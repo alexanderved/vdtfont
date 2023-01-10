@@ -86,7 +86,7 @@ impl Curve for Line {
         let mut list = LinkedList::new();
         if self.p0.y != self.p1.y {
             if self.p0.y > self.p1.y {
-                (self.p0.y, self.p1.y) = (self.p1.y, self.p0.y);
+                (self.p0, self.p1) = (self.p1, self.p0);
             }
             list.push(self);
         }

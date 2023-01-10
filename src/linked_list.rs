@@ -1,5 +1,6 @@
 use std::ops::Drop;
 use std::mem;
+use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub struct LinkedList<T> {
@@ -70,6 +71,43 @@ impl<T: std::fmt::Debug> LinkedList<T> {
 
     pub fn iter(&self) -> Iter<'_, T> {
         Iter { next: self.head.as_deref() }
+    }
+
+    pub fn msort_by<F>(&mut self, f: &F)
+        where F: Fn(&T, &T) -> Ordering
+    {
+        if self.len > 1 {
+            let mut left = LinkedList::new();
+            let mut right = LinkedList::new();
+
+            let mut next_node = &mut self.head;
+
+            right.head = next_node.take();
+
+            for _ in 0..(right.len / 2) {
+                left.push_node(right.pop_node().unwrap());
+            }
+
+            left.msort_by(f);
+            right.msort_by(f);
+
+            while left.head.is_some() && right.head.is_some() {
+                let list =
+                    match f(&left.head.as_ref().unwrap().val, &right.head.as_ref().unwrap().val) {
+                        Ordering::Less | Ordering::Equal => &mut left,
+                        Ordering::Greater => &mut right,
+                    };
+
+                *next_node = list.pop_node();
+                next_node = &mut next_node.as_mut().unwrap().next;
+            }
+
+            *next_node = if left.head.is_some() {
+                left.head.take()
+            } else {
+                right.head.take()
+            };
+        }
     }
 }
 
