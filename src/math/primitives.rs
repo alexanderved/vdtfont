@@ -1,4 +1,3 @@
-use crate::linked_list::LinkedList;
 use super::FLATNESS;
 
 #[derive(Debug, Clone, Copy)]
@@ -72,7 +71,7 @@ pub fn point(x: f32, y: f32) -> Point {
 }
 
 pub trait Curve {
-    fn to_lines(self) -> LinkedList<Line>;
+    fn to_lines(self) -> Vec<Line>;
 }
 
 #[derive(Debug, Clone)]
@@ -82,16 +81,13 @@ pub struct Line {
 }
 
 impl Curve for Line {
-    fn to_lines(mut self) -> LinkedList<Line> {
-        let mut list = LinkedList::new();
-        if self.p0.y != self.p1.y {
-            if self.p0.y > self.p1.y {
-                (self.p0, self.p1) = (self.p1, self.p0);
-            }
-            list.push(self);
+    fn to_lines(mut self) -> Vec<Line> {
+        if self.p0.y > self.p1.y {
+            (self.p0, self.p1) = (self.p1, self.p0);
         }
+        let lines = vec![self];
 
-        list
+        lines
     }
 }
 
@@ -118,24 +114,24 @@ pub struct QuadricCurve {
 }
 
 impl Curve for QuadricCurve {
-    fn to_lines(mut self) -> LinkedList<Line> {
-        let mut list = LinkedList::new();
+    fn to_lines(mut self) -> Vec<Line> {
+        let mut lines = Vec::new();
 
         let mid_p = (self.p0 + 2.0 * self.p1 + self.p2) / 4.0;
         let dp = (self.p0 + self.p2) / 2.0 - mid_p;
 
         if dp.x * dp.x + dp.y * dp.y > FLATNESS * FLATNESS {
-            list.merge(quadric(self.p0, (self.p0 + self.p1) / 2.0, mid_p).to_lines());
-            list.merge(quadric(mid_p, (self.p1 + self.p2) / 2.0, self.p2).to_lines());
+            lines.append(&mut quadric(self.p0, (self.p0 + self.p1) / 2.0, mid_p).to_lines());
+            lines.append(&mut quadric(mid_p, (self.p1 + self.p2) / 2.0, self.p2).to_lines());
         } else {
             if self.p0 > self.p2 {
                 (self.p0, self.p2) = (self.p2, self.p0);
             }
 
-            list.push(line(self.p0, self.p2))
+            lines.push(line(self.p0, self.p2));
         }
 
-        list
+        lines
     }
 }
 
@@ -151,8 +147,8 @@ pub struct CubicCurve {
 }
 
 impl Curve for CubicCurve {
-    fn to_lines(mut self) -> LinkedList<Line> {
-        let mut list = LinkedList::new();
+    fn to_lines(mut self) -> Vec<Line> {
+        let mut lines = Vec::new();
 
         let dp0 = self.p1 - self.p0;
         let dp1 = self.p2 - self.p1;
@@ -174,17 +170,17 @@ impl Curve for CubicCurve {
 
             let mid_p = (p012 + p123) / 2.0;
 
-            list.merge(cubic(self.p0, p01, p012, mid_p).to_lines());
-            list.merge(cubic(mid_p, p123, p23, self.p3).to_lines());
+            lines.append(&mut cubic(self.p0, p01, p012, mid_p).to_lines());
+            lines.append(&mut cubic(mid_p, p123, p23, self.p3).to_lines());
         } else {
             if self.p0 > self.p3 {
                 (self.p0, self.p3) = (self.p3, self.p0);
             }
 
-            list.push(line(self.p0, self.p3))
+            lines.push(line(self.p0, self.p3))
         }
 
-        list
+        lines
     }
 }
 
