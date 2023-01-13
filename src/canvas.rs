@@ -37,7 +37,7 @@ impl CanvasBuilder {
     }
 
     pub fn add_curve(mut self, curve: impl Curve) -> CanvasBuilder {
-        self.lines.append(&mut curve.to_lines());
+        curve.to_lines_with_vec(&mut self.lines);
 
         self
     }
