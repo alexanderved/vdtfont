@@ -30,7 +30,7 @@ impl Canvas {
 
             for x in x0 as usize..x1 as usize {
                 self.plot(x, y as usize, 1.0 - (y - y.floor()));
-                self.plot(x, y as usize + 1, y - y.floor());
+                self.plot(x, (y as usize + 1).min(self.height - 1), y - y.floor());
 
                 y += k;
             }
@@ -49,7 +49,7 @@ impl Canvas {
 
             for y in y0 as usize..y1 as usize {
                 self.plot(x as usize, y, 1.0 - (x - x.floor()));
-                self.plot(x as usize + 1, y, x - x.floor());
+                self.plot((x as usize + 1).min(self.width - 1), y, x - x.floor());
 
                 let dy = 1.0_f32.min(self.height as f32 - p1.y);
 
@@ -60,7 +60,9 @@ impl Canvas {
 
     #[inline(always)]
     fn plot(&mut self, x: usize, y: usize, c: f32) {
-        self.bitmap[y * self.width + x] = c;
+        if y * self.width + x < self.bitmap.len() {
+            self.bitmap[y * self.width + x] = c;
+        }
     }
 }
 
