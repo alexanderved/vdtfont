@@ -94,40 +94,32 @@ impl CanvasBuilder {
             bitmap: vec![0.0; self.width * self.height]
         };
 
+        self.lines.iter().for_each(|line| canvas.draw_line(line));
+
         self.lines.sort_by(|left, right|
             left.p0.y.partial_cmp(&right.p0.y).unwrap()
         );
 
-        self.lines.iter().for_each(|line| {
-            canvas.draw_line(line);
-        });
-
-        let mut hits = Vec::with_capacity(16);
-
         for scanline_y in 0..self.height {
-            let scanline = &mut canvas.bitmap[
-                            scanline_y * canvas.width..(scanline_y + 1) * canvas.width];
-
-            for line in self.lines.iter() {
-                if line.p0.y <= scanline_y as f32 {
-                    if line.p1.y > scanline_y as f32 {
+            let mut hits = self.lines.iter()
+                .filter_map(|line| {
+                    if line.p0.y <= scanline_y as f32 && line.p1.y > scanline_y as f32 {
                         let k = (line.p1.x - line.p0.x) / (line.p1.y - line.p0.y);
                         let x = line.p0.x + k * (scanline_y as f32 - line.p0.y);
 
-                        hits.push(x);
+                        Some(x as usize + 1)
+                    } else {
+                        None
                     }
-                }
-            }
-
-            hits.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                })
+                .collect::<Vec<usize>>();
+            hits.sort_by(|a, b| a.cmp(b));
 
             for xs in hits.chunks_exact(2) {
-                for x in xs[0] as usize + 1..xs[1] as usize + 1 {
-                    scanline[x] = 1.0;
+                for x in xs[0]..xs[1] {
+                    canvas.plot(x, scanline_y, 1.0);
                 }
             }
-
-            hits.clear();
         }
 
         canvas
