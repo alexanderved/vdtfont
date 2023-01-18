@@ -23,7 +23,7 @@ impl Canvas {
             }
 
             let x0 = p0.x.floor();
-            let x1 = p1.x.ceil().min(self.width as f32 - 1.0);
+            let x1 = p1.x.ceil().min(self.width as f32);
 
             let k = (p1.y - p0.y) / (p1.x - p0.x);
             let mut y = p0.y + k * (x0 - p0.x);
@@ -42,7 +42,7 @@ impl Canvas {
             }
 
             let y0 = p0.y.floor();
-            let y1 = p1.y.ceil().min(self.height as f32 - 1.0);
+            let y1 = p1.y.ceil().min(self.height as f32);
 
             let k = (p1.x - p0.x) / (p1.y - p0.y);
             let mut x = p0.x + k * (y0 - p0.y);
