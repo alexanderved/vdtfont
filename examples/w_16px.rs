@@ -2,22 +2,16 @@ use font_rasterizer::*;
 
 fn main() {
     let canvas = build_w_canvas();
-    let mut data = vec![];
-
-    for i in 0..canvas.width * canvas.height {
-        let a = canvas.bitmap[i];
-
-        data.push(0);
-        data.push(0);
-        data.push(255);
-        data.push((255.0 * a.abs()) as u8);
-    }
+    
+    let data = canvas.iter()
+        .flat_map(|a| [0, 0, 255, (255.0 * a.abs()) as u8])
+        .collect::<Vec<u8>>();
 
     let _ = image::save_buffer(
         &std::path::Path::new("examples/images/w_16px.png"),
         &data,
-        canvas.width as u32,
-        canvas.height as u32,
+        canvas.width() as u32,
+        canvas.height() as u32,
         image::ColorType::Rgba8,
     );
 }

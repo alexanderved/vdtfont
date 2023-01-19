@@ -78,6 +78,9 @@ pub trait Curve {
 pub struct Line {
     pub p0: Point,
     pub p1: Point,
+
+    pub dx: f32,
+    pub dy: f32,
 }
 
 impl Curve for Line {
@@ -102,7 +105,9 @@ impl std::cmp::PartialOrd for Line {
 }
 
 pub fn line(p0: Point, p1: Point) -> Line {
-    Line { p0, p1 }
+    let dx = (p1.x - p0.x) / (p1.y - p0.y);
+    let dy = (p1.y - p0.y) / (p1.x - p0.x);
+    Line { p0, p1, dx, dy }
 }
 
 pub struct QuadricCurve {
