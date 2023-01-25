@@ -1,6 +1,6 @@
 use super::FLATNESS;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
@@ -74,7 +74,7 @@ pub trait Curve {
     fn to_lines_with_vec(self, lines: &mut Vec<Line>);
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Line {
     pub p0: Point,
     pub p1: Point,

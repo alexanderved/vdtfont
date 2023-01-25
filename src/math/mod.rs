@@ -1,4 +1,5 @@
 mod primitives;
+mod float;
 
 pub use primitives::{
     Point, point,
@@ -7,5 +8,6 @@ pub use primitives::{
     QuadricCurve, quadric,
     CubicCurve, cubic
 };
+pub use float::*;
 
 pub const FLATNESS: f32 = 0.35;

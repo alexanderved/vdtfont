@@ -5,6 +5,7 @@ use std::{
 use crate::{
     Line,
     Curve,
+    math::*,
 };
 
 pub struct Canvas {
@@ -14,12 +15,12 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    #[inline(always)]
+    #[inline]
     pub fn width(&self) -> usize {
         self.width
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn height(&self) -> usize {
         self.height
     }
@@ -28,7 +29,7 @@ impl Canvas {
         let mut p0 = line.p0;
         let mut p1 = line.p1;
 
-        if (p1.x - p0.x).abs() > (p1.y - p0.y).abs() {
+        if (p1.x - p0.x).abs() >= (p1.y - p0.y).abs() {
             if p0.x == p1.x { return; }
 
             if p0.x > p1.x {
@@ -37,17 +38,17 @@ impl Canvas {
 
             let x0 = p0.x.round();
             let x1 = p1.x.round().min(self.width as f32);
-            let mut y = p0.y + line.dy * (x0 - p0.x);
+            let mut y = p0.y + line.dy * (x0 - p0.x + 1.0);
 
             for x in x0 as usize..x1 as usize + 1 {
-                self.plot(x, y as usize, 1.0 - (y - y.floor()));
-                self.plot(x, (y as usize + 1).min(self.height - 1), y - y.floor());
+                self.plot(x, y as usize, y.rfract());
+                self.plot(x, y as usize + 1, y.fract());
 
                 let dx = 1.0_f32.min(self.width as f32 - p1.x);
 
                 y += line.dy * dx;
             }
-        } else if (p1.x - p0.x).abs() <= (p1.y - p0.y).abs() {
+        } else if (p1.x - p0.x).abs() < (p1.y - p0.y).abs() {
             if p0.y == p1.y { return; }
 
             if p0.y > p1.y {
@@ -59,8 +60,8 @@ impl Canvas {
             let mut x = p0.x + line.dx * (y0 - p0.y);
 
             for y in y0 as usize..y1 as usize + 1 {
-                self.plot(x as usize, y, 1.0 - (x - x.floor()));
-                self.plot((x as usize + 1).min(self.width - 1), y, x - x.floor());
+                self.plot(x as usize, y, x.rfract());
+                self.plot(x as usize + 1, y, x.fract());
 
                 let dy = 1.0_f32.min(self.height as f32 - p1.y);
 
@@ -69,19 +70,19 @@ impl Canvas {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn plot(&mut self, x: usize, y: usize, c: f32) {
         if y * self.width + x < self.bitmap.len() {
-            self.bitmap[y * self.width + x] = c;
+            self.bitmap[y * self.width + x] = c.max(self.bitmap[y * self.width + x]);
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &'_ f32> {
         self.bitmap.iter()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut f32> {
         self.bitmap.iter_mut()
     }
@@ -121,7 +122,7 @@ pub struct CanvasBuilder {
 }
 
 impl CanvasBuilder {
-    pub fn new(width: usize, height: usize,) -> CanvasBuilder {
+    pub fn new(width: usize, height: usize) -> CanvasBuilder {
         CanvasBuilder {
             width,
             height,
@@ -144,9 +145,13 @@ impl CanvasBuilder {
 
         self.lines.iter().for_each(|line| canvas.draw_line(line));
 
-        self.lines.sort_by(|left, right|
+        self.lines.iter_mut()
+            .for_each(|line| if line.p0.y > line.p1.y {
+                mem::swap(&mut line.p0, &mut line.p1);
+            });
+        self.lines.sort_by(|left, right| {
             left.p0.y.partial_cmp(&right.p0.y).unwrap()
-        );
+        });
 
         for scanline_y in 0..self.height {
             let mut hits = self.lines.iter()
