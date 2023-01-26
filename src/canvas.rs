@@ -38,7 +38,7 @@ impl Canvas {
 
             let x0 = p0.x.round();
             let x1 = p1.x.round().min(self.width as f32);
-            let mut y = p0.y + line.dy * (x0 - p0.x + 1.0);
+            let mut y = p0.y + line.dy * (x0 - p0.x);
 
             for x in x0 as usize..x1 as usize + 1 {
                 self.plot(x, y as usize, y.rfract());
