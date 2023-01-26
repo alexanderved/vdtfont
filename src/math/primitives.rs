@@ -71,7 +71,7 @@ pub fn point(x: f32, y: f32) -> Point {
 }
 
 pub trait Curve {
-    fn to_lines_with_vec(self, lines: &mut Vec<Line>);
+    fn tesselate(self, lines: &mut Vec<Line>);
 }
 
 #[derive(Debug, Default, Clone)]
@@ -84,7 +84,7 @@ pub struct Line {
 }
 
 impl Curve for Line {
-    fn to_lines_with_vec(mut self, lines: &mut Vec<Line>) {
+    fn tesselate(mut self, lines: &mut Vec<Line>) {
         if self.p0.y > self.p1.y {
             (self.p0, self.p1) = (self.p1, self.p0);
         }
@@ -117,13 +117,13 @@ pub struct QuadricCurve {
 }
 
 impl Curve for QuadricCurve {
-    fn to_lines_with_vec(mut self, lines: &mut Vec<Line>) {
+    fn tesselate(mut self, lines: &mut Vec<Line>) {
         let mid_p = (self.p0 + 2.0 * self.p1 + self.p2) / 4.0;
         let dp = (self.p0 + self.p2) / 2.0 - mid_p;
 
         if dp.x * dp.x + dp.y * dp.y > FLATNESS * FLATNESS {
-            quadric(self.p0, (self.p0 + self.p1) / 2.0, mid_p).to_lines_with_vec(lines);
-            quadric(mid_p, (self.p1 + self.p2) / 2.0, self.p2).to_lines_with_vec(lines);
+            quadric(self.p0, (self.p0 + self.p1) / 2.0, mid_p).tesselate(lines);
+            quadric(mid_p, (self.p1 + self.p2) / 2.0, self.p2).tesselate(lines);
         } else {
             if self.p0 > self.p2 {
                 (self.p0, self.p2) = (self.p2, self.p0);
@@ -146,7 +146,7 @@ pub struct CubicCurve {
 }
 
 impl Curve for CubicCurve {
-    fn to_lines_with_vec(mut self, lines: &mut Vec<Line>) {
+    fn tesselate(mut self, lines: &mut Vec<Line>) {
         let dp0 = self.p1 - self.p0;
         let dp1 = self.p2 - self.p1;
         let dp2 = self.p3 - self.p2;
@@ -167,8 +167,8 @@ impl Curve for CubicCurve {
 
             let mid_p = (p012 + p123) / 2.0;
 
-            cubic(self.p0, p01, p012, mid_p).to_lines_with_vec(lines);
-            cubic(mid_p, p123, p23, self.p3).to_lines_with_vec(lines);
+            cubic(self.p0, p01, p012, mid_p).tesselate(lines);
+            cubic(mid_p, p123, p23, self.p3).tesselate(lines);
         } else {
             if self.p0 > self.p3 {
                 (self.p0, self.p3) = (self.p3, self.p0);

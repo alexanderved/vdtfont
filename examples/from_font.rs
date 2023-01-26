@@ -6,7 +6,7 @@ fn main() {
     let canvas = build_canvas_from_font();
 
     let data = canvas.iter()
-        .flat_map(|a| [0, 0, 255, (255.0 * a.abs()) as u8])
+        .flat_map(|a| [0, 0, 0, (255.0 * a.abs()) as u8])
         .collect::<Vec<u8>>();
 
     let _ = image::save_buffer(
@@ -20,26 +20,41 @@ fn main() {
 
 fn build_canvas_from_font() -> Canvas {
     let owned_font_data =
+        //include_bytes!("../.fonts/times.ttf");
         include_bytes!("../../../../ab-glyph/dev/fonts/DejaVuSansMono.ttf");
+        //include_bytes!("../../../../ab-glyph/dev/fonts/OpenSans-Italic.ttf");
         //include_bytes!("../.fonts/mingliu.ttc");
 
     let owned_face = ttfp::OwnedFace::from_vec(
         owned_font_data.to_vec(), 0).unwrap();
     let faster_face = ttfp::PreParsedSubtables::from(owned_face);
 
-    let glyph_id = faster_face.glyph_index('☣').unwrap(); //☣ 一
+    let glyph_id = faster_face.glyph_index('É').unwrap(); //☣ 一 ΐ É
 
     let mut outliner = Outliner::default();
     let rect = faster_face.as_face_ref()
         .outline_glyph(glyph_id, &mut outliner).unwrap();
+    
+    let height: f32 =
+        (faster_face.as_face_ref().ascender() - faster_face.as_face_ref().descender()).into();
+    let h = 16.0 / height;
+    let v = 16.0 / height;
+
+    let bounds = ttfp::Rect {
+        x_min: (rect.x_min as f32 * h) as i16,
+        x_max: (rect.x_max as f32 * h) as i16,
+        y_min: (rect.y_min as f32 * v) as i16,
+        y_max: (rect.y_max as f32 * v) as i16,
+    };
 
     let mut canvas_builder = CanvasBuilder::new(
-        (rect.width() + rect.x_min + 10) as usize,
-        (rect.height() + rect.y_min + 10) as usize);
+        bounds.width() as usize + 2,
+        bounds.height() as usize + 2
+    );
 
-    let scale = 0.05;
     let scale_up = |p: Point| {
-        point(p.x * scale, (rect.height() as f32 - p.y) * scale)
+        point(p.x * h - bounds.x_min as f32,
+            bounds.height() as f32 - (p.y * v - bounds.y_min as f32))
     };
     
     for linee in outliner.outline {
@@ -77,7 +92,7 @@ impl ttfp::OutlineBuilder for Outliner {
         // eprintln!("Q {x1} {y1}");
         let p1 = point(x1, y1);
         let p2 = point(x2, y2);
-        quadric(self.last, p1, p2).to_lines_with_vec(&mut self.outline);
+        quadric(self.last, p1, p2).tesselate(&mut self.outline);
         self.last = p2;
     }
 
@@ -87,7 +102,7 @@ impl ttfp::OutlineBuilder for Outliner {
         let p2 = point(x2, y2);
         let p3 = point(x3, y3);
 
-        cubic(self.last, p1, p2, p3).to_lines_with_vec(&mut self.outline);
+        cubic(self.last, p1, p2, p3).tesselate(&mut self.outline);
         self.last = p3;
     }
 

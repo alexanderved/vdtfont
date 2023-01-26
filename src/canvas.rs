@@ -131,7 +131,7 @@ impl CanvasBuilder {
     }
 
     pub fn add_curve(mut self, curve: impl Curve) -> CanvasBuilder {
-        curve.to_lines_with_vec(&mut self.lines);
+        curve.tesselate(&mut self.lines);
 
         self
     }
