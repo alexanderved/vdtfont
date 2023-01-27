@@ -81,13 +81,12 @@ pub struct Line {
 
     pub dx: f32,
     pub dy: f32,
+
+    pub dir: i8,
 }
 
 impl Curve for Line {
-    fn tesselate(mut self, lines: &mut Vec<Line>) {
-        if self.p0.y > self.p1.y {
-            (self.p0, self.p1) = (self.p1, self.p0);
-        }
+    fn tesselate(self, lines: &mut Vec<Line>) {
         lines.push(self);
     }
 }
@@ -104,10 +103,17 @@ impl std::cmp::PartialOrd for Line {
     }
 }
 
-pub fn line(p0: Point, p1: Point) -> Line {
+pub fn line(mut p0: Point, mut p1: Point) -> Line {
     let dx = (p1.x - p0.x) / (p1.y - p0.y);
     let dy = (p1.y - p0.y) / (p1.x - p0.x);
-    Line { p0, p1, dx, dy }
+    let mut dir = 1;
+
+    if p0.y > p1.y {
+        (p0, p1) = (p1, p0);
+        dir = -1;
+    }
+
+    Line { p0, p1, dx, dy, dir }
 }
 
 pub struct QuadricCurve {
@@ -117,7 +123,7 @@ pub struct QuadricCurve {
 }
 
 impl Curve for QuadricCurve {
-    fn tesselate(mut self, lines: &mut Vec<Line>) {
+    fn tesselate(self, lines: &mut Vec<Line>) {
         let mid_p = (self.p0 + 2.0 * self.p1 + self.p2) / 4.0;
         let dp = (self.p0 + self.p2) / 2.0 - mid_p;
 
@@ -125,10 +131,6 @@ impl Curve for QuadricCurve {
             quadric(self.p0, (self.p0 + self.p1) / 2.0, mid_p).tesselate(lines);
             quadric(mid_p, (self.p1 + self.p2) / 2.0, self.p2).tesselate(lines);
         } else {
-            if self.p0 > self.p2 {
-                (self.p0, self.p2) = (self.p2, self.p0);
-            }
-
             lines.push(line(self.p0, self.p2));
         }
     }
@@ -146,7 +148,7 @@ pub struct CubicCurve {
 }
 
 impl Curve for CubicCurve {
-    fn tesselate(mut self, lines: &mut Vec<Line>) {
+    fn tesselate(self, lines: &mut Vec<Line>) {
         let dp0 = self.p1 - self.p0;
         let dp1 = self.p2 - self.p1;
         let dp2 = self.p3 - self.p2;
@@ -170,10 +172,6 @@ impl Curve for CubicCurve {
             cubic(self.p0, p01, p012, mid_p).tesselate(lines);
             cubic(mid_p, p123, p23, self.p3).tesselate(lines);
         } else {
-            if self.p0 > self.p3 {
-                (self.p0, self.p3) = (self.p3, self.p0);
-            }
-
             lines.push(line(self.p0, self.p3))
         }
     }

@@ -46,10 +46,13 @@ pub trait Example {
         };
 
         for linee in outliner.outline {
-            canvas_builder = canvas_builder.add_curve(line(
+            let mut new_line = line(
                 scale_up(linee.p0),
                 scale_up(linee.p1)
-            ));
+            );
+            new_line.dir = linee.dir;
+
+            canvas_builder = canvas_builder.add_curve(new_line);
         }
 
         canvas_builder.build()
@@ -89,6 +92,6 @@ macro_rules! example {
 
 example!(W("w", 'w', 16.0, "../fonts/DejaVuSansMono.ttf"));
 example!(Iota("iota", 'ΐ', 60.0, "../fonts/OpenSans-Italic.ttf"));
-example!(TailedE("tailed_e", 'ę', 300.0, "../fonts/Exo2-Light.otf"));
+example!(TailedE("tailed_e", 'ę', 300.0, "../fonts/Exo2-Light.ttf"));
 example!(Biohazard("biohazard", '☣', 600.0, "../fonts/DejaVuSansMono.ttf"));
 example!(Ichi("ichi", '一', 100.0, "../fonts/mingliu.ttc"));

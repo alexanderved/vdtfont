@@ -145,31 +145,43 @@ impl CanvasBuilder {
 
         self.lines.iter().for_each(|line| canvas.draw_line(line));
 
-        self.lines.iter_mut()
-            .for_each(|line| if line.p0.y > line.p1.y {
-                mem::swap(&mut line.p0, &mut line.p1);
-            });
         self.lines.sort_by(|left, right| {
             left.p0.y.partial_cmp(&right.p0.y).unwrap()
         });
 
-        for scanline_y in 0..self.height {
-            let mut hits = self.lines.iter()
+        let mut hits = vec![];
+        for scanline_y in 0..canvas.height {
+            self.lines.iter()
                 .filter_map(|line| {
                     if line.p0.y <= scanline_y as f32 && line.p1.y > scanline_y as f32 {
                         let x = line.p0.x + line.dx * (scanline_y as f32 - line.p0.y);
 
-                        Some(x as usize + 1)
+                        Some((x as usize + 1, line.dir))
                     } else {
                         None
                     }
                 })
-                .collect::<Vec<usize>>();
+                .for_each(|hit| hits.push(hit));
             hits.sort_by(|a, b| a.cmp(b));
 
-            hits.chunks_exact(2)
-                .flat_map(|xs| xs[0]..xs[1])
-                .for_each(|x| canvas.plot(x, scanline_y, 1.0));
+            /* hits.chunks_exact(2)
+                .flat_map(|xs| xs[0].0..xs[1].0)
+                .for_each(|x| canvas.plot(x, scanline_y, 1.0)); */
+
+            let mut pen = 0;
+            let mut curhit = 0;
+            for x in 0..canvas.width {
+                while curhit < hits.len() && x == hits[curhit].0 {
+                    pen += hits[curhit].1;
+                    curhit += 1;
+                }
+
+                if pen != 0 {
+                    canvas.plot(x, scanline_y, 1.0);
+                }
+            }
+
+            hits.clear();
         }
 
         canvas
