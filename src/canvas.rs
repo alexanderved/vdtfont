@@ -162,7 +162,7 @@ impl CanvasBuilder {
                     }
                 })
                 .for_each(|hit| hits.push(hit));
-            hits.sort_by(|a, b| a.cmp(b));
+            hits.sort_by(|a, b| a.0.cmp(&b.0));
 
             /* hits.chunks_exact(2)
                 .flat_map(|xs| xs[0].0..xs[1].0)
