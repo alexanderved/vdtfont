@@ -44,21 +44,15 @@ pub trait Example {
             bounds.height() as usize + 2
         );
 
-        let scale_up = |p: Point| {
-            point(
-                p.x * h_factor - bounds.x_min as f32,
-                bounds.height() as f32 - (p.y * v_factor - bounds.y_min as f32)
-            )
+        let scale_up = |p: &mut Point| {
+            p.x = p.x * h_factor - bounds.x_min as f32;
+            p.y = bounds.height() as f32 - (p.y * v_factor - bounds.y_min as f32);
         };
 
-        for linee in outliner.outline {
-            let mut new_line = line(
-                scale_up(linee.p0),
-                scale_up(linee.p1)
-            );
-            new_line.dir = linee.dir;
+        for mut linee in outliner.outline {
+            linee.transform(scale_up);
 
-            canvas_builder = canvas_builder.add_curve(new_line);
+            canvas_builder = canvas_builder.add_curve(linee);
         }
 
         canvas_builder.build()

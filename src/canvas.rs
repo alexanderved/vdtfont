@@ -32,8 +32,8 @@ impl Canvas {
     }
 
     pub fn draw_line(&mut self, line: &Line) {
-        let mut p0 = line.p0;
-        let mut p1 = line.p1;
+        let mut p0 = line.p0();
+        let mut p1 = line.p1();
 
         if (p1.x - p0.x).abs() >= (p1.y - p0.y).abs() {
             if p0.x == p1.x { return; }
@@ -44,7 +44,7 @@ impl Canvas {
 
             let x0 = p0.x.round();
             let x1 = p1.x.round().min(self.width as f32);
-            let mut y = p0.y + line.dy * (x0 - p0.x);
+            let mut y = p0.y + line.dy() * (x0 - p0.x);
 
             for x in x0 as usize..x1 as usize + 1 {
                 self.plot(x, y as usize, y.rfract());
@@ -52,7 +52,7 @@ impl Canvas {
 
                 let dx = 1.0_f32.min(self.width as f32 - p1.x);
 
-                y += line.dy * dx;
+                y += line.dy() * dx;
             }
         } else if (p1.x - p0.x).abs() < (p1.y - p0.y).abs() {
             if p0.y == p1.y { return; }
@@ -63,7 +63,7 @@ impl Canvas {
 
             let y0 = p0.y.round();
             let y1 = p1.y.round().min(self.height as f32);
-            let mut x = p0.x + line.dx * (y0 - p0.y);
+            let mut x = p0.x + line.dx() * (y0 - p0.y);
 
             for y in y0 as usize..y1 as usize + 1 {
                 self.plot(x as usize, y, x.rfract());
@@ -71,7 +71,7 @@ impl Canvas {
 
                 let dy = 1.0_f32.min(self.height as f32 - p1.y);
 
-                x += line.dx * dy
+                x += line.dx() * dy
             }
         }
     }
@@ -152,17 +152,17 @@ impl CanvasBuilder {
         self.lines.iter().for_each(|line| canvas.draw_line(line));
 
         self.lines.sort_by(|left, right| {
-            left.p0.y.partial_cmp(&right.p0.y).unwrap()
+            left.p0().y.partial_cmp(&right.p0().y).unwrap()
         });
 
         let mut hits: Vec<(usize, i8)> = Vec::with_capacity(8);
         for scanline_y in 0..canvas.height {
             self.lines.iter()
                 .filter_map(|line| {
-                    if line.p0.y <= scanline_y as f32 && line.p1.y > scanline_y as f32 {
-                        let x = line.p0.x + line.dx * (scanline_y as f32 - line.p0.y);
+                    if line.p0().y <= scanline_y as f32 && line.p1().y > scanline_y as f32 {
+                        let x = line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y);
 
-                        Some((x as usize + 1, line.dir))
+                        Some((x as usize + 1, line.dir()))
                     } else {
                         None
                     }

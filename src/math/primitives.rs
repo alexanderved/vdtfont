@@ -84,13 +84,48 @@ pub trait Curve {
 
 #[derive(Debug, Default, Clone)]
 pub struct Line {
-    pub p0: Point,
-    pub p1: Point,
+    p0: Point,
+    p1: Point,
 
-    pub dx: f32,
-    pub dy: f32,
+    dx: f32,
+    dy: f32,
 
-    pub dir: i8,
+    dir: i8,
+}
+
+impl Line {
+    pub fn p0(&self) -> &Point {
+        &self.p0
+    }
+
+    pub fn p1(&self) -> &Point {
+        &self.p1
+    }
+
+    pub fn dx(&self) -> f32 {
+        self.dx
+    }
+
+    pub fn dy(&self) -> f32 {
+        self.dy
+    }
+
+    pub fn dir(&self) -> i8 {
+        self.dir
+    }
+
+    pub fn transform<F>(&mut self, f: F)
+        where F: Fn(&mut Point)
+    {
+        if self.dir == -1 {
+            std::mem::swap(&mut self.p0, &mut self.p1);
+        }
+
+        f(&mut self.p0);
+        f(&mut self.p1);
+
+        *self = line(self.p0, self.p1);
+    }
 }
 
 impl Curve for Line {
