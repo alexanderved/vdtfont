@@ -155,7 +155,7 @@ impl CanvasBuilder {
             left.p0.y.partial_cmp(&right.p0.y).unwrap()
         });
 
-        let mut hits = vec![];
+        let mut hits: Vec<(usize, i8)> = vec![];
         for scanline_y in 0..canvas.height {
             self.lines.iter()
                 .filter_map(|line| {
@@ -170,24 +170,20 @@ impl CanvasBuilder {
                 .for_each(|hit| hits.push(hit));
             hits.sort_by(|a, b| a.0.cmp(&b.0));
 
-            /* hits.chunks_exact(2)
-                .flat_map(|xs| xs[0].0..xs[1].0)
-                .for_each(|x| canvas.plot(x, scanline_y, 1.0)); */
+            hits.drain(..)
+                .fold((0, 0), |(mut x0, mut w), (hit, dir)| {
+                    if w == 0 {
+                        x0 = hit;
+                    }
+                    w += dir;
+                    if w == 0 {
+                        for x in x0..hit {
+                            canvas.plot(x, scanline_y, 1.0);
+                        }
+                    }
 
-            let mut pen = 0;
-            let mut curhit = 0;
-            for x in 0..canvas.width {
-                while curhit < hits.len() && x == hits[curhit].0 {
-                    pen += hits[curhit].1;
-                    curhit += 1;
-                }
-
-                if pen != 0 {
-                    canvas.plot(x, scanline_y, 1.0);
-                }
-            }
-
-            hits.clear();
+                    (x0, w)
+                });
         }
 
         canvas
