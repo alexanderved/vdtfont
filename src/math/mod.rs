@@ -4,16 +4,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-mod primitives;
 mod float;
+mod primitives;
 
-pub use primitives::{
-    Point, point,
-    Curve,
-    Line, line,
-    QuadricCurve, quadric,
-    CubicCurve, cubic
-};
 pub use float::ReverseFract;
+pub use primitives::{cubic, line, point, quadric, CubicCurve, Curve, Line, Point, QuadricCurve};
 
 pub const FLATNESS: f32 = 0.35;

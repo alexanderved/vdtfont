@@ -4,15 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use std::{
-    mem, slice, vec,
-    iter::IntoIterator,
-};
-use crate::{
-    Line,
-    Curve,
-    math::*,
-};
+use crate::{math::*, Curve, Line};
+use std::{iter::IntoIterator, mem, slice, vec};
 
 pub struct Canvas {
     width: usize,
@@ -36,7 +29,9 @@ impl Canvas {
         let mut p1 = line.p1();
 
         if (p1.x - p0.x).abs() >= (p1.y - p0.y).abs() {
-            if p0.x == p1.x { return; }
+            if p0.x == p1.x {
+                return;
+            }
 
             if p0.x > p1.x {
                 mem::swap(&mut p0, &mut p1);
@@ -55,7 +50,9 @@ impl Canvas {
                 y += line.dy() * dx;
             }
         } else if (p1.x - p0.x).abs() < (p1.y - p0.y).abs() {
-            if p0.y == p1.y { return; }
+            if p0.y == p1.y {
+                return;
+            }
 
             if p0.y > p1.y {
                 mem::swap(&mut p0, &mut p1);
@@ -132,7 +129,7 @@ impl CanvasBuilder {
         CanvasBuilder {
             width,
             height,
-            lines: Vec::new()
+            lines: Vec::new(),
         }
     }
 
@@ -146,18 +143,18 @@ impl CanvasBuilder {
         let mut canvas = Canvas {
             width: self.width,
             height: self.height,
-            bitmap: vec![0.0; self.width * self.height]
+            bitmap: vec![0.0; self.width * self.height],
         };
 
         self.lines.iter().for_each(|line| canvas.draw_line(line));
 
-        self.lines.sort_by(|left, right| {
-            left.p0().y.partial_cmp(&right.p0().y).unwrap()
-        });
+        self.lines
+            .sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
 
         let mut hits: Vec<(usize, i8)> = Vec::with_capacity(8);
         for scanline_y in 0..canvas.height {
-            self.lines.iter()
+            self.lines
+                .iter()
                 .filter_map(|line| {
                     if line.p0().y <= scanline_y as f32 && line.p1().y > scanline_y as f32 {
                         let x = line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y);

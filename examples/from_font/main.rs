@@ -4,19 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-mod outliner;
 mod example;
+mod outliner;
 
 use crate::example::*;
 
 fn main() {
-    let examples: [&dyn Example; 5] = [
-        &W,
-        &Iota,
-        &TailedE,
-        &Biohazard,
-        &Ichi
-    ];
+    let examples: [&dyn Example; 5] = [&W, &Iota, &TailedE, &Biohazard, &Ichi];
 
     for example in examples {
         example.create_image();

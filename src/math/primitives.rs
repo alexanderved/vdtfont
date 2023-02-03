@@ -2,7 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- * 
+ *
  * Quadric and cubic bezier tesselation adapted from stb_truetype: https://github.com/nothings/stb
  */
 
@@ -115,7 +115,8 @@ impl Line {
     }
 
     pub fn transform<F>(&mut self, f: F)
-        where F: Fn(&mut Point)
+    where
+        F: Fn(&mut Point),
     {
         if self.dir == -1 {
             std::mem::swap(&mut self.p0, &mut self.p1);
@@ -156,7 +157,13 @@ pub fn line(mut p0: Point, mut p1: Point) -> Line {
         dir = -1;
     }
 
-    Line { p0, p1, dx, dy, dir }
+    Line {
+        p0,
+        p1,
+        dx,
+        dy,
+        dir,
+    }
 }
 
 pub struct QuadricCurve {
@@ -197,8 +204,9 @@ impl Curve for CubicCurve {
         let dp2 = self.p3 - self.p2;
         let dp = self.p3 - self.p0;
 
-        let longlen = (dp0.x.powi(2) + dp0.y.powi(2)).sqrt() + 
-            (dp1.x.powi(2) + dp1.y.powi(2)).sqrt() + (dp2.x.powi(2) + dp2.y.powi(2)).sqrt();
+        let longlen = (dp0.x.powi(2) + dp0.y.powi(2)).sqrt()
+            + (dp1.x.powi(2) + dp1.y.powi(2)).sqrt()
+            + (dp2.x.powi(2) + dp2.y.powi(2)).sqrt();
         let shortlen = (dp.x.powi(2) + dp.y.powi(2)).sqrt();
         let flatness_squared = longlen.powi(2) - shortlen.powi(2);
 

@@ -11,7 +11,7 @@ use owned_ttf_parser as ttfp;
 pub struct Outliner {
     pub last: Point,
     pub last_move: Option<Point>,
-    pub outline: Vec<Line>
+    pub outline: Vec<Line>,
 }
 
 impl ttfp::OutlineBuilder for Outliner {
