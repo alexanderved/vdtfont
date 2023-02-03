@@ -7,6 +7,7 @@
 use crate::{math::*, Curve, Line};
 use std::{iter::IntoIterator, mem, slice, vec};
 
+/// An object that contains pixel alphas of drawn curves.
 pub struct Canvas {
     width: usize,
     height: usize,
@@ -14,16 +15,23 @@ pub struct Canvas {
 }
 
 impl Canvas {
+    /// Returns the width of Canvas.
     #[inline]
     pub fn width(&self) -> usize {
         self.width
     }
 
+    /// Returns the height of Canvas.
     #[inline]
     pub fn height(&self) -> usize {
         self.height
     }
 
+    /// Draws line in Canvas with [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm).
+    /// 
+    /// ```
+    /// canvas.draw_line(&line(l0, l1));
+    /// ```
     pub fn draw_line(&mut self, line: &Line) {
         let mut p0 = line.p0();
         let mut p1 = line.p1();
@@ -73,18 +81,41 @@ impl Canvas {
         }
     }
 
+    /// Plots one pixel on Canvas if it's inside the bounds.
+    /// 
+    /// ```
+    /// canvas.plot(x, y, alpha);
+    /// ```
     #[inline]
     pub fn plot(&mut self, x: usize, y: usize, c: f32) {
-        if y * self.width + x < self.bitmap.len() {
+        if x < self.width && y < self.height {
             self.bitmap[y * self.width + x] = c.max(self.bitmap[y * self.width + x]);
         }
     }
 
+    /// Returns an iterator over pixel alphas in Canvas.
+    /// 
+    /// ```
+    /// canvas.iter()
+    ///     .for_each(|alpha| {
+    ///         // ...
+    ///     })
+    /// ```
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &'_ f32> {
         self.bitmap.iter()
     }
 
+    /// Returns an iterator over pixel alphas in Canvas that allows modify them.
+    /// 
+    /// ```
+    /// canvas.iter_mut()
+    ///     .for_each(|alpha| {
+    ///         *alpha = some_value;
+    /// 
+    ///         // ...
+    ///     })
+    /// ```
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut f32> {
         self.bitmap.iter_mut()
@@ -95,6 +126,7 @@ impl IntoIterator for Canvas {
     type Item = f32;
     type IntoIter = vec::IntoIter<f32>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.bitmap.into_iter()
     }
@@ -104,6 +136,7 @@ impl<'a> IntoIterator for &'a Canvas {
     type Item = &'a f32;
     type IntoIter = slice::Iter<'a, f32>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.bitmap.iter()
     }
@@ -113,11 +146,13 @@ impl<'a> IntoIterator for &'a mut Canvas {
     type Item = &'a mut f32;
     type IntoIter = slice::IterMut<'a, f32>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.bitmap.iter_mut()
     }
 }
 
+/// An object that stores outlines and allows building Canvas with them.
 pub struct CanvasBuilder {
     width: usize,
     height: usize,
@@ -125,6 +160,11 @@ pub struct CanvasBuilder {
 }
 
 impl CanvasBuilder {
+    /// Creates new CanvasBuilder with specified width and height.
+    /// 
+    /// ```
+    /// let canvas_builder = CanvasBuilder::new(width, height);
+    /// ```
     pub fn new(width: usize, height: usize) -> CanvasBuilder {
         CanvasBuilder {
             width,
@@ -133,12 +173,24 @@ impl CanvasBuilder {
         }
     }
 
+    /// Tesselates a curve with lines and stores them.
+    /// 
+    /// ```
+    /// let canvas_builder = canvas_builder.add_curve(line(l0, l1))
+    ///     .add_curve(quadric(q0, q1, q2))
+    ///     .add_curve(cubic(c0, c1, c2, c3));
+    /// ```
     pub fn add_curve(mut self, curve: impl Curve) -> CanvasBuilder {
         curve.tesselate(&mut self.lines);
 
         self
     }
 
+    /// Builds Canvas with stored lines.
+    /// 
+    /// ```
+    /// let canvas = canvas_builder.build();
+    /// ```
     pub fn build(mut self) -> Canvas {
         let mut canvas = Canvas {
             width: self.width,
@@ -155,7 +207,7 @@ impl CanvasBuilder {
         for scanline_y in 0..canvas.height {
             self.lines
                 .iter()
-                .filter_map(|line| {
+                .filter_map(|line| { // Find the intersection of line and scanline
                     if line.p0().y <= scanline_y as f32 && line.p1().y > scanline_y as f32 {
                         let x = line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y);
 
@@ -169,10 +221,16 @@ impl CanvasBuilder {
 
             hits.drain(..)
                 .fold((0, 0), |(mut start, mut w), (hit, dir)| {
+                    // If w equals 0, we have filled all previous intervals.
+                    // Now we need to find starting point of the new interval.
                     if w == 0 {
                         start = hit;
                     }
+
                     w += dir;
+
+                    // If w equals 0 after adding dir, we have reached the end point
+                    // of the current interval. Now we need to fill it.
                     if w == 0 {
                         for x in start..hit {
                             canvas.plot(x, scanline_y, 1.0);
