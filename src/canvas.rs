@@ -27,7 +27,8 @@ impl Canvas {
         self.height
     }
 
-    /// Draws line in Canvas with [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm).
+    /// Draws line in Canvas with
+    /// [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm).
     /// 
     /// ```
     /// canvas.draw_line(&line(l0, l1));
