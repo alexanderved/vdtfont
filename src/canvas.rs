@@ -155,7 +155,7 @@ impl CanvasBuilder {
             left.p0.y.partial_cmp(&right.p0.y).unwrap()
         });
 
-        let mut hits: Vec<(usize, i8)> = vec![];
+        let mut hits: Vec<(usize, i8)> = Vec::with_capacity(8);
         for scanline_y in 0..canvas.height {
             self.lines.iter()
                 .filter_map(|line| {
