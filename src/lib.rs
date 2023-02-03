@@ -7,7 +7,7 @@
 //! Rasterization for linear, quadric and cubic Bezier curves.
 //!
 //! ```
-//! use font_rasterizer::CanvasBuilder;
+//! use font_rasterizer::*;
 //!
 //! // Add outline curves to CanvasBuilder
 //! let canvas_builder = CanvasBuilder::new(width, height)
