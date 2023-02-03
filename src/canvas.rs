@@ -171,18 +171,18 @@ impl CanvasBuilder {
             hits.sort_by(|a, b| a.0.cmp(&b.0));
 
             hits.drain(..)
-                .fold((0, 0), |(mut x0, mut w), (hit, dir)| {
+                .fold((0, 0), |(mut start, mut w), (hit, dir)| {
                     if w == 0 {
-                        x0 = hit;
+                        start = hit;
                     }
                     w += dir;
                     if w == 0 {
-                        for x in x0..hit {
+                        for x in start..hit {
                             canvas.plot(x, scanline_y, 1.0);
                         }
                     }
 
-                    (x0, w)
+                    (start, w)
                 });
         }
 
