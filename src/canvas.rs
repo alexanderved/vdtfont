@@ -47,7 +47,7 @@ impl Canvas {
             }
 
             let x0 = p0.x.round();
-            let x1 = p1.x.round().min(self.width as f32);
+            let x1 = p1.x.round();
 
             let mut prev_x = p0.x;
             let mut y = p0.y;
@@ -70,7 +70,7 @@ impl Canvas {
             }
 
             let y0 = p0.y.round();
-            let y1 = p1.y.round().min(self.height as f32);
+            let y1 = p1.y.round();
 
             let mut prev_y = p0.y;
             let mut x = p0.x;
