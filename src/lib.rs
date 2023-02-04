@@ -4,7 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-//! Rasterization for linear, quadric and cubic Bezier curves.
+//! Rasterization for linear, quadric and cubic Bezier curves that was designed
+//! for font rasterizarion.
 //!
 //! ```
 //! use font_rasterizer::*;

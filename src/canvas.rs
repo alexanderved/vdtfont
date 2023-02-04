@@ -15,19 +15,19 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    /// Returns the width of Canvas.
+    /// Returns the width of [`Canvas`].
     #[inline]
     pub fn width(&self) -> usize {
         self.width
     }
 
-    /// Returns the height of Canvas.
+    /// Returns the height of [`Canvas`].
     #[inline]
     pub fn height(&self) -> usize {
         self.height
     }
 
-    /// Draws line in Canvas with
+    /// Draws line in [`Canvas`] with
     /// [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm).
     /// 
     /// ```
@@ -86,7 +86,7 @@ impl Canvas {
         }
     }
 
-    /// Plots one pixel on Canvas if it's inside the bounds.
+    /// Plots one pixel on [`Canvas`] if it's inside the bounds.
     /// 
     /// ```
     /// canvas.plot(x, y, alpha);
@@ -94,11 +94,15 @@ impl Canvas {
     #[inline]
     pub fn plot(&mut self, x: usize, y: usize, c: f32) {
         if x < self.width && y < self.height {
-            self.bitmap[y * self.width + x] = c.max(self.bitmap[y * self.width + x]);
+            // SAFETY: `x` and `y` are inside bounds which makes this function safe.
+            unsafe {
+                let pixel = self.bitmap.get_unchecked_mut(x + y * self.width);
+                *pixel = c.max(*pixel);
+            }
         }
     }
 
-    /// Returns an iterator over pixel alphas in Canvas.
+    /// Returns an iterator over pixel alphas in [`Canvas`].
     /// 
     /// ```
     /// canvas.iter()
@@ -111,7 +115,7 @@ impl Canvas {
         self.bitmap.iter()
     }
 
-    /// Returns an iterator over pixel alphas in Canvas that allows modify them.
+    /// Returns an iterator over pixel alphas in [`Canvas`] that allows modify them.
     /// 
     /// ```
     /// canvas.iter_mut()
@@ -157,7 +161,7 @@ impl<'a> IntoIterator for &'a mut Canvas {
     }
 }
 
-/// An object that stores outlines and allows building Canvas with them.
+/// An object that stores outlines and allows building [`Canvas`] with them.
 pub struct CanvasBuilder {
     width: usize,
     height: usize,
@@ -165,7 +169,7 @@ pub struct CanvasBuilder {
 }
 
 impl CanvasBuilder {
-    /// Creates new CanvasBuilder with specified width and height.
+    /// Creates new [`CanvasBuilder`] with specified width and height.
     /// 
     /// ```
     /// let canvas_builder = CanvasBuilder::new(width, height);
@@ -191,7 +195,7 @@ impl CanvasBuilder {
         self
     }
 
-    /// Builds Canvas with stored lines.
+    /// Builds [`Canvas`] with stored lines.
     /// 
     /// ```
     /// let canvas = canvas_builder.build();
