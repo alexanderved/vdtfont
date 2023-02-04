@@ -8,6 +8,7 @@
 
 use super::FLATNESS;
 
+/// A point with (`x`, `y`) coordinates.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Point {
     pub x: f32,
@@ -38,6 +39,14 @@ impl std::ops::Mul for Point {
     }
 }
 
+impl std::ops::Mul<f32> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        point(self.x * rhs, self.y * rhs)
+    }
+}
+
 impl std::ops::Mul<Point> for f32 {
     type Output = Point;
 
@@ -62,26 +71,23 @@ impl std::ops::Div<f32> for Point {
     }
 }
 
-impl std::cmp::PartialEq for Point {
-    fn eq(&self, other: &Self) -> bool {
-        self.y == other.y
-    }
-}
-
-impl std::cmp::PartialOrd for Point {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.y.partial_cmp(&other.y)
-    }
-}
-
+/// Constructs [`Point`].
+/// 
+/// ```
+/// let p = point(1.2, 5.3);
+/// assert!(p.x == 1.2 && p.y == 5.3);
+/// ```
 pub fn point(x: f32, y: f32) -> Point {
     Point { x, y }
 }
 
+/// Operations on curves.
 pub trait Curve {
+    /// Divides a curve into lines and pushes them to specified [`Vec`].
     fn tesselate(self, lines: &mut Vec<Line>);
 }
 
+/// A straight line from `p0` to `p1`.
 #[derive(Debug, Default, Clone)]
 pub struct Line {
     p0: Point,
@@ -94,26 +100,45 @@ pub struct Line {
 }
 
 impl Line {
+    /// Returns the reference to the starting point of a line.
+    #[inline]
     pub fn p0(&self) -> &Point {
         &self.p0
     }
 
+    /// Returns the reference to the end point of a line.
+    #[inline]
     pub fn p1(&self) -> &Point {
         &self.p1
     }
 
+    /// Returns the delta x of a line.
+    #[inline]
     pub fn dx(&self) -> f32 {
         self.dx
     }
 
+    /// Returns the delta y of a line.
+    #[inline]
     pub fn dy(&self) -> f32 {
         self.dy
     }
 
+    /// Returns the direction of a line.
+    #[inline]
     pub fn dir(&self) -> i8 {
         self.dir
     }
 
+    /// Applies specified function to end points of a line.
+    /// 
+    /// ```
+    /// let mut l = line(point(0.0, 0.0), point(10.0, 10.0));
+    /// let increment_x = |p: &mut Point| p.x += 1.0;
+    /// l.transform(increment_x);
+    /// 
+    /// assert!(l.p0().x == 1.0 && l.p1().x == 11.0);
+    /// ```
     pub fn transform<F>(&mut self, f: F)
     where
         F: Fn(&mut Point),
@@ -130,23 +155,18 @@ impl Line {
 }
 
 impl Curve for Line {
+    /// Pushes line to specifed [`Vec`] because it is simple enough.
+    #[inline]
     fn tesselate(self, lines: &mut Vec<Line>) {
         lines.push(self);
     }
 }
 
-impl std::cmp::PartialEq for Line {
-    fn eq(&self, other: &Self) -> bool {
-        self.p0 == other.p0
-    }
-}
-
-impl std::cmp::PartialOrd for Line {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.p0.partial_cmp(&other.p0)
-    }
-}
-
+/// Constructs [`Line`].
+/// 
+/// ```
+/// let l = line(point(1.2, 5.3), point(7.4, 9.8));
+/// ```
 pub fn line(mut p0: Point, mut p1: Point) -> Line {
     let dx = (p1.x - p0.x) / (p1.y - p0.y);
     let dy = (p1.y - p0.y) / (p1.x - p0.x);
@@ -166,6 +186,7 @@ pub fn line(mut p0: Point, mut p1: Point) -> Line {
     }
 }
 
+/// A quadric Bezier curve.
 pub struct QuadricCurve {
     pub p0: Point,
     pub p1: Point,
@@ -173,6 +194,7 @@ pub struct QuadricCurve {
 }
 
 impl Curve for QuadricCurve {
+    /// Recursively divides a quadric curve into lines.
     fn tesselate(self, lines: &mut Vec<Line>) {
         let mid_p = (self.p0 + 2.0 * self.p1 + self.p2) / 4.0;
         let dp = (self.p0 + self.p2) / 2.0 - mid_p;
@@ -186,10 +208,17 @@ impl Curve for QuadricCurve {
     }
 }
 
+/// Constructs [`QuadricCurve`].
+/// 
+/// ```
+/// let q = quadric(point(1.2, 5.3), point(7.4, 9.8), point(15.4, 6.9));
+/// ```
+#[inline]
 pub fn quadric(p0: Point, p1: Point, p2: Point) -> QuadricCurve {
     QuadricCurve { p0, p1, p2 }
 }
 
+/// A cubic Bezier curve.
 pub struct CubicCurve {
     pub p0: Point,
     pub p1: Point,
@@ -198,6 +227,7 @@ pub struct CubicCurve {
 }
 
 impl Curve for CubicCurve {
+    /// Recursively divides a cubic curve into lines.
     fn tesselate(self, lines: &mut Vec<Line>) {
         let dp0 = self.p1 - self.p0;
         let dp1 = self.p2 - self.p1;
@@ -228,6 +258,12 @@ impl Curve for CubicCurve {
     }
 }
 
+/// Constructs [`CubicCurve`].
+/// 
+/// ```
+/// let c = cubic(point(1.2, 5.3), point(7.4, 9.8), point(10.1, 8.5), point(15.4, 6.9));
+/// ```
+#[inline]
 pub fn cubic(p0: Point, p1: Point, p2: Point, p3: Point) -> CubicCurve {
     CubicCurve { p0, p1, p2, p3 }
 }
