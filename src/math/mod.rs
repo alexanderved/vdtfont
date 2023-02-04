@@ -9,5 +9,3 @@ mod primitives;
 
 pub use float::ReverseFract;
 pub use primitives::{cubic, line, point, quadric, CubicCurve, Curve, Line, Point, QuadricCurve};
-
-pub const FLATNESS: f32 = 0.35;
