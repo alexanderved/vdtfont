@@ -6,7 +6,7 @@
  * Quadric and cubic bezier tesselation adapted from stb_truetype: https://github.com/nothings/stb
  */
 
-use super::FLATNESS;
+const OBJSPACE_FLATNESS: f32 = 0.35;
 
 /// A point with (`x`, `y`) coordinates.
 #[derive(Debug, Default, Clone, Copy)]
@@ -199,7 +199,7 @@ impl Curve for QuadricCurve {
         let mid_p = (self.p0 + 2.0 * self.p1 + self.p2) / 4.0;
         let dp = (self.p0 + self.p2) / 2.0 - mid_p;
 
-        if dp.x * dp.x + dp.y * dp.y > FLATNESS * FLATNESS {
+        if dp.x * dp.x + dp.y * dp.y > OBJSPACE_FLATNESS * OBJSPACE_FLATNESS {
             quadric(self.p0, (self.p0 + self.p1) / 2.0, mid_p).tesselate(lines);
             quadric(mid_p, (self.p1 + self.p2) / 2.0, self.p2).tesselate(lines);
         } else {
@@ -240,7 +240,7 @@ impl Curve for CubicCurve {
         let shortlen = (dp.x.powi(2) + dp.y.powi(2)).sqrt();
         let flatness_squared = longlen.powi(2) - shortlen.powi(2);
 
-        if flatness_squared > FLATNESS * FLATNESS {
+        if flatness_squared > OBJSPACE_FLATNESS * OBJSPACE_FLATNESS {
             let p01 = (self.p0 + self.p1) / 2.0;
             let p12 = (self.p1 + self.p2) / 2.0;
             let p23 = (self.p2 + self.p3) / 2.0;
