@@ -10,7 +10,7 @@ mod outliner;
 use crate::example::*;
 
 fn main() {
-    let examples: [&dyn Example; 5] = [&W, &Iota, &TailedE, &Biohazard, &Ichi];
+    let examples: [&dyn Example; 6] = [&W, &Iota, &TailedE, &Biohazard, &Ichi, &StressedE];
 
     for example in examples {
         example.create_image();

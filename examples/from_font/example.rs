@@ -20,7 +20,7 @@ pub trait Example {
         let owned_face = ttfp::OwnedFace::from_vec(self.font().to_vec(), 0).unwrap();
         let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
-        let glyph_id = parsed_face.glyph_index(self.letter()).unwrap(); //☣ 一 ΐ É
+        let glyph_id = parsed_face.glyph_index(self.letter()).unwrap();
 
         let mut outliner = Outliner::default();
         let rect = parsed_face
@@ -108,3 +108,4 @@ example!(Biohazard(
     "../fonts/DejaVuSansMono.ttf"
 ));
 example!(Ichi("ichi", '一', 100.0, "../fonts/mingliu.ttc"));
+example!(StressedE("stressed_e", 'É', 60.0, "../fonts/DejaVuSansMono.ttf"));
