@@ -48,15 +48,17 @@ impl Canvas {
 
             let x0 = p0.x.round();
             let x1 = p1.x.round().min(self.width as f32);
-            let mut y = p0.y + line.dy() * (x0 - p0.x);
+
+            let mut prev_x = p0.x;
+            let mut y = p0.y;
 
             for x in x0 as usize..x1 as usize + 1 {
+                y += line.dy() * (x as f32 - prev_x);
+
                 self.plot(x, y as usize, y.rfract());
                 self.plot(x, y as usize + 1, y.fract());
 
-                let dx = 1.0_f32.min(self.width as f32 - p1.x);
-
-                y += line.dy() * dx;
+                prev_x = x as f32;
             }
         } else if (p1.x - p0.x).abs() < (p1.y - p0.y).abs() {
             if p0.y == p1.y {
@@ -69,15 +71,17 @@ impl Canvas {
 
             let y0 = p0.y.round();
             let y1 = p1.y.round().min(self.height as f32);
-            let mut x = p0.x + line.dx() * (y0 - p0.y);
+
+            let mut prev_y = p0.y;
+            let mut x = p0.x;
 
             for y in y0 as usize..y1 as usize + 1 {
+                x += line.dx() * (y as f32 - prev_y);
+
                 self.plot(x as usize, y, x.rfract());
                 self.plot(x as usize + 1, y, x.fract());
 
-                let dy = 1.0_f32.min(self.height as f32 - p1.y);
-
-                x += line.dx() * dy
+                prev_y = y as f32;
             }
         }
     }
