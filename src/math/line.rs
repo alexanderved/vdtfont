@@ -51,37 +51,37 @@ impl Line {
 
     /// Returns the reference to the starting point of a line.
     #[inline]
-    pub fn p0(&self) -> &Point {
+    pub const fn p0(&self) -> &Point {
         &self.p0
     }
 
     /// Returns the reference to the end point of a line.
     #[inline]
-    pub fn p1(&self) -> &Point {
+    pub const fn p1(&self) -> &Point {
         &self.p1
     }
 
     /// Returns the delta x of a line.
     #[inline]
-    pub fn dx(&self) -> f32 {
+    pub const fn dx(&self) -> f32 {
         self.dx
     }
 
     /// Returns the delta y of a line.
     #[inline]
-    pub fn dy(&self) -> f32 {
+    pub const fn dy(&self) -> f32 {
         self.dy
     }
 
     /// Returns the direction of a line.
     #[inline]
-    pub fn dir(&self) -> i8 {
+    pub const fn dir(&self) -> i8 {
         self.dir
     }
 
     /// Decomposes a [`Line`] to its raw parts.
     #[inline]
-    pub fn to_raw_parts(&self) -> (Point, Point, f32, f32, i8) {
+    pub const fn to_raw_parts(&self) -> (Point, Point, f32, f32, i8) {
         let Line {
             p0,
             p1,

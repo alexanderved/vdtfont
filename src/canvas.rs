@@ -17,13 +17,13 @@ pub struct Canvas {
 impl Canvas {
     /// Returns the width of [`Canvas`].
     #[inline]
-    pub fn width(&self) -> usize {
+    pub const fn width(&self) -> usize {
         self.width
     }
 
     /// Returns the height of [`Canvas`].
     #[inline]
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.height
     }
 
@@ -173,7 +173,7 @@ impl CanvasBuilder {
     /// ```
     /// let canvas_builder = CanvasBuilder::new(width, height);
     /// ```
-    pub fn new(width: usize, height: usize) -> CanvasBuilder {
+    pub const fn new(width: usize, height: usize) -> CanvasBuilder {
         CanvasBuilder {
             width,
             height,
