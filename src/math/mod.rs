@@ -5,7 +5,11 @@
  */
 
 mod float;
-mod primitives;
+mod point;
+mod line;
+mod curve;
 
 pub use float::ReverseFract;
-pub use primitives::{cubic, line, point, quadric, CubicCurve, Curve, Line, Point, QuadricCurve};
+pub use point::*;
+pub use line::*;
+pub use curve::*;

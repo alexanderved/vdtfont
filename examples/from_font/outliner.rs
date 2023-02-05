@@ -24,7 +24,7 @@ impl ttfp::OutlineBuilder for Outliner {
     fn line_to(&mut self, x1: f32, y1: f32) {
         // eprintln!("L {x1} {y1}");
         let p1 = point(x1, y1);
-        self.outline.push(line(self.last, p1));
+        Linear(self.last, p1).tesselate(&mut self.outline);
         self.last = p1;
     }
 
@@ -32,7 +32,7 @@ impl ttfp::OutlineBuilder for Outliner {
         // eprintln!("Q {x1} {y1}");
         let p1 = point(x1, y1);
         let p2 = point(x2, y2);
-        quadric(self.last, p1, p2).tesselate(&mut self.outline);
+        Quadric(self.last, p1, p2).tesselate(&mut self.outline);
         self.last = p2;
     }
 
@@ -42,14 +42,14 @@ impl ttfp::OutlineBuilder for Outliner {
         let p2 = point(x2, y2);
         let p3 = point(x3, y3);
 
-        cubic(self.last, p1, p2, p3).tesselate(&mut self.outline);
+        Cubic(self.last, p1, p2, p3).tesselate(&mut self.outline);
         self.last = p3;
     }
 
     fn close(&mut self) {
         // eprintln!("Z");
         if let Some(m) = self.last_move.take() {
-            self.outline.push(line(self.last, m));
+            Linear(self.last, m).tesselate(&mut self.outline);
         }
     }
 }

@@ -34,8 +34,7 @@ impl Canvas {
     /// canvas.draw_line(&line(l0, l1));
     /// ```
     pub fn draw_line(&mut self, line: &Line) {
-        let mut p0 = line.p0();
-        let mut p1 = line.p1();
+        let (mut p0, mut p1, dx, dy, _) = line.to_raw_parts();
 
         if (p1.x - p0.x).abs() >= (p1.y - p0.y).abs() {
             if p0.x == p1.x {
@@ -53,7 +52,7 @@ impl Canvas {
             let mut y = p0.y;
 
             for x in x0 as usize..x1 as usize + 1 {
-                y += line.dy() * (x as f32 - prev_x);
+                y += dy * (x as f32 - prev_x);
 
                 self.plot(x, y as usize, y.rfract());
                 self.plot(x, y as usize + 1, y.fract());
@@ -76,7 +75,7 @@ impl Canvas {
             let mut x = p0.x;
 
             for y in y0 as usize..y1 as usize + 1 {
-                x += line.dx() * (y as f32 - prev_y);
+                x += dx * (y as f32 - prev_y);
 
                 self.plot(x as usize, y, x.rfract());
                 self.plot(x as usize + 1, y, x.fract());
@@ -191,6 +190,17 @@ impl CanvasBuilder {
     /// ```
     pub fn add_curve(mut self, curve: impl Curve) -> CanvasBuilder {
         curve.tesselate(&mut self.lines);
+
+        self
+    }
+
+    /// Stores `line` in [`CanvasBuilder`].
+    /// 
+    /// ```
+    /// let canvas_builder = canvas_builder.add_line(Line::new(l0, l1))
+    /// ```
+    pub fn add_line(mut self, line: Line) -> CanvasBuilder {
+        self.lines.push(line);
 
         self
     }

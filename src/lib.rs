@@ -12,9 +12,9 @@
 //!
 //! // Add outline curves to CanvasBuilder
 //! let canvas_builder = CanvasBuilder::new(width, height)
-//!     .add_curve(line(l0, l1))
-//!     .add_curve(quadric(q0, q1, q2))
-//!     .add_curve(cubic(c0, c1, c2, c3));
+//!     .add_curve(Linear(l0, l1))
+//!     .add_curve(Quadric(q0, q1, q2))
+//!     .add_curve(Cubic(c0, c1, c2, c3));
 //!
 //! // Draw outlines and fill them
 //! let canvas = canvas_builder.build();

@@ -43,15 +43,12 @@ pub trait Example {
         let mut canvas_builder =
             CanvasBuilder::new(bounds.width() as usize + 2, bounds.height() as usize + 2);
 
-        let scale_up = |p: &mut Point| {
-            p.x = p.x * h_factor - bounds.x_min as f32;
-            p.y = bounds.height() as f32 - (p.y * v_factor - bounds.y_min as f32);
-        };
-
         for mut linee in outliner.outline {
-            linee.transform(scale_up);
+            linee = linee * point(h_factor, -v_factor)
+                - point(bounds.x_min as f32, -bounds.y_min as f32)
+                + point(0.0, bounds.height() as f32);
 
-            canvas_builder = canvas_builder.add_curve(linee);
+            canvas_builder = canvas_builder.add_line(linee);
         }
 
         canvas_builder.build()
@@ -108,4 +105,9 @@ example!(Biohazard(
     "../fonts/DejaVuSansMono.ttf"
 ));
 example!(Ichi("ichi", '一', 100.0, "../fonts/mingliu.ttc"));
-example!(StressedE("stressed_e", 'É', 60.0, "../fonts/DejaVuSansMono.ttf"));
+example!(StressedE(
+    "stressed_e",
+    'É',
+    60.0,
+    "../fonts/DejaVuSansMono.ttf"
+));
