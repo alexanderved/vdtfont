@@ -72,6 +72,18 @@ impl ops::Add<Point> for f32 {
     }
 }
 
+impl ops::AddAssign for Point {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl ops::AddAssign<f32> for Point {
+    fn add_assign(&mut self, rhs: f32) {
+        *self = *self + rhs;
+    }
+}
+
 impl ops::Sub for Point {
     type Output = Point;
 
@@ -85,6 +97,18 @@ impl ops::Sub<f32> for Point {
 
     fn sub(self, rhs: f32) -> Self::Output {
         point(self.x - rhs, self.y - rhs)
+    }
+}
+
+impl ops::SubAssign for Point {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
+    }
+}
+
+impl ops::SubAssign<f32> for Point {
+    fn sub_assign(&mut self, rhs: f32) {
+        *self = *self - rhs;
     }
 }
 
@@ -112,6 +136,18 @@ impl ops::Mul<Point> for f32 {
     }
 }
 
+impl ops::MulAssign for Point {
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = *self * rhs;
+    }
+}
+
+impl ops::MulAssign<f32> for Point {
+    fn mul_assign(&mut self, rhs: f32) {
+        *self = *self * rhs;
+    }
+}
+
 impl ops::Div for Point {
     type Output = Point;
 
@@ -125,6 +161,18 @@ impl ops::Div<f32> for Point {
 
     fn div(self, rhs: f32) -> Self::Output {
         point(self.x / rhs, self.y / rhs)
+    }
+}
+
+impl ops::DivAssign for Point {
+    fn div_assign(&mut self, rhs: Self) {
+        *self = *self / rhs;
+    }
+}
+
+impl ops::DivAssign<f32> for Point {
+    fn div_assign(&mut self, rhs: f32) {
+        *self = *self / rhs;
     }
 }
 
