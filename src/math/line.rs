@@ -141,6 +141,18 @@ impl ops::Add<Line> for Point {
     }
 }
 
+impl ops::AddAssign<f32> for Line {
+    fn add_assign(&mut self, rhs: f32) {
+        *self = self.clone() + rhs;
+    }
+}
+
+impl ops::AddAssign<Point> for Line {
+    fn add_assign(&mut self, rhs: Point) {
+        *self = self.clone() + rhs;
+    }
+}
+
 impl ops::Sub<f32> for Line {
     type Output = Line;
 
@@ -162,6 +174,18 @@ impl ops::Sub<Point> for Line {
         }
 
         Line::new(self.p0 - rhs, self.p1 - rhs)
+    }
+}
+
+impl ops::SubAssign<f32> for Line {
+    fn sub_assign(&mut self, rhs: f32) {
+        *self = self.clone() - rhs;
+    }
+}
+
+impl ops::SubAssign<Point> for Line {
+    fn sub_assign(&mut self, rhs: Point) {
+        *self = self.clone() - rhs;
     }
 }
 
@@ -213,6 +237,18 @@ impl ops::Mul<Line> for Point {
     }
 }
 
+impl ops::MulAssign<f32> for Line {
+    fn mul_assign(&mut self, rhs: f32) {
+        *self = self.clone() * rhs;
+    }
+}
+
+impl ops::MulAssign<Point> for Line {
+    fn mul_assign(&mut self, rhs: Point) {
+        *self = self.clone() * rhs;
+    }
+}
+
 impl ops::Div<f32> for Line {
     type Output = Line;
 
@@ -234,5 +270,17 @@ impl ops::Div<Point> for Line {
         }
 
         Line::new(self.p0 / rhs, self.p1 / rhs)
+    }
+}
+
+impl ops::DivAssign<f32> for Line {
+    fn div_assign(&mut self, rhs: f32) {
+        *self = self.clone() / rhs;
+    }
+}
+
+impl ops::DivAssign<Point> for Line {
+    fn div_assign(&mut self, rhs: Point) {
+        *self = self.clone() / rhs;
     }
 }

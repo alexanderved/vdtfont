@@ -43,12 +43,12 @@ pub trait Example {
         let mut canvas_builder =
             CanvasBuilder::new(bounds.width() as usize + 2, bounds.height() as usize + 2);
 
-        for mut linee in outliner.outline {
-            linee = linee * point(h_factor, -v_factor)
-                - point(bounds.x_min as f32, -bounds.y_min as f32)
-                + point(0.0, bounds.height() as f32);
+        for mut line in outliner.outline {
+            line *= point(h_factor, -v_factor);
+            line -= point(bounds.x_min as f32, -bounds.y_min as f32);
+            line += point(0.0, bounds.height() as f32);
 
-            canvas_builder = canvas_builder.add_line(linee);
+            canvas_builder = canvas_builder.add_line(line);
         }
 
         canvas_builder.build()
