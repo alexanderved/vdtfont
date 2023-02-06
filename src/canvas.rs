@@ -218,7 +218,6 @@ impl CanvasBuilder {
         };
 
         self.lines.iter().for_each(|line| canvas.draw_line(line));
-
         self.lines
             .sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
 
@@ -235,12 +234,45 @@ impl CanvasBuilder {
                         None
                     }
                 })
-                .for_each(|hit| hits.push(hit));
-            hits.sort_by(|a, b| a.0.cmp(&b.0));
+                .for_each(|hit| {
+                    let i = if !hits.is_empty() {
+                        // Using binary search to find place to insert element,
+                        // where the previous one is less and the next one is greater.
+                        let mut low = 0;
+                        let mut high = hits.len() - 1;
+                        loop {
+                            if high <= low {
+                                break if hit.0 > hits[low].0 {
+                                    low + 1
+                                } else {
+                                    low
+                                };
+                            }
+
+                            let mid = (low + high) / 2;
+                            // SAFETY: 0 >= `low` >= `mid` and `mid` <= `high` < hits.len(),
+                            // so it's safe.
+                            let mid_hit = unsafe { hits.get_unchecked(mid) };
+
+                            if hit.0 == mid_hit.0 {
+                                break mid + 1;
+                            } else if hit.0 > mid_hit.0 {
+                                low = mid.saturating_add(1);
+                            } else if hit.0 < mid_hit.0 {
+                                high = mid.saturating_sub(1);
+                            }
+                        }
+                    } else {
+                        // If hits are empty, insert element at the begining.
+                        0
+                    };
+
+                    hits.insert(i, hit);
+                });
 
             hits.drain(..)
                 .fold((0, 0), |(mut start, mut w), (hit, dir)| {
-                    // If w equals 0, we have filled all previous intervals.
+                    // If `w` equals 0, we have filled all previous intervals.
                     // Now we need to find starting point of the new interval.
                     if w == 0 {
                         start = hit;
@@ -248,7 +280,7 @@ impl CanvasBuilder {
 
                     w += dir;
 
-                    // If w equals 0 after adding dir, we have reached the end point
+                    // If `w` equals 0 after adding dir, we have reached the end point
                     // of the current interval. Now we need to fill it.
                     if w == 0 {
                         for x in start..hit {
