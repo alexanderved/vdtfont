@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+/// Additional operations on floats.
 pub trait FloatExt {
     fn rfract(self) -> Self;
 }

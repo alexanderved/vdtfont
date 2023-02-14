@@ -9,7 +9,7 @@ mod point;
 mod line;
 mod curve;
 
-pub use float::ReverseFract;
+pub use float::FloatExt;
 pub use point::*;
 pub use line::*;
 pub use curve::*;

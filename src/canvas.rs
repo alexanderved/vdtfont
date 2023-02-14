@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use crate::{math::*, Curve, Line};
+use crate::math::*;
 use std::{iter::IntoIterator, mem, slice, vec};
 
 /// An object that contains pixel alphas of drawn curves.
