@@ -235,37 +235,7 @@ impl CanvasBuilder {
                     }
                 })
                 .for_each(|hit| {
-                    let i = if !hits.is_empty() {
-                        // Using binary search to find place to insert element,
-                        // where the previous one is less and the next one is greater.
-                        let mut low = 0;
-                        let mut high = hits.len() - 1;
-                        loop {
-                            if high <= low {
-                                break if hit.0 > hits[low].0 {
-                                    low + 1
-                                } else {
-                                    low
-                                };
-                            }
-
-                            let mid = (low + high) / 2;
-                            // SAFETY: 0 >= `low` >= `mid` and `mid` <= `high` < hits.len(),
-                            // so it's safe.
-                            let mid_hit = unsafe { hits.get_unchecked(mid) };
-
-                            if hit.0 == mid_hit.0 {
-                                break mid + 1;
-                            } else if hit.0 > mid_hit.0 {
-                                low = mid.saturating_add(1);
-                            } else if hit.0 < mid_hit.0 {
-                                high = mid.saturating_sub(1);
-                            }
-                        }
-                    } else {
-                        // If hits are empty, insert element at the begining.
-                        0
-                    };
+                    let i = hits.partition_point(|(x, _)| *x < hit.0);
 
                     hits.insert(i, hit);
                 });
