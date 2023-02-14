@@ -29,64 +29,52 @@ impl Canvas {
 
     /// Draws line in [`Canvas`] with
     /// [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm).
-    /// 
+    ///
     /// ```
     /// canvas.draw_line(&line(l0, l1));
     /// ```
     pub fn draw_line(&mut self, line: &Line) {
         let (mut p0, mut p1, dx, dy, _) = line.to_raw_parts();
+        let steep = (p1.x - p0.x).abs() < (p1.y - p0.y).abs();
+        let delta = if steep { dx } else { dy };
+        let boundary = if steep { self.height } else { self.width };
 
-        if (p1.x - p0.x).abs() >= (p1.y - p0.y).abs() {
-            if p0.x == p1.x {
-                return;
+        if steep {
+            mem::swap(&mut p0.x, &mut p0.y);
+            mem::swap(&mut p1.x, &mut p1.y);
+        }
+
+        if p0.x == p1.x {
+            return;
+        }
+
+        if p0.x > p1.x {
+            mem::swap(&mut p0, &mut p1);
+        }
+
+        let i0 = p0.x.round();
+        let i1 = p1.x.round();
+
+        let mut prev_i = p0.x;
+        let mut j = p0.y;
+
+        for i in i0 as usize..boundary.min(i1 as usize + 1) {
+            j += delta * (i as f32 - prev_i);
+
+            if steep {
+                self.plot(j as usize, i, j.rfract());
+                self.plot(j as usize + 1, i, j.fract());
+            } else {
+                self.plot(i, j as usize, j.rfract());
+                self.plot(i, j as usize + 1, j.fract());
             }
 
-            if p0.x > p1.x {
-                mem::swap(&mut p0, &mut p1);
-            }
-
-            let x0 = p0.x.round();
-            let x1 = p1.x.round();
-
-            let mut prev_x = p0.x;
-            let mut y = p0.y;
-
-            for x in x0 as usize..x1 as usize + 1 {
-                y += dy * (x as f32 - prev_x);
-
-                self.plot(x, y as usize, y.rfract());
-                self.plot(x, y as usize + 1, y.fract());
-
-                prev_x = x as f32;
-            }
-        } else if (p1.x - p0.x).abs() < (p1.y - p0.y).abs() {
-            if p0.y == p1.y {
-                return;
-            }
-
-            if p0.y > p1.y {
-                mem::swap(&mut p0, &mut p1);
-            }
-
-            let y0 = p0.y.round();
-            let y1 = p1.y.round();
-
-            let mut prev_y = p0.y;
-            let mut x = p0.x;
-
-            for y in y0 as usize..y1 as usize + 1 {
-                x += dx * (y as f32 - prev_y);
-
-                self.plot(x as usize, y, x.rfract());
-                self.plot(x as usize + 1, y, x.fract());
-
-                prev_y = y as f32;
-            }
+            prev_i = i as f32;
         }
     }
 
     /// Plots one pixel on [`Canvas`] if it's inside the bounds.
-    /// 
+    ///
     /// ```
     /// canvas.plot(x, y, alpha);
     /// ```
@@ -102,7 +90,7 @@ impl Canvas {
     }
 
     /// Returns an iterator over pixel alphas in [`Canvas`].
-    /// 
+    ///
     /// ```
     /// canvas.iter()
     ///     .for_each(|alpha| {
@@ -115,12 +103,12 @@ impl Canvas {
     }
 
     /// Returns an iterator over pixel alphas in [`Canvas`] that allows modify them.
-    /// 
+    ///
     /// ```
     /// canvas.iter_mut()
     ///     .for_each(|alpha| {
     ///         *alpha = some_value;
-    /// 
+    ///
     ///         // ...
     ///     })
     /// ```
@@ -169,7 +157,7 @@ pub struct CanvasBuilder {
 
 impl CanvasBuilder {
     /// Creates new [`CanvasBuilder`] with specified width and height.
-    /// 
+    ///
     /// ```
     /// let canvas_builder = CanvasBuilder::new(width, height);
     /// ```
@@ -182,7 +170,7 @@ impl CanvasBuilder {
     }
 
     /// Tesselates a curve with lines and stores them.
-    /// 
+    ///
     /// ```
     /// let canvas_builder = canvas_builder.add_curve(line(l0, l1))
     ///     .add_curve(quadric(q0, q1, q2))
@@ -195,7 +183,7 @@ impl CanvasBuilder {
     }
 
     /// Stores `line` in [`CanvasBuilder`].
-    /// 
+    ///
     /// ```
     /// let canvas_builder = canvas_builder.add_line(Line::new(l0, l1))
     /// ```
@@ -206,7 +194,7 @@ impl CanvasBuilder {
     }
 
     /// Builds [`Canvas`] with stored lines.
-    /// 
+    ///
     /// ```
     /// let canvas = canvas_builder.build();
     /// ```
@@ -225,7 +213,8 @@ impl CanvasBuilder {
         for scanline_y in 0..canvas.height {
             self.lines
                 .iter()
-                .filter_map(|line| { // Find the intersection of line and scanline
+                .filter_map(|line| {
+                    // Find the intersection of line and scanline
                     if line.p0().y <= scanline_y as f32 && line.p1().y > scanline_y as f32 {
                         let x = line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y);
 
