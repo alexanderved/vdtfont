@@ -182,17 +182,6 @@ impl CanvasBuilder {
         self
     }
 
-    /// Stores `line` in [`CanvasBuilder`].
-    ///
-    /// ```
-    /// let canvas_builder = canvas_builder.add_line(Line::new(l0, l1))
-    /// ```
-    pub fn add_line(mut self, line: Line) -> CanvasBuilder {
-        self.lines.push(line);
-
-        self
-    }
-
     /// Builds [`Canvas`] with stored lines.
     ///
     /// ```

@@ -48,7 +48,7 @@ pub trait Example {
             line -= point(bounds.x_min as f32, -bounds.y_min as f32);
             line += point(0.0, bounds.height() as f32);
 
-            canvas_builder = canvas_builder.add_line(line);
+            canvas_builder.lines.push(line);
         }
 
         canvas_builder.build()
