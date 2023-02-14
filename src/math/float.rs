@@ -4,11 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-pub trait ReverseFract {
+pub trait FloatExt {
     fn rfract(self) -> Self;
 }
 
-impl ReverseFract for f32 {
+impl FloatExt for f32 {
     fn rfract(self) -> Self {
         1.0 - self.fract()
     }
