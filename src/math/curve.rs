@@ -19,19 +19,33 @@ pub enum Curve {
 }
 
 impl Curve {
+    /// Constructs a new linear curve.
     #[inline]
     pub const fn linear(p0: Point, p1: Point) -> Curve {
         Curve::Linear(Linear(p0, p1))
     }
 
+    /// Constructs a new quadric curve.
     #[inline]
     pub const fn quadric(p0: Point, p1: Point, p2: Point) -> Curve {
         Curve::Quadric(Quadric(p0, p1, p2))
     }
 
+    /// Constructs a new cubic curve.
     #[inline]
     pub const fn cubic(p0: Point, p1: Point, p2: Point, p3: Point) -> Curve {
         Curve::Cubic(Cubic(p0, p1, p2, p3))
+    }
+
+    /// Applies transformation to a curve.
+    pub fn transform<F>(&mut self, f: F)
+        where F: Fn(&mut Point)
+    {
+        match self {
+            Curve::Linear(linear) => linear.transform(f),
+            Curve::Quadric(quadric) => quadric.transform(f),
+            Curve::Cubic(cubic) => cubic.transform(f),
+        };
     }
 
     /// Splits a curve into two curves.
@@ -56,7 +70,6 @@ impl Curve {
     }
 
     /// Divies a curve into lines and pushes them to a specified [`Vec`].
-    #[inline]
     pub fn tesselate(self, lines: &mut Vec<Line>) {
         match self {
             Curve::Linear(linear) => linear.tesselate(lines),
@@ -71,9 +84,15 @@ impl Curve {
 pub struct Linear(pub Point, pub Point);
 
 impl Linear {
+    pub fn transform<F>(&mut self, f: F)
+        where F: Fn(&mut Point)
+    {
+        f(&mut self.0);
+        f(&mut self.1);
+    }
+
     /// Splits a linear curve into two linear curves.
-    #[inline]
-    fn split(self) -> (Self, Self) {
+    pub fn split(self) -> (Self, Self) {
         let midpoint = self.0.midpoint(&self.1);
 
         (Linear(self.0, midpoint), Linear(midpoint, self.1))
@@ -81,7 +100,7 @@ impl Linear {
 
     /// Converts [`Linear`] into [`Line`].
     #[inline]
-    fn tesselate(self, lines: &mut Vec<Line>) {
+    pub fn tesselate(self, lines: &mut Vec<Line>) {
         lines.push(Line::new(self.0, self.1));
     }
 }
@@ -91,8 +110,16 @@ impl Linear {
 pub struct Quadric(pub Point, pub Point, pub Point);
 
 impl Quadric {
+    pub fn transform<F>(&mut self, f: F)
+        where F: Fn(&mut Point)
+    {
+        f(&mut self.0);
+        f(&mut self.1);
+        f(&mut self.2);
+    }
+
     /// Splits a quadric curve into two quadric curves.
-    fn split(self) -> (Self, Self) {
+    pub fn split(self) -> (Self, Self) {
         let mp01 = self.0.midpoint(&self.1);
         let mp12 = self.1.midpoint(&self.2);
         let midpoint = mp01.midpoint(&mp12);
@@ -104,7 +131,7 @@ impl Quadric {
     }
 
     /// Recursively divides a quadric curve into lines.
-    fn tesselate(self, lines: &mut Vec<Line>) {
+    pub fn tesselate(self, lines: &mut Vec<Line>) {
         let mp01 = self.0.midpoint(&self.1);
         let mp12 = self.1.midpoint(&self.2);
         let midpoint = mp01.midpoint(&mp12);
@@ -125,8 +152,17 @@ impl Quadric {
 pub struct Cubic(pub Point, pub Point, pub Point, pub Point);
 
 impl Cubic {
+    pub fn transform<F>(&mut self, f: F)
+        where F: Fn(&mut Point)
+    {
+        f(&mut self.0);
+        f(&mut self.1);
+        f(&mut self.2);
+        f(&mut self.3);
+    }
+
     /// Splits a cubic curve into two cubic curves.
-    fn split(self) -> (Self, Self) {
+    pub fn split(self) -> (Self, Self) {
         let mp01 = self.0.midpoint(&self.1);
         let mp12 = self.1.midpoint(&self.2);
         let mp23 = self.2.midpoint(&self.3);
@@ -143,7 +179,7 @@ impl Cubic {
     }
 
     /// Recursively divides a cubic curve into lines.
-    fn tesselate(self, lines: &mut Vec<Line>) {
+    pub fn tesselate(self, lines: &mut Vec<Line>) {
         let longlen =
             self.0.distance(&self.1) + self.1.distance(&self.2) + self.2.distance(&self.3);
         let shortlen = self.0.distance(&self.3);

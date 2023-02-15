@@ -90,7 +90,6 @@ impl Canvas {
     /// ```
     /// canvas.plot(x, y, alpha);
     /// ```
-    #[inline]
     pub fn plot(&mut self, x: usize, y: usize, c: f32) {
         if x < self.width && y < self.height {
             // SAFETY: `x` and `y` are inside bounds which makes this function safe.
@@ -173,6 +172,7 @@ impl CanvasBuilder {
     /// ```
     /// let canvas_builder = CanvasBuilder::new(width, height);
     /// ```
+    #[inline]
     pub const fn new() -> CanvasBuilder {
         CanvasBuilder {
             width: 0,

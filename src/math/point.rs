@@ -28,7 +28,6 @@ impl Point {
     }
 
     /// Calculates squared distance between two points.
-    #[inline]
     pub fn distance_squared(&self, other: &Point) -> f32 {
         let p = *self - *other;
 
