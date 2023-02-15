@@ -40,15 +40,16 @@ pub trait Example {
             y_max: (rect.y_max as f32 * v_factor) as i16,
         };
 
-        let mut canvas_builder =
-            CanvasBuilder::new(bounds.width() as usize + 2, bounds.height() as usize + 2);
+        let mut canvas_builder = CanvasBuilder::new()
+            .width(bounds.width() as usize + 2)
+            .height(bounds.height() as usize + 2);
 
         for mut line in outliner.outline {
             line *= point(h_factor, -v_factor);
             line -= point(bounds.x_min as f32, -bounds.y_min as f32);
             line += point(0.0, bounds.height() as f32);
 
-            canvas_builder = canvas_builder.add_line(line);
+            canvas_builder = canvas_builder.line(line);
         }
 
         canvas_builder.build()

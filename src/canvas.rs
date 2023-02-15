@@ -164,7 +164,7 @@ impl<'a> IntoIterator for &'a mut Canvas {
 pub struct CanvasBuilder {
     width: usize,
     height: usize,
-    pub lines: Vec<Line>,
+    lines: Vec<Line>,
 }
 
 impl CanvasBuilder {
@@ -173,22 +173,45 @@ impl CanvasBuilder {
     /// ```
     /// let canvas_builder = CanvasBuilder::new(width, height);
     /// ```
-    pub const fn new(width: usize, height: usize) -> CanvasBuilder {
+    pub const fn new() -> CanvasBuilder {
         CanvasBuilder {
-            width,
-            height,
+            width: 0,
+            height: 0,
             lines: Vec::new(),
         }
+    }
+
+    /// Sets `width` for [`Canvas`].
+    ///
+    /// ```
+    /// canvas_builder.width(600);
+    /// ```
+    pub const fn width(mut self, width: usize) -> CanvasBuilder {
+        self.width = width;
+
+        self
+    }
+
+    /// Sets `height` for [`Canvas`].
+    ///
+    /// ```
+    /// canvas_builder.height(800);
+    /// ```
+    pub const fn height(mut self, height: usize) -> CanvasBuilder {
+        self.height = height;
+
+        self
     }
 
     /// Tesselates a curve with lines and stores them.
     /// 
     /// ```
-    /// let canvas_builder = canvas_builder.add_curve(line(l0, l1))
-    ///     .add_curve(quadric(q0, q1, q2))
-    ///     .add_curve(cubic(c0, c1, c2, c3));
+    /// let canvas_builder = canvas_builder
+    ///     .curve(line(l0, l1))
+    ///     .curve(quadric(q0, q1, q2))
+    ///     .curve(cubic(c0, c1, c2, c3));
     /// ```
-    pub fn add_curve(mut self, curve: impl Curve) -> CanvasBuilder {
+    pub fn curve(mut self, curve: impl Curve) -> CanvasBuilder {
         curve.tesselate(&mut self.lines);
 
         self
@@ -197,9 +220,9 @@ impl CanvasBuilder {
     /// Stores `line` in [`CanvasBuilder`].
     /// 
     /// ```
-    /// let canvas_builder = canvas_builder.add_line(Line::new(l0, l1))
+    /// let canvas_builder = canvas_builder.line(Line::new(l0, l1))
     /// ```
-    pub fn add_line(mut self, line: Line) -> CanvasBuilder {
+    pub fn line(mut self, line: Line) -> CanvasBuilder {
         self.lines.push(line);
 
         self
