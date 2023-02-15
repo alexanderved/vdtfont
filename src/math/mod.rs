@@ -10,6 +10,6 @@ pub mod line;
 pub mod curve;
 
 pub use float::FloatExt;
-pub use point::{Point, point};
+pub use point::{Point, point, TransformFn};
 pub use line::Line;
 pub use curve::Curve;

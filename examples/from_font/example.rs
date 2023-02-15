@@ -40,9 +40,17 @@ pub trait Example {
             y_max: (rect.y_max as f32 * v_factor) as i16,
         };
 
+        let f = Box::new(move |p: Point| {
+            point(
+                p.x * h_factor - bounds.x_min as f32,
+                bounds.height() as f32 - (p.y * v_factor - bounds.y_min as f32)
+            )
+        });
+
         let mut canvas_builder = CanvasBuilder::new()
             .width(bounds.width() as usize + 2)
-            .height(bounds.height() as usize + 2);
+            .height(bounds.height() as usize + 2)
+            .transform(f);
 
         for mut line in outliner.outline {
             line *= point(h_factor, -v_factor);

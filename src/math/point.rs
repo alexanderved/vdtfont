@@ -8,6 +8,8 @@
 
 use std::ops;
 
+pub type TransformFn = Box<dyn Fn(Point) -> Point>;
+
 /// A point with (`x`, `y`) coordinates.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Point {

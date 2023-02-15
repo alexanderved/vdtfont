@@ -38,7 +38,7 @@ impl Curve {
     }
 
     /// Applies transformation to a curve.
-    pub fn transform(&mut self, f: fn(Point) -> Point){
+    pub fn transform(&mut self, f: &TransformFn) {
         match self {
             Curve::Linear(linear) => linear.transform(f),
             Curve::Quadric(quadric) => quadric.transform(f),
@@ -82,7 +82,7 @@ impl Curve {
 pub struct Linear(pub Point, pub Point);
 
 impl Linear {
-    pub fn transform(&mut self, f: fn(Point) -> Point){
+    pub fn transform(&mut self, f: &TransformFn) {
         self.0 = f(self.0);
         self.1 = f(self.1);
     }
@@ -106,7 +106,7 @@ impl Linear {
 pub struct Quadric(pub Point, pub Point, pub Point);
 
 impl Quadric {
-    pub fn transform(&mut self, f: fn(Point) -> Point){
+    pub fn transform(&mut self, f: &TransformFn) {
         self.0 = f(self.0);
         self.1 = f(self.1);
         self.2 = f(self.2);
@@ -146,7 +146,7 @@ impl Quadric {
 pub struct Cubic(pub Point, pub Point, pub Point, pub Point);
 
 impl Cubic {
-    pub fn transform(&mut self, f: fn(Point) -> Point){
+    pub fn transform(&mut self, f: &TransformFn) {
         self.0 = f(self.0);
         self.1 = f(self.1);
         self.2 = f(self.2);
