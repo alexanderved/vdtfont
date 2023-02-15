@@ -29,7 +29,7 @@ impl Canvas {
 
     /// Draws line in [`Canvas`] with
     /// [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm).
-    /// 
+    ///
     /// ```
     /// canvas.draw_line(&line(l0, l1));
     /// ```
@@ -86,7 +86,7 @@ impl Canvas {
     }
 
     /// Plots one pixel on [`Canvas`] if it's inside the bounds.
-    /// 
+    ///
     /// ```
     /// canvas.plot(x, y, alpha);
     /// ```
@@ -101,7 +101,7 @@ impl Canvas {
     }
 
     /// Returns an iterator over pixel alphas in [`Canvas`].
-    /// 
+    ///
     /// ```
     /// canvas.iter()
     ///     .for_each(|alpha| {
@@ -114,12 +114,12 @@ impl Canvas {
     }
 
     /// Returns an iterator over pixel alphas in [`Canvas`] that allows modify them.
-    /// 
+    ///
     /// ```
     /// canvas.iter_mut()
     ///     .for_each(|alpha| {
     ///         *alpha = some_value;
-    /// 
+    ///
     ///         // ...
     ///     })
     /// ```
@@ -163,14 +163,16 @@ impl<'a> IntoIterator for &'a mut Canvas {
 pub struct CanvasBuilder {
     width: usize,
     height: usize,
+
     lines: Vec<Line>,
+    curves: Vec<Curve>,
 
     transform: fn(Point) -> Point,
 }
 
 impl CanvasBuilder {
     /// Creates new [`CanvasBuilder`] with specified width and height.
-    /// 
+    ///
     /// ```
     /// let canvas_builder = CanvasBuilder::new(width, height);
     /// ```
@@ -179,7 +181,8 @@ impl CanvasBuilder {
         Self {
             width: 0,
             height: 0,
-            lines: Vec::new(),
+            lines: vec![],
+            curves: vec![],
             transform: |p| p,
         }
     }
@@ -213,7 +216,7 @@ impl CanvasBuilder {
     }
 
     /// Tesselates a curve with lines and stores them.
-    /// 
+    ///
     /// ```
     /// let canvas_builder = canvas_builder
     ///     .curve(Curve::linear(l0, l1))
@@ -227,7 +230,7 @@ impl CanvasBuilder {
     }
 
     /// Stores `line` in [`CanvasBuilder`].
-    /// 
+    ///
     /// ```
     /// let canvas_builder = canvas_builder.line(Line::new(l0, l1))
     /// ```
@@ -238,7 +241,7 @@ impl CanvasBuilder {
     }
 
     /// Builds [`Canvas`] with stored lines.
-    /// 
+    ///
     /// ```
     /// let canvas = canvas_builder.build();
     /// ```
@@ -249,6 +252,9 @@ impl CanvasBuilder {
             bitmap: vec![0.0; self.width * self.height],
         };
 
+        self.curves
+            .into_iter()
+            .for_each(|curve| curve.tesselate(&mut self.lines));
         self.lines.iter().for_each(|line| canvas.draw_line(line));
         self.lines
             .sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
@@ -257,7 +263,8 @@ impl CanvasBuilder {
         for scanline_y in 0..canvas.height {
             self.lines
                 .iter()
-                .filter_map(|line| { // Find the intersection of line and scanline
+                .filter_map(|line| {
+                    // Find the intersection of line and scanline
                     if line.p0().y <= scanline_y as f32 && line.p1().y > scanline_y as f32 {
                         let x = line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y);
 
