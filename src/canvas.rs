@@ -164,6 +164,8 @@ pub struct CanvasBuilder {
     width: usize,
     height: usize,
     lines: Vec<Line>,
+
+    transform: fn(Point) -> Point,
 }
 
 impl CanvasBuilder {
@@ -173,11 +175,12 @@ impl CanvasBuilder {
     /// let canvas_builder = CanvasBuilder::new(width, height);
     /// ```
     #[inline]
-    pub const fn new() -> CanvasBuilder {
-        CanvasBuilder {
+    pub fn new() -> Self {
+        Self {
             width: 0,
             height: 0,
             lines: Vec::new(),
+            transform: |p| p,
         }
     }
 
@@ -186,7 +189,7 @@ impl CanvasBuilder {
     /// ```
     /// canvas_builder.width(600);
     /// ```
-    pub const fn width(mut self, width: usize) -> CanvasBuilder {
+    pub const fn width(mut self, width: usize) -> Self {
         self.width = width;
 
         self
@@ -197,8 +200,14 @@ impl CanvasBuilder {
     /// ```
     /// canvas_builder.height(800);
     /// ```
-    pub const fn height(mut self, height: usize) -> CanvasBuilder {
+    pub const fn height(mut self, height: usize) -> Self {
         self.height = height;
+
+        self
+    }
+
+    pub fn transform(mut self, transform: fn(Point) -> Point) -> Self {
+        self.transform = transform;
 
         self
     }
@@ -211,7 +220,7 @@ impl CanvasBuilder {
     ///     .curve(Curve::quadric(q0, q1, q2))
     ///     .curve(Curve::cubic(c0, c1, c2, c3));
     /// ```
-    pub fn curve(mut self, curve: Curve) -> CanvasBuilder {
+    pub fn curve(mut self, curve: Curve) -> Self {
         curve.tesselate(&mut self.lines);
 
         self
@@ -222,7 +231,7 @@ impl CanvasBuilder {
     /// ```
     /// let canvas_builder = canvas_builder.line(Line::new(l0, l1))
     /// ```
-    pub fn line(mut self, line: Line) -> CanvasBuilder {
+    pub fn line(mut self, line: Line) -> Self {
         self.lines.push(line);
 
         self
