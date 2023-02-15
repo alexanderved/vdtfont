@@ -154,8 +154,6 @@ pub struct CanvasBuilder {
 
     lines: Vec<Line>,
     curves: Vec<Curve>,
-
-    transform: fn(Point) -> Point,
 }
 
 impl CanvasBuilder {
@@ -171,7 +169,6 @@ impl CanvasBuilder {
             height: 0,
             lines: vec![],
             curves: vec![],
-            transform: |p| p,
         }
     }
 
@@ -193,12 +190,6 @@ impl CanvasBuilder {
     /// ```
     pub const fn height(mut self, height: usize) -> Self {
         self.height = height;
-
-        self
-    }
-
-    pub fn transform(mut self, transform: fn(Point) -> Point) -> Self {
-        self.transform = transform;
 
         self
     }
@@ -243,7 +234,6 @@ impl CanvasBuilder {
         self.curves
             .into_iter()
             .for_each(|mut curve| {
-                curve.transform(self.transform);
                 curve.tesselate(&mut self.lines);
             });
         self.lines.iter().for_each(|line| canvas.draw_line(line));
