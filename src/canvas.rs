@@ -207,11 +207,11 @@ impl CanvasBuilder {
     /// 
     /// ```
     /// let canvas_builder = canvas_builder
-    ///     .curve(line(l0, l1))
-    ///     .curve(quadric(q0, q1, q2))
-    ///     .curve(cubic(c0, c1, c2, c3));
+    ///     .curve(Curve::linear(l0, l1))
+    ///     .curve(Curve::quadric(q0, q1, q2))
+    ///     .curve(Curve::cubic(c0, c1, c2, c3));
     /// ```
-    pub fn curve(mut self, curve: impl Curve) -> CanvasBuilder {
+    pub fn curve(mut self, curve: Curve) -> CanvasBuilder {
         curve.tesselate(&mut self.lines);
 
         self

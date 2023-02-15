@@ -4,12 +4,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-mod float;
-mod point;
-mod line;
-mod curve;
+pub mod float;
+pub mod point;
+pub mod line;
+pub mod curve;
 
 pub use float::FloatExt;
-pub use point::*;
-pub use line::*;
-pub use curve::*;
+pub use point::{Point, point};
+pub use line::Line;
+pub use curve::Curve;

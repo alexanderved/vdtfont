@@ -11,20 +11,68 @@ use super::point::*;
 
 const OBJSPACE_FLATNESS: f32 = 0.35;
 
-/// Operations on Bezier curves.
-pub trait Curve: Sized {
-    /// Splits a curve into two curves in its midpoint.
-    fn split(self) -> (Self, Self);
-
-    /// Divides a curve into lines and pushes them to specified [`Vec`].
-    fn tesselate(self, lines: &mut Vec<Line>);
+/// A Bezier curves.
+pub enum Curve {
+    Linear(Linear),
+    Quadric(Quadric),
+    Cubic(Cubic),
 }
 
+impl Curve {
+    #[inline]
+    pub const fn linear(p0: Point, p1: Point) -> Curve {
+        Curve::Linear(Linear(p0, p1))
+    }
+
+    #[inline]
+    pub const fn quadric(p0: Point, p1: Point, p2: Point) -> Curve {
+        Curve::Quadric(Quadric(p0, p1, p2))
+    }
+
+    #[inline]
+    pub const fn cubic(p0: Point, p1: Point, p2: Point, p3: Point) -> Curve {
+        Curve::Cubic(Cubic(p0, p1, p2, p3))
+    }
+
+    /// Splits a curve into two curves.
+    pub fn split(self) -> (Self, Self) {
+        match self {
+            Curve::Linear(linear) => {
+                let (l0, l1) = linear.split();
+
+                (Curve::Linear(l0), Curve::Linear(l1))
+            },
+            Curve::Quadric(quadric) => {
+                let (q0, q1) = quadric.split();
+
+                (Curve::Quadric(q0), Curve::Quadric(q1))
+            },
+            Curve::Cubic(cubic) => {
+                let (c0, c1) = cubic.split();
+
+                (Curve::Cubic(c0), Curve::Cubic(c1))
+            },
+        }
+    }
+
+    /// Divies a curve into lines and pushes them to a specified [`Vec`].
+    #[inline]
+    pub fn tesselate(self, lines: &mut Vec<Line>) {
+        match self {
+            Curve::Linear(linear) => linear.tesselate(lines),
+            Curve::Quadric(quadric) => quadric.tesselate(lines),
+            Curve::Cubic(cubic) => cubic.tesselate(lines),
+        };
+    }
+}
+
+///A linear Bezier curve.
 #[derive(Debug, Default, Clone)]
 pub struct Linear(pub Point, pub Point);
 
-impl Curve for Linear {
+impl Linear {
     /// Splits a linear curve into two linear curves.
+    #[inline]
     fn split(self) -> (Self, Self) {
         let midpoint = self.0.midpoint(&self.1);
 
@@ -42,7 +90,7 @@ impl Curve for Linear {
 #[derive(Debug, Default, Clone)]
 pub struct Quadric(pub Point, pub Point, pub Point);
 
-impl Curve for Quadric {
+impl Quadric {
     /// Splits a quadric curve into two quadric curves.
     fn split(self) -> (Self, Self) {
         let mp01 = self.0.midpoint(&self.1);
@@ -76,7 +124,7 @@ impl Curve for Quadric {
 #[derive(Debug, Default, Clone)]
 pub struct Cubic(pub Point, pub Point, pub Point, pub Point);
 
-impl Curve for Cubic {
+impl Cubic {
     /// Splits a cubic curve into two cubic curves.
     fn split(self) -> (Self, Self) {
         let mp01 = self.0.midpoint(&self.1);
