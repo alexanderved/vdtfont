@@ -203,7 +203,7 @@ impl CanvasBuilder {
         self
     }
 
-    /// Tesselates a curve with lines and stores them.
+    /// Stores a curve.
     ///
     /// ```
     /// let canvas_builder = canvas_builder
@@ -212,7 +212,7 @@ impl CanvasBuilder {
     ///     .curve(Curve::cubic(c0, c1, c2, c3));
     /// ```
     pub fn curve(mut self, curve: Curve) -> Self {
-        curve.tesselate(&mut self.lines);
+        self.curves.push(curve);
 
         self
     }
@@ -242,7 +242,10 @@ impl CanvasBuilder {
 
         self.curves
             .into_iter()
-            .for_each(|curve| curve.tesselate(&mut self.lines));
+            .for_each(|mut curve| {
+                curve.transform(self.transform);
+                curve.tesselate(&mut self.lines);
+            });
         self.lines.iter().for_each(|line| canvas.draw_line(line));
         self.lines
             .sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
