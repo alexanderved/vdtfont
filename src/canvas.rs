@@ -157,12 +157,6 @@ pub struct CanvasBuilder {
     transform: TransformFn,
 }
 
-impl std::default::Default for CanvasBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl CanvasBuilder {
     /// Creates new [`CanvasBuilder`].
     ///

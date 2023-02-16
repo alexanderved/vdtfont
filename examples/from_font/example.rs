@@ -22,7 +22,7 @@ pub trait Example {
 
         let glyph_id = parsed_face.glyph_index(self.letter()).unwrap();
 
-        let mut outliner = Outliner::default();
+        let mut outliner = Outliner::new();
         let rect = parsed_face
             .as_face_ref()
             .outline_glyph(glyph_id, &mut outliner)

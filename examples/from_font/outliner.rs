@@ -7,11 +7,20 @@
 use font_rasterizer::*;
 use owned_ttf_parser as ttfp;
 
-#[derive(Default)]
 pub struct Outliner {
     pub last: Point,
     pub last_move: Option<Point>,
     pub cb: CanvasBuilder,
+}
+
+impl Outliner {
+    pub fn new() -> Self {
+        Self {
+            last: Point::default(),
+            last_move: None,
+            cb: CanvasBuilder::new()
+        }
+    }
 }
 
 impl ttfp::OutlineBuilder for Outliner {
