@@ -15,6 +15,15 @@ pub struct Canvas {
 }
 
 impl Canvas {
+    /// Constructs new [`Canvas`].
+    pub fn new(width: usize, height: usize) -> Self {
+        Canvas {
+            width,
+            height,
+            bitmap: vec![0.0; width * height],
+        }
+    }
+
     /// Returns the width of [`Canvas`].
     #[inline]
     pub const fn width(&self) -> usize {
@@ -221,62 +230,46 @@ impl CanvasBuilder {
     /// let canvas = canvas_builder.build();
     /// ```
     pub fn build(self) -> Canvas {
-        let mut canvas = Canvas {
-            width: self.width,
-            height: self.height,
-            bitmap: vec![0.0; self.width * self.height],
-        };
+        let mut canvas = Canvas::new(self.width, self.height);
         let mut lines = vec![];
 
-        self.curves
-            .into_iter()
-            .for_each(|mut curve| {
-                curve.transform(&self.transform);
-                curve.tesselate(&mut lines);
-            });
+        self.curves.into_iter().for_each(|mut curve| {
+            curve.transform(&self.transform);
+            curve.tesselate(&mut lines);
+        });
         lines.iter().for_each(|line| canvas.draw_line(line));
-        lines
-            .sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
+        lines.sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
 
-        let mut hits: Vec<(usize, i8)> = Vec::with_capacity(8);
+        let mut hits_down = Vec::with_capacity(4);
+        let mut hits_up = Vec::with_capacity(4);
         for scanline_y in 0..canvas.height {
             lines
                 .iter()
-                .filter_map(|line| {
+                .filter(|line| line.p0().y <= scanline_y as f32)
+                .filter(|line| line.p1().y > scanline_y as f32)
+                .for_each(|line| {
                     // Find the intersection of line and scanline
-                    if line.p0().y <= scanline_y as f32 && line.p1().y > scanline_y as f32 {
-                        let x = line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y);
+                    let x =
+                        (line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y)) as usize + 1;
 
-                        Some((x as usize + 1, line.dir()))
-                    } else {
-                        None
-                    }
-                })
-                .for_each(|hit| {
-                    let i = hits.partition_point(|(x, _)| *x < hit.0);
+                    // Choose the vec to add the hit depending on the direction of a line.
+                    let hits = match line.dir() {
+                        Direction::Down => &mut hits_down,
+                        Direction::Up => &mut hits_up,
+                    };
 
-                    hits.insert(i, hit);
+                    let i = hits.partition_point(|hit| *hit < x);
+                    hits.insert(i, x);
                 });
 
-            hits.drain(..)
-                .fold((0, 0), |(mut start, mut w), (hit, dir)| {
-                    // If `w` equals 0, we have filled all previous intervals.
-                    // Now we need to find starting point of the new interval.
-                    if w == 0 {
-                        start = hit;
+            hits_down
+                .drain(..)
+                .zip(hits_up.drain(..))
+                .map(|(x0, x1)| if x0 > x1 { (x1, x0) } else { (x0, x1) })
+                .for_each(|(x0, x1)| {
+                    for x in x0..x1 {
+                        canvas.plot(x, scanline_y, 1.0);
                     }
-
-                    w += dir;
-
-                    // If `w` equals 0 after adding dir, we have reached the end point
-                    // of the current interval. Now we need to fill it.
-                    if w == 0 {
-                        for x in start..hit {
-                            canvas.plot(x, scanline_y, 1.0);
-                        }
-                    }
-
-                    (start, w)
                 });
         }
 

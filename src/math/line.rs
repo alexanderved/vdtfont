@@ -9,10 +9,14 @@
 use super::point::*;
 use std::{mem, ops};
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[repr(i8)]
+pub enum Direction {
+    Down = -1,
+    Up = 1,
+}
+
 /// A straight line from `p0` to `p1`.
-///
-/// If `p0.y` is greater than `p1.y`, `p0` and `p1` are swapped and
-/// `dir` is set `-1`. Otherwise, `dir` equals `1`.
 #[derive(Debug, Clone)]
 pub struct Line {
     p0: Point,
@@ -21,23 +25,26 @@ pub struct Line {
     dx: f32,
     dy: f32,
 
-    dir: i8,
+    dir: Direction,
 }
 
 impl Line {
     /// Constructs [`Line`].
     ///
     /// ```
+    /// use font_rasterizer::Line;
+    /// use font_rasterizer::point;
+    /// 
     /// let l = Line::new(point(1.2, 5.3), point(7.4, 9.8));
     /// ```
     pub fn new(mut p0: Point, mut p1: Point) -> Line {
         let dx = (p1.x - p0.x) / (p1.y - p0.y);
         let dy = (p1.y - p0.y) / (p1.x - p0.x);
-        let mut dir = 1;
+        let mut dir = Direction::Up;
 
         if p0.y > p1.y {
             (p0, p1) = (p1, p0);
-            dir = -1;
+            dir = Direction::Down;
         }
 
         Line {
@@ -75,13 +82,13 @@ impl Line {
 
     /// Returns the direction of a line.
     #[inline]
-    pub const fn dir(&self) -> i8 {
+    pub const fn dir(&self) -> Direction {
         self.dir
     }
 
     /// Decomposes a [`Line`] to its raw parts.
     #[inline]
-    pub const fn to_raw_parts(&self) -> (Point, Point, f32, f32, i8) {
+    pub const fn to_raw_parts(&self) -> (Point, Point, f32, f32, Direction) {
         let Line {
             p0,
             p1,
@@ -97,7 +104,7 @@ impl ops::Add<f32> for Line {
     type Output = Line;
 
     fn add(mut self, rhs: f32) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -109,7 +116,7 @@ impl ops::Add<Line> for f32 {
     type Output = Line;
 
     fn add(self, mut rhs: Line) -> Self::Output {
-        if rhs.dir == -1 {
+        if rhs.dir == Direction::Down {
             mem::swap(&mut rhs.p0, &mut rhs.p1);
         }
 
@@ -121,7 +128,7 @@ impl ops::Add<Point> for Line {
     type Output = Line;
 
     fn add(mut self, rhs: Point) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -133,7 +140,7 @@ impl ops::Add<Line> for Point {
     type Output = Line;
 
     fn add(self, mut rhs: Line) -> Self::Output {
-        if rhs.dir == -1 {
+        if rhs.dir == Direction::Down {
             mem::swap(&mut rhs.p0, &mut rhs.p1);
         }
 
@@ -157,7 +164,7 @@ impl ops::Sub<f32> for Line {
     type Output = Line;
 
     fn sub(mut self, rhs: f32) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -169,7 +176,7 @@ impl ops::Sub<Point> for Line {
     type Output = Line;
 
     fn sub(mut self, rhs: Point) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -193,7 +200,7 @@ impl ops::Mul<f32> for Line {
     type Output = Line;
 
     fn mul(mut self, rhs: f32) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -205,7 +212,7 @@ impl ops::Mul<Line> for f32 {
     type Output = Line;
 
     fn mul(self, mut rhs: Line) -> Self::Output {
-        if rhs.dir == -1 {
+        if rhs.dir == Direction::Down {
             mem::swap(&mut rhs.p0, &mut rhs.p1);
         }
 
@@ -217,7 +224,7 @@ impl ops::Mul<Point> for Line {
     type Output = Line;
 
     fn mul(mut self, rhs: Point) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -229,7 +236,7 @@ impl ops::Mul<Line> for Point {
     type Output = Line;
 
     fn mul(self, mut rhs: Line) -> Self::Output {
-        if rhs.dir == -1 {
+        if rhs.dir == Direction::Down {
             mem::swap(&mut rhs.p0, &mut rhs.p1);
         }
 
@@ -253,7 +260,7 @@ impl ops::Div<f32> for Line {
     type Output = Line;
 
     fn div(mut self, rhs: f32) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
@@ -265,7 +272,7 @@ impl ops::Div<Point> for Line {
     type Output = Line;
 
     fn div(mut self, rhs: Point) -> Self::Output {
-        if self.dir == -1 {
+        if self.dir == Direction::Down {
             mem::swap(&mut self.p0, &mut self.p1);
         }
 
