@@ -43,22 +43,15 @@ pub trait Example {
         let f = Box::new(move |p: Point| {
             point(
                 p.x * h_factor - bounds.x_min as f32,
-                bounds.height() as f32 - (p.y * v_factor - bounds.y_min as f32)
+                bounds.height() as f32 - (p.y * v_factor - bounds.y_min as f32),
             )
         });
 
-        let mut canvas_builder = CanvasBuilder::new()
+        let mut canvas_builder = outliner.cb;
+        canvas_builder
             .width(bounds.width() as usize + 2)
             .height(bounds.height() as usize + 2)
             .transform(f);
-
-        for mut line in outliner.outline {
-            line *= point(h_factor, -v_factor);
-            line -= point(bounds.x_min as f32, -bounds.y_min as f32);
-            line += point(0.0, bounds.height() as f32);
-
-            canvas_builder = canvas_builder.line(line);
-        }
 
         canvas_builder.build()
     }

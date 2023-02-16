@@ -152,10 +152,15 @@ pub struct CanvasBuilder {
     width: usize,
     height: usize,
 
-    lines: Vec<Line>,
     curves: Vec<Curve>,
 
     transform: TransformFn,
+}
+
+impl std::default::Default for CanvasBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CanvasBuilder {
@@ -169,7 +174,6 @@ impl CanvasBuilder {
         Self {
             width: 0,
             height: 0,
-            lines: vec![],
             curves: vec![],
             transform: Box::new(|p| p),
         }
@@ -180,7 +184,7 @@ impl CanvasBuilder {
     /// ```
     /// canvas_builder.width(600);
     /// ```
-    pub const fn width(mut self, width: usize) -> Self {
+    pub fn width(&mut self, width: usize) -> &mut Self {
         self.width = width;
 
         self
@@ -191,13 +195,13 @@ impl CanvasBuilder {
     /// ```
     /// canvas_builder.height(800);
     /// ```
-    pub const fn height(mut self, height: usize) -> Self {
+    pub fn height(&mut self, height: usize) -> &mut Self {
         self.height = height;
 
         self
     }
 
-    pub fn transform(mut self, transform: TransformFn) -> Self {
+    pub fn transform(&mut self, transform: TransformFn) -> &mut Self {
         self.transform = transform;
 
         self
@@ -211,19 +215,8 @@ impl CanvasBuilder {
     ///     .curve(Curve::quadric(q0, q1, q2))
     ///     .curve(Curve::cubic(c0, c1, c2, c3));
     /// ```
-    pub fn curve(mut self, curve: Curve) -> Self {
+    pub fn curve(&mut self, curve: Curve) -> &mut Self {
         self.curves.push(curve);
-
-        self
-    }
-
-    /// Stores `line` in [`CanvasBuilder`].
-    ///
-    /// ```
-    /// let canvas_builder = canvas_builder.line(Line::new(l0, l1))
-    /// ```
-    pub fn line(mut self, line: Line) -> Self {
-        self.lines.push(line);
 
         self
     }
@@ -233,26 +226,27 @@ impl CanvasBuilder {
     /// ```
     /// let canvas = canvas_builder.build();
     /// ```
-    pub fn build(mut self) -> Canvas {
+    pub fn build(self) -> Canvas {
         let mut canvas = Canvas {
             width: self.width,
             height: self.height,
             bitmap: vec![0.0; self.width * self.height],
         };
+        let mut lines = vec![];
 
         self.curves
             .into_iter()
             .for_each(|mut curve| {
                 curve.transform(&self.transform);
-                curve.tesselate(&mut self.lines);
+                curve.tesselate(&mut lines);
             });
-        self.lines.iter().for_each(|line| canvas.draw_line(line));
-        self.lines
+        lines.iter().for_each(|line| canvas.draw_line(line));
+        lines
             .sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
 
         let mut hits: Vec<(usize, i8)> = Vec::with_capacity(8);
         for scanline_y in 0..canvas.height {
-            self.lines
+            lines
                 .iter()
                 .filter_map(|line| {
                     // Find the intersection of line and scanline

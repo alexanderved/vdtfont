@@ -11,7 +11,7 @@ use owned_ttf_parser as ttfp;
 pub struct Outliner {
     pub last: Point,
     pub last_move: Option<Point>,
-    pub outline: Vec<Line>,
+    pub cb: CanvasBuilder,
 }
 
 impl ttfp::OutlineBuilder for Outliner {
@@ -24,7 +24,7 @@ impl ttfp::OutlineBuilder for Outliner {
     fn line_to(&mut self, x1: f32, y1: f32) {
         // eprintln!("L {x1} {y1}");
         let p1 = point(x1, y1);
-        Curve::linear(self.last, p1).tesselate(&mut self.outline);
+        self.cb.curve(Curve::linear(self.last, p1));
         self.last = p1;
     }
 
@@ -32,7 +32,7 @@ impl ttfp::OutlineBuilder for Outliner {
         // eprintln!("Q {x1} {y1}");
         let p1 = point(x1, y1);
         let p2 = point(x2, y2);
-        Curve::quadric(self.last, p1, p2).tesselate(&mut self.outline);
+        self.cb.curve(Curve::quadric(self.last, p1, p2));
         self.last = p2;
     }
 
@@ -42,14 +42,14 @@ impl ttfp::OutlineBuilder for Outliner {
         let p2 = point(x2, y2);
         let p3 = point(x3, y3);
 
-        Curve::cubic(self.last, p1, p2, p3).tesselate(&mut self.outline);
+        self.cb.curve(Curve::cubic(self.last, p1, p2, p3));
         self.last = p3;
     }
 
     fn close(&mut self) {
         // eprintln!("Z");
         if let Some(m) = self.last_move.take() {
-            Curve::linear(self.last, m).tesselate(&mut self.outline);
+            self.cb.curve(Curve::linear(self.last, m));
         }
     }
 }
