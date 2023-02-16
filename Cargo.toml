@@ -1,6 +1,6 @@
 [package]
 name = "font_rasterizer"
-version = "0.2.0"
+version = "0.2.2"
 edition = "2021"
 authors = ["Alexander Vedekhin"]
 license = "MPL-2.0"
@@ -8,7 +8,11 @@ license = "MPL-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libm = { version = "0.2", optional = true }
 
 [dev-dependencies]
 image = { version = "0.24" }
 owned_ttf_parser = { version = "0.18.0" }
+
+[features]
+no_std = ["dep:libm"]

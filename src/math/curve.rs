@@ -6,6 +6,13 @@
  * Quadric and cubic bezier tesselation adapted from stb_truetype: https://github.com/nothings/stb
  */
 
+#[cfg(feature = "no_std")]
+use alloc::vec::Vec;
+
+#[allow(unused_imports)]
+#[cfg(feature = "no_std")]
+use crate::math::float::FloatExt;
+
 use super::line::*;
 use super::point::*;
 

@@ -6,7 +6,19 @@
  * Quadric and cubic bezier tesselation adapted from stb_truetype: https://github.com/nothings/stb
  */
 
+#[cfg(not(feature = "no_std"))]
 use std::ops;
+
+#[cfg(feature = "no_std")]
+use core::ops;
+#[cfg(feature = "no_std")]
+use alloc::{
+    boxed::Box,
+};
+
+#[allow(unused_imports)]
+#[cfg(feature = "no_std")]
+use super::float::FloatExt;
 
 pub type TransformFn = Box<dyn Fn(Point) -> Point>;
 

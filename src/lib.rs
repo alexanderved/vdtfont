@@ -26,8 +26,13 @@
 //!     })
 //! ```
 
-mod canvas;
-mod math;
+#![cfg_attr(feature = "no_std", no_std)]
+
+#[cfg(feature = "no_std")]
+extern crate alloc;
+
+pub mod canvas;
+pub mod math;
 
 pub use canvas::*;
 pub use math::*;

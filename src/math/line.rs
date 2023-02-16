@@ -6,8 +6,13 @@
  * Quadric and cubic bezier tesselation adapted from stb_truetype: https://github.com/nothings/stb
  */
 
-use super::point::*;
+#[cfg(not(feature = "no_std"))]
 use std::{mem, ops};
+
+#[cfg(feature = "no_std")]
+use core::{mem, ops};
+
+use super::point::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 #[repr(i8)]

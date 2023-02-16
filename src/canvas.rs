@@ -4,8 +4,19 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#[cfg(not(feature = "no_std"))]
+use std::{iter::IntoIterator, mem, slice, vec::IntoIter};
+
+#[cfg(feature = "no_std")]
+use core::{iter::IntoIterator, mem, slice};
+#[cfg(feature = "no_std")]
+use alloc::{
+    vec,
+    vec::{Vec, IntoIter},
+    boxed::Box,
+};
+
 use crate::math::*;
-use std::{iter::IntoIterator, mem, slice, vec};
 
 /// An object that contains pixel alphas of drawn curves.
 pub struct Canvas {
@@ -128,7 +139,7 @@ impl Canvas {
 
 impl IntoIterator for Canvas {
     type Item = f32;
-    type IntoIter = vec::IntoIter<f32>;
+    type IntoIter = IntoIter<f32>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
