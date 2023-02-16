@@ -8,13 +8,13 @@
 use std::{iter::IntoIterator, mem, slice, vec::IntoIter};
 
 #[cfg(feature = "no_std")]
-use core::{iter::IntoIterator, mem, slice};
-#[cfg(feature = "no_std")]
 use alloc::{
-    vec,
-    vec::{Vec, IntoIter},
     boxed::Box,
+    vec,
+    vec::{IntoIter, Vec},
 };
+#[cfg(feature = "no_std")]
+use core::{iter::IntoIterator, mem, slice};
 
 use crate::math::*;
 
@@ -45,6 +45,21 @@ impl Canvas {
     #[inline]
     pub const fn height(&self) -> usize {
         self.height
+    }
+
+    /// Plots one pixel on [`Canvas`] if it's inside the bounds.
+    ///
+    /// ```
+    /// canvas.plot(x, y, alpha);
+    /// ```
+    pub fn plot(&mut self, x: usize, y: usize, c: f32) {
+        if x < self.width && y < self.height {
+            // SAFETY: `x` and `y` are inside bounds which makes this function safe.
+            unsafe {
+                let pixel = self.bitmap.get_unchecked_mut(x + y * self.width);
+                *pixel = c.max(*pixel);
+            }
+        }
     }
 
     /// Draws line in [`Canvas`] with
@@ -93,18 +108,40 @@ impl Canvas {
         }
     }
 
-    /// Plots one pixel on [`Canvas`] if it's inside the bounds.
-    ///
-    /// ```
-    /// canvas.plot(x, y, alpha);
-    /// ```
-    pub fn plot(&mut self, x: usize, y: usize, c: f32) {
-        if x < self.width && y < self.height {
-            // SAFETY: `x` and `y` are inside bounds which makes this function safe.
-            unsafe {
-                let pixel = self.bitmap.get_unchecked_mut(x + y * self.width);
-                *pixel = c.max(*pixel);
-            }
+    /// Fills the specified outline.
+    pub fn fill_outline(&mut self, outline: &Vec<Line>) {
+        let mut hits_down = Vec::with_capacity(4);
+        let mut hits_up = Vec::with_capacity(4);
+        for scanline_y in 0..self.height {
+            outline
+                .iter()
+                .filter(|line| line.p0().y <= scanline_y as f32)
+                .filter(|line| line.p1().y > scanline_y as f32)
+                .for_each(|line| {
+                    let (p0, _, dx, _, dir) = line.to_raw_parts();
+                    // Find the intersection of line and scanline
+                    let x = (p0.x + dx * (scanline_y as f32 - p0.y)) as usize + 1;
+
+                    // Choose the vec to add the hit
+                    // depending on the direction of a line.
+                    let hits = match dir {
+                        Direction::Down => &mut hits_down,
+                        Direction::Up => &mut hits_up,
+                    };
+
+                    let i = hits.partition_point(|hit| *hit < x);
+                    hits.insert(i, x);
+                });
+
+            hits_down
+                .drain(..)
+                .zip(hits_up.drain(..))
+                .map(|(x0, x1)| if x0 > x1 { (x1, x0) } else { (x0, x1) })
+                .for_each(|(x0, x1)| {
+                    for x in x0..x1 {
+                        self.plot(x, scanline_y, 1.0);
+                    }
+                });
         }
     }
 
@@ -251,38 +288,7 @@ impl CanvasBuilder {
         lines.iter().for_each(|line| canvas.draw_line(line));
         lines.sort_by(|left, right| left.p0().y.partial_cmp(&right.p0().y).unwrap());
 
-        let mut hits_down = Vec::with_capacity(4);
-        let mut hits_up = Vec::with_capacity(4);
-        for scanline_y in 0..canvas.height {
-            lines
-                .iter()
-                .filter(|line| line.p0().y <= scanline_y as f32)
-                .filter(|line| line.p1().y > scanline_y as f32)
-                .for_each(|line| {
-                    // Find the intersection of line and scanline
-                    let x =
-                        (line.p0().x + line.dx() * (scanline_y as f32 - line.p0().y)) as usize + 1;
-
-                    // Choose the vec to add the hit depending on the direction of a line.
-                    let hits = match line.dir() {
-                        Direction::Down => &mut hits_down,
-                        Direction::Up => &mut hits_up,
-                    };
-
-                    let i = hits.partition_point(|hit| *hit < x);
-                    hits.insert(i, x);
-                });
-
-            hits_down
-                .drain(..)
-                .zip(hits_up.drain(..))
-                .map(|(x0, x1)| if x0 > x1 { (x1, x0) } else { (x0, x1) })
-                .for_each(|(x0, x1)| {
-                    for x in x0..x1 {
-                        canvas.plot(x, scanline_y, 1.0);
-                    }
-                });
-        }
+        canvas.fill_outline(&lines);
 
         canvas
     }
