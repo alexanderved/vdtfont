@@ -164,10 +164,10 @@ impl std::default::Default for CanvasBuilder {
 }
 
 impl CanvasBuilder {
-    /// Creates new [`CanvasBuilder`] with specified width and height.
+    /// Creates new [`CanvasBuilder`].
     ///
     /// ```
-    /// let canvas_builder = CanvasBuilder::new(width, height);
+    /// let canvas_builder = CanvasBuilder::new();
     /// ```
     #[inline]
     pub fn new() -> Self {
@@ -210,7 +210,7 @@ impl CanvasBuilder {
     /// Stores a curve.
     ///
     /// ```
-    /// let canvas_builder = canvas_builder
+    /// canvas_builder
     ///     .curve(Curve::linear(l0, l1))
     ///     .curve(Curve::quadric(q0, q1, q2))
     ///     .curve(Curve::cubic(c0, c1, c2, c3));
