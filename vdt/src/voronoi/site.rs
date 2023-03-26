@@ -1,6 +1,6 @@
 use crate::ocl::prm::Float2;
 
-pub type SiteId = i32;
+pub type SiteId = i64;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 #[repr(transparent)]

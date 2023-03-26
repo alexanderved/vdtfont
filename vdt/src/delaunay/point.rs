@@ -1,6 +1,6 @@
 use crate::ocl::prm::Float2;
 
-pub(super) type PointId = i32;
+pub(super) type PointId = i64;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Point {

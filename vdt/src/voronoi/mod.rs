@@ -43,7 +43,7 @@ impl<'a> VoronoiImage<'a> {
             .map(|(i, raw_pixel)| {
                 let x = i % self.dim;
                 let y = i / self.dim;
-                let raw_pixel = [raw_pixel[0], raw_pixel[1], raw_pixel[2]];
+                let raw_pixel = [raw_pixel[0] as i64, raw_pixel[1] as i64, raw_pixel[2] as i64];
                 Pixel::new(x, y, raw_pixel)
             })
             .collect())

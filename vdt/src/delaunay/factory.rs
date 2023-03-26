@@ -127,7 +127,7 @@ impl DelaunayFactory {
         points: &mut Vec<Point>,
         voronoi_image_pixels: &mut Vec<Pixel>,
     ) -> Bounds {
-        let first_bounding_point_id = points.len() as i32;
+        let first_bounding_point_id = points.len() as i64;
 
         self.add_bounding_points(dim, points);
         self.add_bounding_pixels(dim, first_bounding_point_id, voronoi_image_pixels);
@@ -168,22 +168,22 @@ impl DelaunayFactory {
         voronoi_image_pixels[min_x + min_y * dim] = Pixel::new(
             min_x,
             min_y,
-            [-(dim as i32 * 10), -(dim as i32 * 10), first_bounding_point_id],
+            [-(dim as i64 * 10), -(dim as i64 * 10), first_bounding_point_id],
         );
         voronoi_image_pixels[max_x + min_y * dim] = Pixel::new(
             max_x,
             min_y,
-            [dim as i32 * 10, -(dim as i32 * 10), first_bounding_point_id + 1],
+            [dim as i64 * 10, -(dim as i64 * 10), first_bounding_point_id + 1],
         );
         voronoi_image_pixels[max_x + max_y * dim] = Pixel::new(
             max_x,
             max_y,
-            [dim as i32 * 10, dim as i32 * 10, first_bounding_point_id + 2],
+            [dim as i64 * 10, dim as i64 * 10, first_bounding_point_id + 2],
         );
         voronoi_image_pixels[min_x + max_y * dim] = Pixel::new(
             min_x,
             max_y,
-            [-(dim as i32 * 10), dim as i32 * 10, first_bounding_point_id + 3],
+            [-(dim as i64 * 10), dim as i64 * 10, first_bounding_point_id + 3],
         );
     }
 

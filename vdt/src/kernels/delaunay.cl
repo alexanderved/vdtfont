@@ -1,4 +1,4 @@
-typedef int PointId;
+typedef long PointId;
 
 typedef struct VoronoiVertex {
     PointId v[4];

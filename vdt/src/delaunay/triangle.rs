@@ -1,6 +1,6 @@
 use crate::delaunay::{bounds::Bounds, Point, PointId};
 
-pub(super) type TriangleId = i32;
+pub(super) type TriangleId = i64;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]

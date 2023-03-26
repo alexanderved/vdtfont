@@ -9,7 +9,7 @@ pub struct Pixel {
 }
 
 impl Pixel {
-    pub(crate) fn new(x: usize, y: usize, raw_data: [i32; 3]) -> Self {
+    pub(crate) fn new(x: usize, y: usize, raw_data: [i64; 3]) -> Self {
         Self {
             x,
             y,
