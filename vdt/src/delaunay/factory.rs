@@ -13,7 +13,7 @@ pub struct DelaunayFactory {
 
     build_triangles_kernel: ocl::Kernel,
     triangles_buffer: Buffer<DelaunayTriangle>,
-    free_triangle_index_buffer: Buffer<TriangleId>,
+    free_triangle_index_buffer: Buffer<i32>,
 }
 
 impl DelaunayFactory {
@@ -41,7 +41,7 @@ impl DelaunayFactory {
             .arg(None::<&ocl::Buffer<TriangleId>>)
             .build()?;
         let triangles_buffer = Buffer::<DelaunayTriangle>::new(queue.clone())?;
-        let mut free_triangle_index_buffer = Buffer::<TriangleId>::new(queue.clone())?;
+        let mut free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
         free_triangle_index_buffer.write(&[0])?;
 
         Ok(Self {
