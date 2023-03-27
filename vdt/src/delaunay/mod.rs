@@ -1,7 +1,7 @@
+mod bounds;
 mod factory;
 mod point;
 mod triangle;
-mod bounds;
 
 pub use factory::DelaunayFactory;
 pub use point::*;
@@ -10,11 +10,13 @@ pub use triangle::*;
 
 use crate::list::List;
 
+use arena_system::{Arena, Handle};
+
 pub struct Delaunay {
     dim: usize,
 
-    points: Vec<Point>,
-    triangles: List<DelaunayTriangle>,
+    points: Arena<Point>,
+    triangles: Arena<DelaunayTriangle>,
 }
 
 impl Delaunay {
@@ -22,42 +24,81 @@ impl Delaunay {
         self.dim
     }
 
-    pub fn points(&self) -> &Vec<Point> {
+    pub fn points(&self) -> &Arena<Point> {
         &self.points
     }
 
     pub fn image(&self) -> Vec<u8> {
         let mut bitmap = vec![0.0; self.dim * self.dim];
-        for t in self.triangles.data.iter().filter_map(|e| e.as_ref()) {
+
+        let mut i: i64 = 0;
+        let mut tri = self
+            .triangles
+            .handle::<DelaunayTriangleHandle>(i.into(), &self.points)
+            .get();
+
+        while let Ok(t) = tri {
+            let t = &t.unwrap();
+
             crate::draw_line(
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                self.points[t.vertices[0] as usize],
-                self.points[t.vertices[1] as usize],
+                self.points
+                    .handle::<DelaunayPointHandle>(t.vertices[0].into(), ())
+                    .get()
+                    .unwrap()
+                    .unwrap(),
+                self.points
+                    .handle::<DelaunayPointHandle>(t.vertices[1].into(), ())
+                    .get()
+                    .unwrap()
+                    .unwrap(),
             );
 
             crate::draw_line(
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                self.points[t.vertices[1] as usize],
-                self.points[t.vertices[2] as usize],
+                self.points
+                    .handle::<DelaunayPointHandle>(t.vertices[1].into(), ())
+                    .get()
+                    .unwrap()
+                    .unwrap(),
+                self.points
+                    .handle::<DelaunayPointHandle>(t.vertices[2].into(), ())
+                    .get()
+                    .unwrap()
+                    .unwrap(),
             );
 
             crate::draw_line(
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                self.points[t.vertices[0] as usize],
-                self.points[t.vertices[2] as usize],
+                self.points
+                    .handle::<DelaunayPointHandle>(t.vertices[0].into(), ())
+                    .get()
+                    .unwrap()
+                    .unwrap(),
+                self.points
+                    .handle::<DelaunayPointHandle>(t.vertices[2].into(), ())
+                    .get()
+                    .unwrap()
+                    .unwrap(),
             );
+
+            i += 1;
+            tri = self
+                .triangles
+                .handle::<DelaunayTriangleHandle>(i.into(), &self.points)
+                .get();
         }
 
         bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * a) as u8]).collect()
     }
 
-    fn new(dim: usize, points: Vec<Point>, triangles: List<DelaunayTriangle>) -> Self {
+    fn new(dim: usize, points: Arena<Point>, triangles: Arena<DelaunayTriangle>) -> Self {
         Self { dim, points, triangles }
     }
 }

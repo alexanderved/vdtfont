@@ -1,3 +1,5 @@
+use arena_system::Arena;
+
 use super::bounds::Bounds;
 use super::point::{Point, PointId};
 use super::triangle::{DelaunayTriangle, TriangleId};
@@ -68,7 +70,11 @@ impl DelaunayFactory {
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
 
-        Ok(Delaunay::new(dim, points, triangles.into_iter().collect::<List<DelaunayTriangle>>()))
+        Ok(Delaunay::new(
+            dim,
+            points.into_iter().collect::<Arena<Point>>(),
+            triangles.into_iter().collect::<Arena<DelaunayTriangle>>(),
+        ))
     }
 
     fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {

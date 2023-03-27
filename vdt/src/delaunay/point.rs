@@ -40,9 +40,7 @@ impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
     type Userdata = ();
 
     fn from_raw(raw: RawHandle<'arena, Self::Type>, _userdata: Self::Userdata) -> Self {
-        Self {
-            raw,
-        }
+        Self { raw }
     }
 
     fn as_raw(&self) -> &RawHandle<'arena, Self::Type> {
