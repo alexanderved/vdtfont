@@ -1,5 +1,7 @@
 use crate::ocl::prm::Float2;
 
+use std::cmp::{Eq, PartialEq};
+
 use arena_system::{Handle, RawHandle};
 
 pub(super) type PointId = i64;
@@ -31,6 +33,7 @@ impl DelaunayPoint {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DelaunayPointHandle<'arena> {
     raw: RawHandle<'arena, DelaunayPoint>,
 }
@@ -60,8 +63,12 @@ impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
     fn as_raw(&self) -> &RawHandle<'arena, Self::Type> {
         &self.raw
     }
+}
 
-    fn as_mut_raw(&mut self) -> &mut RawHandle<'arena, Self::Type> {
-        &mut self.raw
+impl PartialEq for DelaunayPointHandle<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.index() == other.index()
     }
 }
+
+impl Eq for DelaunayPointHandle<'_> {}

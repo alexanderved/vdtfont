@@ -2,14 +2,14 @@ use rand::Rng;
 
 use vdt::delaunay::{Delaunay, DelaunayFactory};
 //use vdt::point::Point;
-use vdt::voronoi::{VoronoiImage, VoronoiImageFactory, Site};
+use vdt::voronoi::{Site, VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
 pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
 
 fn generate_random_points(dim: usize) -> Vec<Site> {
     let mut rng = rand::thread_rng();
-    let len: usize = rng.gen_range(32..=32);//=dim.min(512));
+    let len: usize = rng.gen_range(32..=32); //=dim.min(512));
 
     let res = (0..len)
         .into_iter()
@@ -60,22 +60,10 @@ fn save(voronoi_image: &VoronoiImage, delaunay: &Delaunay, name: &str) -> anyhow
     let img_data = img_data
         .chunks(4)
         .zip(delaunay_img_data.chunks(4))
-        .flat_map(|(v, d)| {
-            if d[3] > 0 {
-                [0, 0, 0, d[3]]
-            } else {
-                [v[0], v[1], v[2], v[3]]
-            }
-        })
+        .flat_map(|(v, d)| if d[3] > 0 { [0, 0, 0, d[3]] } else { [v[0], v[1], v[2], v[3]] })
         .collect::<Vec<u8>>();
 
-    image::save_buffer(
-        name,
-        &img_data,
-        dim as u32,
-        dim as u32,
-        image::ColorType::Rgba8,
-    )?;
+    image::save_buffer(name, &img_data, dim as u32, dim as u32, image::ColorType::Rgba8)?;
 
     Ok(())
 }
@@ -83,12 +71,9 @@ fn save(voronoi_image: &VoronoiImage, delaunay: &Delaunay, name: &str) -> anyhow
 fn main() -> anyhow::Result<()> {
     let platform = ocl::Platform::default();
     let device = ocl::Device::list(platform, Some(ocl::DeviceType::GPU))?[0];
-    let context = ocl::Context::builder()
-        .platform(platform)
-        .devices(device)
-        .build()?;
-    let queue = ocl::Queue::new(&context, device,
-        Some(ocl::CommandQueueProperties::PROFILING_ENABLE))?;
+    let context = ocl::Context::builder().platform(platform).devices(device).build()?;
+    let queue =
+        ocl::Queue::new(&context, device, Some(ocl::CommandQueueProperties::PROFILING_ENABLE))?;
 
     let dim = IMG_DIM / 2;
     let random = generate_random_points(dim);
