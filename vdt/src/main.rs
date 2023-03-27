@@ -9,7 +9,7 @@ pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
 
 fn generate_random_points(dim: usize) -> Vec<Site> {
     let mut rng = rand::thread_rng();
-    let len: usize = rng.gen_range(32..=32); //=dim.min(512));
+    let len: usize = rng.gen_range(30..=30); //=dim.min(512));
 
     let res = (0..len)
         .into_iter()
@@ -23,14 +23,6 @@ fn generate_random_points(dim: usize) -> Vec<Site> {
             Site::new(x + x_fract, y + y_fract)
         })
         .collect::<Vec<Site>>();
-
-    //res.push(Site::new(dim as f32 - 1.0, dim as f32 - 1.0));
-
-    /* for x in [0, dim - 1] {
-        for y in [0, dim - 1] {
-            res.push(Site::new(x as f32, y as f32));
-        }
-    } */
 
     res
 }

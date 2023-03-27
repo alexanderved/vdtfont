@@ -1,10 +1,11 @@
-use arena_system::Arena;
+use arena_system::{Arena, Handle};
 
 use super::bounds::Bounds;
 use super::point::{DelaunayPoint, PointId};
 use super::triangle::{DelaunayTriangle, TriangleId};
 use super::Delaunay;
 
+use crate::delaunay::DelaunayTriangleHandle;
 use crate::opencl::Buffer;
 use crate::voronoi::{Pixel, VoronoiImage};
 
@@ -15,6 +16,8 @@ pub struct DelaunayFactory {
     build_triangles_kernel: ocl::Kernel,
     triangles_buffer: Buffer<DelaunayTriangle>,
     free_triangle_index_buffer: Buffer<i32>,
+
+    find_neighbours_kernel: ocl::Kernel,
 }
 
 impl DelaunayFactory {
@@ -45,6 +48,13 @@ impl DelaunayFactory {
         let mut free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
         free_triangle_index_buffer.write(&[0])?;
 
+        let find_neighbours_kernel = ocl::Kernel::builder()
+            .queue(queue.clone())
+            .program(&program)
+            .name("find_neighbours")
+            .arg(None::<&ocl::Buffer<DelaunayTriangle>>)
+            .build()?;
+
         Ok(Self {
             count_triangles_kernel,
             triangle_number_buffer,
@@ -52,6 +62,8 @@ impl DelaunayFactory {
             build_triangles_kernel,
             triangles_buffer,
             free_triangle_index_buffer,
+
+            find_neighbours_kernel,
         })
     }
 
@@ -71,6 +83,9 @@ impl DelaunayFactory {
         let _bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
+        
+        self.find_neighbours(&mut triangles)?;
+        self.flip_triangles(&triangles, &points);
 
         Ok(Delaunay::new(dim, points, triangles))
     }
@@ -203,7 +218,7 @@ impl DelaunayFactory {
                 if last.nearest_site_id() == pixel.nearest_site_id() {
                     continue 'pixels;
                 }
-                
+
                 if pixel_stack.len() < 2 {
                     break 'vertices;
                 }
@@ -228,6 +243,44 @@ impl DelaunayFactory {
         }
 
         Ok(())
+    }
+
+    fn find_neighbours(&mut self, triangles: &mut Arena<DelaunayTriangle>) -> anyhow::Result<()> {
+        let mut triangles_vec: Vec<DelaunayTriangle> =
+            triangles.handle_iter().map(|h| *h.get().unwrap()).collect();
+        self.triangles_buffer.write(&triangles_vec)?;
+
+        self.find_neighbours_kernel
+            .set_default_global_work_size((triangles_vec.len(), triangles_vec.len()).into())
+            .set_default_local_work_size((1, 1).into());
+
+        self.find_neighbours_kernel.set_arg(0, self.triangles_buffer.as_raw())?;
+
+        unsafe {
+            self.find_neighbours_kernel.enq()?;
+        }
+
+        self.triangles_buffer.read(&mut triangles_vec)?;
+        *triangles = triangles_vec.into_iter().collect();
+
+        Ok(())
+    }
+
+    fn flip_triangles(&self, triangles: &Arena<DelaunayTriangle>, points: &Arena<DelaunayPoint>) {
+        loop {
+            let mut is_changed = false;
+            for i in 0..triangles.len() {
+                let mut handle = triangles.handle::<DelaunayTriangleHandle>(i.into(), points);
+
+                for mut neighbour in handle.neighbours() {
+                    is_changed = is_changed || handle.flip_with(&mut neighbour);
+                }
+            }
+
+            if !is_changed {
+                break;
+            }
+        }
     }
 }
 

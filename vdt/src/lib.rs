@@ -83,15 +83,19 @@ pub fn draw_line(
     let mut prev_i = x0;
     let mut j = y0;
 
+    let c = if p0.is_bounding() || p1.is_bounding() {
+        0.5
+    } else {
+        1.0
+    };
+
     for i in i0 as usize..boundary.min(i1 as usize + 1) {
         j += delta * (i as f32 - prev_i);
 
         if steep {
-            plot(bitmap, width, height, j as usize, i, 1.0); // - j.fract());
-                                                             //plot(bitmap, width, height, j as usize + 1, i, j.fract());
+            plot(bitmap, width, height, j as usize, i, c);
         } else {
-            plot(bitmap, width, height, i, j as usize, 1.0); // - j.fract());
-                                                             //plot(bitmap, width, height, i, j as usize + 1, j.fract());
+            plot(bitmap, width, height, i, j as usize, c);
         }
 
         prev_i = i as f32;

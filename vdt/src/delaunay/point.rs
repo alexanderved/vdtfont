@@ -25,6 +25,14 @@ impl DelaunayPoint {
         self.coords[1]
     }
 
+    pub fn coords(&self) -> Float2 {
+        self.coords
+    }
+
+    pub fn is_bounding(&self) -> bool {
+        self.is_bounding
+    }
+
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
         let a = Self::new(self.x() - origin.x(), self.y() - origin.y(), false);
         let b = Self::new(other.x() - origin.x(), other.y() - origin.y(), false);
