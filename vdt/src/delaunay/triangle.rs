@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::delaunay::{bounds::Bounds, Point, PointId};
+use crate::delaunay::{bounds::Bounds, DelaunayPoint, PointId};
 
 use arena_system::{Arena, Handle, RawHandle};
 
@@ -17,13 +17,13 @@ impl DelaunayTriangle {
         Self { vertices }
     }
 
-    pub(super) fn is_counterclockwise(&self, points: &Vec<Point>) -> bool {
+    pub(super) fn is_counterclockwise(&self, points: &Vec<DelaunayPoint>) -> bool {
         points[self.vertices[1] as usize]
             .cross_product(&points[self.vertices[0] as usize], &points[self.vertices[2] as usize])
             < 0.0
     }
 
-    pub(super) fn make_counterclockwise(&mut self, points: &Vec<Point>) {
+    pub(super) fn make_counterclockwise(&mut self, points: &Vec<DelaunayPoint>) {
         if !self.is_counterclockwise(points) {
             unsafe {
                 let vertex1 = &mut self.vertices[1] as *mut _;
@@ -91,7 +91,7 @@ impl DelaunayTriangle {
         &mut self,
         other_id: TriangleId,
         triangles: &mut Vec<DelaunayTriangle>,
-        points: &Vec<Point>,
+        points: &Vec<DelaunayPoint>,
         bounds: &Bounds,
     ) {
         if self.is_flippable_with(other_id, triangles, bounds) {
@@ -118,12 +118,12 @@ unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 
 pub(super) struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
-    points: &'arena Arena<Point>,
+    points: &'arena Arena<DelaunayPoint>,
 }
 
 impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {
     type Type = DelaunayTriangle;
-    type Userdata = &'arena Arena<Point>;
+    type Userdata = &'arena Arena<DelaunayPoint>;
 
     fn from_raw(raw: RawHandle<'arena, Self::Type>, userdata: Self::Userdata) -> Self {
         Self { raw, points: userdata }

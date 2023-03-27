@@ -31,12 +31,7 @@ impl<T: ocl::OclPrm> ImageView<T> {
             );
         }
 
-        Ok(Self {
-            ocl_image,
-
-            origin,
-            region,
-        })
+        Ok(Self { ocl_image, origin, region })
     }
 
     pub fn ocl_image(&self) -> &ocl::Image<T> {
@@ -113,12 +108,7 @@ impl<T: ocl::OclPrm> ImageView<T> {
             .build()?;
         self.ocl_image.cmd().copy(&copied_image, [0; 3]).enq()?;
 
-        Ok(Self {
-            ocl_image: copied_image,
-
-            origin: self.origin,
-            region: self.region,
-        })
+        Ok(Self { ocl_image: copied_image, origin: self.origin, region: self.region })
     }
 
     pub fn to_vec(&self) -> anyhow::Result<Vec<T>> {

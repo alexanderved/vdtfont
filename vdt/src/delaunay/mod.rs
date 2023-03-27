@@ -8,14 +8,12 @@ pub use point::*;
 pub use triangle::*;
 //pub(crate) use bounds::*;
 
-use crate::list::List;
-
 use arena_system::{Arena, Handle};
 
 pub struct Delaunay {
     dim: usize,
 
-    points: Arena<Point>,
+    points: Arena<DelaunayPoint>,
     triangles: Arena<DelaunayTriangle>,
 }
 
@@ -24,7 +22,7 @@ impl Delaunay {
         self.dim
     }
 
-    pub fn points(&self) -> &Arena<Point> {
+    pub fn points(&self) -> &Arena<DelaunayPoint> {
         &self.points
     }
 
@@ -98,7 +96,7 @@ impl Delaunay {
         bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * a) as u8]).collect()
     }
 
-    fn new(dim: usize, points: Arena<Point>, triangles: Arena<DelaunayTriangle>) -> Self {
+    fn new(dim: usize, points: Arena<DelaunayPoint>, triangles: Arena<DelaunayTriangle>) -> Self {
         Self { dim, points, triangles }
     }
 }

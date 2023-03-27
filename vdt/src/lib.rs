@@ -1,13 +1,13 @@
-pub mod opencl;
-pub mod voronoi;
 pub mod delaunay;
 pub mod list;
+pub mod opencl;
+pub mod voronoi;
 
 pub extern crate ocl;
 
-use std::{time, mem};
+use std::{mem, time};
 
-use delaunay::Point;
+use delaunay::DelaunayPoint;
 
 fn bench(f: impl FnOnce() -> anyhow::Result<()>) -> time::Duration {
     let now = std::time::Instant::now();
@@ -24,7 +24,7 @@ pub fn test(name: &str, f: impl FnOnce() -> anyhow::Result<()>) {
 
 pub fn profile(name: &str, event_list: ocl::EventList) -> anyhow::Result<()> {
     let mut elapsed = 0;
-    
+
     event_list.wait_for()?;
 
     for event in event_list {
@@ -48,18 +48,20 @@ pub fn plot(bitmap: &mut Vec<f32>, width: usize, height: usize, x: usize, y: usi
     }
 }
 
-pub fn draw_line(bitmap: &mut Vec<f32>, width: usize, height: usize, p0: Point, p1: Point) {
+pub fn draw_line(
+    bitmap: &mut Vec<f32>,
+    width: usize,
+    height: usize,
+    p0: DelaunayPoint,
+    p1: DelaunayPoint,
+) {
     let mut x0 = p0.x();
     let mut y0 = p0.y();
     let mut x1 = p1.x();
     let mut y1 = p1.y();
 
     let steep = (x1 - x0).abs() < (y1 - y0).abs();
-    let delta = if steep {
-        (x1 - x0) / (y1 - y0)
-    } else {
-        (y1 - y0) / (x1 - x0)
-    };
+    let delta = if steep { (x1 - x0) / (y1 - y0) } else { (y1 - y0) / (x1 - x0) };
     let boundary = if steep { height } else { width };
 
     if steep {
@@ -86,11 +88,11 @@ pub fn draw_line(bitmap: &mut Vec<f32>, width: usize, height: usize, p0: Point, 
         j += delta * (i as f32 - prev_i);
 
         if steep {
-            plot(bitmap, width, height, j as usize, i, 1.0);// - j.fract());
-            //plot(bitmap, width, height, j as usize + 1, i, j.fract());
+            plot(bitmap, width, height, j as usize, i, 1.0); // - j.fract());
+                                                             //plot(bitmap, width, height, j as usize + 1, i, j.fract());
         } else {
-            plot(bitmap, width, height, i, j as usize, 1.0);// - j.fract());
-            //plot(bitmap, width, height, i, j as usize + 1, j.fract());
+            plot(bitmap, width, height, i, j as usize, 1.0); // - j.fract());
+                                                             //plot(bitmap, width, height, i, j as usize + 1, j.fract());
         }
 
         prev_i = i as f32;

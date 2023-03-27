@@ -9,10 +9,7 @@ pub struct List<T> {
 
 impl<T> List<T> {
     pub fn new() -> Self {
-        Self {
-            data: vec![],
-            free: vec![],
-        }
+        Self { data: vec![], free: vec![] }
     }
 
     pub fn add(&mut self, value: T) {
@@ -33,13 +30,7 @@ impl<T> List<T> {
 
 impl<T> iter::FromIterator<T> for List<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        Self {
-            data: iter
-                .into_iter()
-                .map(|e| Some(e))
-                .collect::<Vec<Option<T>>>(),
-            free: vec![],
-        }
+        Self { data: iter.into_iter().map(|e| Some(e)).collect::<Vec<Option<T>>>(), free: vec![] }
     }
 }
 

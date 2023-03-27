@@ -5,12 +5,12 @@ use arena_system::{Handle, RawHandle};
 pub(super) type PointId = i64;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub struct Point {
+pub struct DelaunayPoint {
     coords: Float2,
     is_bounding: bool,
 }
 
-impl Point {
+impl DelaunayPoint {
     pub fn new(x: f32, y: f32, is_bounding: bool) -> Self {
         Self { coords: Float2::new(x, y), is_bounding }
     }
@@ -32,11 +32,11 @@ impl Point {
 }
 
 pub struct DelaunayPointHandle<'arena> {
-    raw: RawHandle<'arena, Point>,
+    raw: RawHandle<'arena, DelaunayPoint>,
 }
 
 impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
-    type Type = Point;
+    type Type = DelaunayPoint;
     type Userdata = ();
 
     fn from_raw(raw: RawHandle<'arena, Self::Type>, _userdata: Self::Userdata) -> Self {

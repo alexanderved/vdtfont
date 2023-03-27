@@ -1,5 +1,5 @@
-use crate::opencl::ImageView;
 use crate::ocl;
+use crate::opencl::ImageView;
 
 pub(super) struct Swapchain {
     max_dim: usize,

@@ -6,10 +6,7 @@ pub struct Buffer<T: ocl::OclPrm> {
 
 impl<T: ocl::OclPrm> Buffer<T> {
     pub fn new(queue: ocl::Queue) -> anyhow::Result<Self> {
-        let inner = ocl::Buffer::<T>::builder()
-            .queue(queue)
-            .len(1)
-            .build()?;
+        let inner = ocl::Buffer::<T>::builder().queue(queue).len(1).build()?;
 
         Ok(Self { inner, len: 0, cap: 1 })
     }
