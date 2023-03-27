@@ -1,12 +1,11 @@
 mod factory;
 mod pixel;
-mod site;
 mod swapchain;
 
 pub use factory::VoronoiImageFactory;
 pub use pixel::Pixel;
-pub use site::{Site, SiteId};
 
+pub use crate::point::{Point, PointId};
 use crate::opencl::ImageView;
 
 use std::borrow::Cow;
@@ -14,7 +13,7 @@ use std::borrow::Cow;
 pub struct VoronoiImage<'a> {
     dim: usize,
 
-    sites: Vec<Site>,
+    sites: Vec<Point>,
     image: Cow<'a, ImageView<i32>>,
 }
 
@@ -23,7 +22,7 @@ impl<'a> VoronoiImage<'a> {
         self.dim
     }
 
-    pub fn sites(&self) -> &Vec<Site> {
+    pub fn sites(&self) -> &Vec<Point> {
         &self.sites
     }
 
@@ -49,7 +48,7 @@ impl<'a> VoronoiImage<'a> {
             .collect())
     }
 
-    fn new(dim: usize, sites: Vec<Site>, image: Cow<'a, ImageView<i32>>) -> Self {
+    fn new(dim: usize, sites: Vec<Point>, image: Cow<'a, ImageView<i32>>) -> Self {
         Self { dim, sites, image }
     }
 }

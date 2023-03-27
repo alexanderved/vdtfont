@@ -1,9 +1,9 @@
-use super::site::Site;
 use super::swapchain::Swapchain;
 use super::VoronoiImage;
 
 use crate::ocl::{self, prm::Float2};
 use crate::opencl::Buffer;
+use crate::point::Point;
 
 use std::{borrow::Cow, iter};
 
@@ -70,7 +70,7 @@ impl VoronoiImageFactory {
 
     pub fn construct_owned(
         &mut self,
-        sites: Vec<Site>,
+        sites: Vec<Point>,
         dim: usize,
     ) -> anyhow::Result<VoronoiImage<'static>> {
         self.draw_voronoi(&sites, dim)?;
@@ -82,7 +82,7 @@ impl VoronoiImageFactory {
 
     pub fn construct_borrowed<'s>(
         &'s mut self,
-        sites: Vec<Site>,
+        sites: Vec<Point>,
         dim: usize,
     ) -> anyhow::Result<VoronoiImage<'s>> {
         self.draw_voronoi(&sites, dim)?;
@@ -90,7 +90,7 @@ impl VoronoiImageFactory {
         Ok(VoronoiImage::new(dim, sites, Cow::Borrowed(self.swapchain.last())))
     }
 
-    fn draw_voronoi(&mut self, sites: &Vec<Site>, dim: usize) -> anyhow::Result<()> {
+    fn draw_voronoi(&mut self, sites: &Vec<Point>, dim: usize) -> anyhow::Result<()> {
         self.swapchain.set_dim(dim)?;
         self.swapchain.clear()?;
 
@@ -101,7 +101,7 @@ impl VoronoiImageFactory {
         Ok(())
     }
 
-    fn plot_sites(&mut self, sites: &Vec<Site>) -> anyhow::Result<()> {
+    fn plot_sites(&mut self, sites: &Vec<Point>) -> anyhow::Result<()> {
         let raw_sites = sites.iter().map(|s| s.coords()).collect::<Vec<Float2>>();
         self.sites_buffer.write(&raw_sites)?;
 

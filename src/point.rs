@@ -4,7 +4,7 @@ use std::cmp::{Eq, PartialEq};
 
 use arena_system::{Handle, RawHandle};
 
-pub(super) type PointId = i64;
+pub type PointId = i64;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Point {

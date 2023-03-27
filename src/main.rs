@@ -1,13 +1,13 @@
 use rand::Rng;
 
 use vdtfont::delaunay::{Delaunay, DelaunayFactory};
-//use vdt::point::Point;
-use vdtfont::voronoi::{Site, VoronoiImage, VoronoiImageFactory};
+use vdtfont::point::Point;
+use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
 pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
 
-fn generate_random_points(dim: usize) -> Vec<Site> {
+fn generate_random_points(dim: usize) -> Vec<Point> {
     let mut rng = rand::thread_rng();
     let len: usize = rng.gen_range(30..=30); //=dim.min(512));
 
@@ -20,9 +20,9 @@ fn generate_random_points(dim: usize) -> Vec<Site> {
             let x_fract = rng.gen_range(0..100) as f32 / 100.0;
             let y_fract = rng.gen_range(0..100) as f32 / 100.0;
 
-            Site::new(x + x_fract, y + y_fract)
+            Point::new(x + x_fract, y + y_fract, false, -1)
         })
-        .collect::<Vec<Site>>();
+        .collect::<Vec<Point>>();
 
     res
 }
