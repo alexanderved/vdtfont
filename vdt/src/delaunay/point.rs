@@ -1,5 +1,7 @@
 use crate::ocl::prm::Float2;
 
+use arena_system::{Handle, RawHandle};
+
 pub(super) type PointId = i64;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -26,5 +28,28 @@ impl Point {
         let b = Self::new(other.x() - origin.x(), other.y() - origin.y(), false);
 
         a.x() * b.y() - a.y() * b.x()
+    }
+}
+
+pub struct DelaunayPointHandle<'arena> {
+    raw: RawHandle<'arena, Point>,
+}
+
+impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
+    type Type = Point;
+    type Userdata = ();
+
+    fn from_raw(raw: RawHandle<'arena, Self::Type>, _userdata: Self::Userdata) -> Self {
+        Self {
+            raw,
+        }
+    }
+
+    fn as_raw(&self) -> &RawHandle<'arena, Self::Type> {
+        &self.raw
+    }
+
+    fn as_mut_raw(&mut self) -> &mut RawHandle<'arena, Self::Type> {
+        &mut self.raw
     }
 }
