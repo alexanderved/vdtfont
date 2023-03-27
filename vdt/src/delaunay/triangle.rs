@@ -2,7 +2,7 @@
 
 use crate::delaunay::{bounds::Bounds, Point, PointId};
 
-use arena_system::{Handle, RawHandle, ArenaResult, ArenaError, Arena};
+use arena_system::{Arena, Handle, RawHandle};
 
 pub(super) type TriangleId = i64;
 
@@ -116,7 +116,6 @@ impl std::default::Default for DelaunayTriangle {
 
 unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 
-
 pub(super) struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
     points: &'arena Arena<Point>,
@@ -127,10 +126,7 @@ impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {
     type Userdata = &'arena Arena<Point>;
 
     fn from_raw(raw: RawHandle<'arena, Self::Type>, userdata: Self::Userdata) -> Self {
-        Self {
-            raw,
-            points: userdata,
-        }
+        Self { raw, points: userdata }
     }
 
     fn as_raw(&self) -> &RawHandle<'arena, Self::Type> {
@@ -141,6 +137,5 @@ impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {
         &mut self.raw
     }
 }
-
 
 pub struct Triangle;
