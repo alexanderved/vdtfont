@@ -1,7 +1,7 @@
 pub mod delaunay;
 pub mod opencl;
-pub mod voronoi;
 pub mod point;
+pub mod voronoi;
 
 pub extern crate ocl;
 
@@ -48,13 +48,7 @@ pub fn plot(bitmap: &mut Vec<f32>, width: usize, height: usize, x: usize, y: usi
     }
 }
 
-pub fn draw_line(
-    bitmap: &mut Vec<f32>,
-    width: usize,
-    height: usize,
-    p0: Point,
-    p1: Point,
-) {
+pub fn draw_line(bitmap: &mut Vec<f32>, width: usize, height: usize, p0: Point, p1: Point) {
     let mut x0 = p0.x();
     let mut y0 = p0.y();
     let mut x1 = p1.x();
@@ -84,11 +78,7 @@ pub fn draw_line(
     let mut prev_i = x0;
     let mut j = y0;
 
-    let c = if p0.is_bounding() || p1.is_bounding() {
-        0.5
-    } else {
-        1.0
-    };
+    let c = if p0.is_bounding() || p1.is_bounding() { 0.5 } else { 1.0 };
 
     for i in i0 as usize..boundary.min(i1 as usize + 1) {
         j += delta * (i as f32 - prev_i);

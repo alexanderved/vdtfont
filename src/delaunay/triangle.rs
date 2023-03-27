@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::point::{Point, PointId, PointHandle};
+use crate::point::{Point, PointHandle, PointId};
 
 use arena_system::{Arena, Handle, RawHandle};
 use smallvec::SmallVec;
@@ -21,13 +21,10 @@ impl DelaunayTriangle {
     }
 
     pub(super) fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
-        points
-            .handle::<PointHandle>(self.vertices[1].into(), ())
-            .cross_product(
-                &points.handle(self.vertices[0].into(), ()),
-                &points.handle(self.vertices[2].into(), ()),
-            )
-            < 0.0
+        points.handle::<PointHandle>(self.vertices[1].into(), ()).cross_product(
+            &points.handle(self.vertices[0].into(), ()),
+            &points.handle(self.vertices[2].into(), ()),
+        ) < 0.0
     }
 
     pub(super) fn make_counterclockwise(&mut self, points: &Arena<Point>) {

@@ -4,9 +4,9 @@ use super::bounds::Bounds;
 use super::triangle::{DelaunayTriangle, TriangleId};
 use super::Delaunay;
 
-use crate::point::{Point, PointId};
 use crate::delaunay::DelaunayTriangleHandle;
 use crate::opencl::Buffer;
+use crate::point::{Point, PointId};
 use crate::voronoi::{Pixel, VoronoiImage};
 
 pub struct DelaunayFactory {
@@ -72,7 +72,7 @@ impl DelaunayFactory {
         let mut points = voronoi_image
             .sites()
             .iter()
-            .map(|site| Point::new(site.x().floor(), site.y().floor(), false))
+            .map(|site| Point::new(site.x().floor(), site.y().floor(), false, -1))
             .collect::<Arena<Point>>();
         let mut triangles = self
             .build_triangles(voronoi_image, &points)?
@@ -165,10 +165,10 @@ impl DelaunayFactory {
         let max_x = dim as f32 * 10.0;
         let max_y = dim as f32 * 10.0;
 
-        points.add(Point::new(min_x, min_y, true));
-        points.add(Point::new(max_x, min_y, true));
-        points.add(Point::new(max_x, max_y, true));
-        points.add(Point::new(min_x, max_y, true));
+        points.add(Point::new(min_x, min_y, true, -1));
+        points.add(Point::new(max_x, min_y, true, -1));
+        points.add(Point::new(max_x, max_y, true, -1));
+        points.add(Point::new(min_x, max_y, true, -1));
     }
 
     fn add_bounding_pixels(

@@ -10,11 +10,12 @@ pub(super) type PointId = i64;
 pub struct Point {
     coords: Float2,
     is_bounding: bool,
+    previous_in_outline: PointId,
 }
 
 impl Point {
-    pub fn new(x: f32, y: f32, is_bounding: bool) -> Self {
-        Self { coords: Float2::new(x, y), is_bounding }
+    pub fn new(x: f32, y: f32, is_bounding: bool, previous_in_outline: PointId) -> Self {
+        Self { coords: Float2::new(x, y), is_bounding, previous_in_outline }
     }
 
     pub fn x(&self) -> f32 {
@@ -34,8 +35,8 @@ impl Point {
     }
 
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
-        let a = Self::new(self.x() - origin.x(), self.y() - origin.y(), false);
-        let b = Self::new(other.x() - origin.x(), other.y() - origin.y(), false);
+        let a = Self::new(self.x() - origin.x(), self.y() - origin.y(), false, -1);
+        let b = Self::new(other.x() - origin.x(), other.y() - origin.y(), false, -1);
 
         a.x() * b.y() - a.y() * b.x()
     }
@@ -47,6 +48,18 @@ pub struct PointHandle<'arena> {
 }
 
 impl<'arena> PointHandle<'arena> {
+    pub fn x(&self) -> f32 {
+        self.get().unwrap().coords[0]
+    }
+
+    pub fn y(&self) -> f32 {
+        self.get().unwrap().coords[1]
+    }
+
+    pub fn coords(&self) -> Float2 {
+        self.get().unwrap().coords
+    }
+
     pub fn is_bounding(&self) -> bool {
         self.get().unwrap().is_bounding
     }
