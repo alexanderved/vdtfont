@@ -95,7 +95,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
     pub(super) fn shared_points_with(
         &self,
-        other: &DelaunayTriangleHandle,
+        other: &DelaunayTriangleHandle<'arena>,
     ) -> [DelaunayPointHandle; 2] {
         let mut shared_points = SmallVec::<[DelaunayPointHandle; 2]>::new();
 
@@ -145,8 +145,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     pub(super) fn flip_with(&mut self, other: &mut DelaunayTriangleHandle) {
-        let is_flippable = self.is_flippable_with(other);
-        if is_flippable {
+        if self.is_flippable_with(other) {
             let shared_points = self.shared_points_with(other);
             let opposite_points = self.opposite_points_with(other);
 
