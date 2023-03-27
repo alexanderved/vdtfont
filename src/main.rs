@@ -1,8 +1,8 @@
 use rand::Rng;
 
-use vdt::delaunay::{Delaunay, DelaunayFactory};
+use vdtfont::delaunay::{Delaunay, DelaunayFactory};
 //use vdt::point::Point;
-use vdt::voronoi::{Site, VoronoiImage, VoronoiImageFactory};
+use vdtfont::voronoi::{Site, VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
 pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
