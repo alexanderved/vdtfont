@@ -35,6 +35,16 @@ pub struct DelaunayPointHandle<'arena> {
     raw: RawHandle<'arena, DelaunayPoint>,
 }
 
+impl<'arena> DelaunayPointHandle<'arena> {
+    pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
+        let this = self.get().unwrap().unwrap();
+        let origin = origin.get().unwrap().unwrap();
+        let other = other.get().unwrap().unwrap();
+
+        this.cross_product(&origin, &other)
+    }
+}
+
 impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
     type Type = DelaunayPoint;
     type Userdata = ();
