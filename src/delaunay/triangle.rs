@@ -228,12 +228,6 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                     }
                 }
 
-                println!(
-                    "{:?} new: {:?}",
-                    triangle.index(),
-                    new_neighbours.iter().map(|n| n.index().into()).collect::<Vec<i64>>()
-                );
-
                 triangle.set_neghbours(new_neighbours);
             }
 

@@ -11,4 +11,9 @@ license = "MPL-2.0"
 members = ["vdt"]
 
 [dependencies]
-vdt = { version = "0.1", path = "vdt" }
+ocl = "0.19"
+anyhow = "1.0"
+rand = "0.8"
+image = "0.24"
+arena_system = { version = "0.0.10", repository = "https://github.com/alexanderved/arena_system" }
+smallvec = "1.10.0"
