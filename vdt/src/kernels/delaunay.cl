@@ -8,6 +8,7 @@ typedef struct VoronoiVertex {
 typedef struct Triangle {
     PointId vertices[3];
     TriangleId neighbours[3];
+    int neighbours_number;
 } Triangle;
 
 
@@ -50,6 +51,20 @@ int count_triangles_in_vertex(VoronoiVertex *vertex) {
     }
 
     return 2 - same_points_number;
+}
+
+int count_shared_points(Triangle triangle0, Triangle triangle1) {
+    int shared_points_number = 0;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (triangle0.vertices[i] == triangle1.vertices[j]) {
+                shared_points_number++;
+                break;
+            }
+        }
+    }
+
+    return shared_points_number;
 }
 
 
@@ -105,5 +120,17 @@ __kernel void build_triangles(
                 .vertices = { vertex.v[i], vertex.v[i + 1], vertex.v[i + 2] },
             };
         }
+    }
+}
+
+__kernel void find_neighbours(__global Triangle *triangles) {
+    __global Triangle *triangle = &triangles[get_global_id(0)];
+    Triangle supposed_neighbour = triangles[get_global_id(1)];
+
+    int shared_points_number = count_shared_points(*triangle, supposed_neighbour);
+
+    if (shared_points_number == 2) {
+        int neighbour_idx = atomic_add(&triangle->neighbours_number, 1);
+        triangle->neighbours[neighbour_idx] = get_global_id(1);
     }
 }
