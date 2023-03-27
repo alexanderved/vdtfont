@@ -36,6 +36,10 @@ pub struct DelaunayPointHandle<'arena> {
 }
 
 impl<'arena> DelaunayPointHandle<'arena> {
+    pub fn is_bounding(&self) -> bool {
+        self.get().unwrap().is_bounding
+    }
+
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
         let this = self.get().unwrap();
         let origin = origin.get().unwrap();
