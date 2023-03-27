@@ -12,19 +12,25 @@ pub(super) type TriangleId = i64;
 #[repr(C)]
 pub(super) struct DelaunayTriangle {
     pub(super) vertices: [PointId; 3],
-    //pub(super) neighbours: [TriangleId; 3],
+    pub(super) neighbours: [TriangleId; 3],
 }
 
 impl DelaunayTriangle {
     pub(super) fn new(vertices: [PointId; 3]) -> Self {
-        Self { vertices }
+        Self {
+            vertices,
+            neighbours: [-1; 3],
+        }
     }
 
     pub(super) fn is_counterclockwise(&self, points: &Arena<DelaunayPoint>) -> bool {
-        points.handle::<DelaunayPointHandle>(self.vertices[1].into(), ()).cross_product(
-            &points.handle(self.vertices[0].into(), ()),
-            &points.handle(self.vertices[2].into(), ()),
-        ) < 0.0
+        points
+            .handle::<DelaunayPointHandle>(self.vertices[1].into(), ())
+            .cross_product(
+                &points.handle(self.vertices[0].into(), ()),
+                &points.handle(self.vertices[2].into(), ()),
+            )
+            < 0.0
     }
 
     pub(super) fn make_counterclockwise(&mut self, points: &Arena<DelaunayPoint>) {
@@ -57,6 +63,26 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let this = self.get().unwrap();
 
         this.vertices
+    }
+
+    pub(super) fn points(&self) -> [DelaunayPointHandle; 3] {
+        let this = self.get().unwrap();
+
+        [
+            self.points.handle(this.vertices[0].into(), ()),
+            self.points.handle(this.vertices[1].into(), ()),
+            self.points.handle(this.vertices[2].into(), ()),
+        ]
+    }
+
+    pub(super) fn set_points(&mut self, points: [DelaunayPointHandle; 3]) {
+        let mut this = self.get_mut().unwrap();
+
+        this.vertices = [
+            points[0].index().into(),
+            points[1].index().into(),
+            points[2].index().into(),
+        ]
     }
 
     pub(super) fn is_counterclockwise(&self) -> bool {
@@ -93,10 +119,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         shared_points
     }
 
-    pub(super) fn opposite_points_with(
-        &self,
-        other: &DelaunayTriangleHandle,
-    ) -> [PointId; 2] {
+    pub(super) fn opposite_points_with(&self, other: &DelaunayTriangleHandle) -> [PointId; 2] {
         let mut opposite_points = [-1; 2];
         let shared_points = self.shared_points_with(other);
 
@@ -115,24 +138,22 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         opposite_points
     }
 
-    pub(super) fn is_flippable_with(
-        &self,
-        other: &DelaunayTriangleHandle,
-        bounds: &Bounds,
-    ) -> bool {
+    pub(super) fn is_flippable_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let shared_points = self.shared_points_with(other);
-        let is_shared_edge_connected_to_bounds =
-            bounds.contains(shared_points[0]) || bounds.contains(shared_points[1]);
+        let is_shared_edge_connected_to_bounds = self
+            .points
+            .handle::<DelaunayPointHandle>(shared_points[0].into(), ())
+            .is_bounding()
+            || self
+                .points
+                .handle::<DelaunayPointHandle>(shared_points[1].into(), ())
+                .is_bounding();
 
         is_shared_edge_connected_to_bounds
     }
 
-    pub(super) fn flip_with(
-        &mut self,
-        other: &mut DelaunayTriangleHandle,
-        bounds: &Bounds,
-    ) {
-        if self.is_flippable_with(other, bounds) {
+    pub(super) fn flip_with(&mut self, other: &mut DelaunayTriangleHandle) {
+        if self.is_flippable_with(other) {
             let shared_points = self.shared_points_with(other);
             let opposite_points = self.opposite_points_with(other);
 
@@ -141,8 +162,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                 let mut other = other.get_mut().unwrap();
 
                 this.vertices = [shared_points[0], opposite_points[0], opposite_points[1]];
-                other.vertices =
-                    [shared_points[1], opposite_points[0], opposite_points[1]];
+                other.vertices = [shared_points[1], opposite_points[0], opposite_points[1]];
             }
 
             self.make_counterclockwise();

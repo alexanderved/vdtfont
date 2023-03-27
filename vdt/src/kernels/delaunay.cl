@@ -1,4 +1,5 @@
 typedef long PointId;
+typedef long TriangleId;
 
 typedef struct VoronoiVertex {
     PointId v[4];
@@ -6,6 +7,7 @@ typedef struct VoronoiVertex {
 
 typedef struct Triangle {
     PointId vertices[3];
+    TriangleId neighbours[3];
 } Triangle;
 
 
