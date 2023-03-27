@@ -83,7 +83,7 @@ impl DelaunayFactory {
         let _bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
-        
+
         self.find_neighbours(&mut triangles)?;
         self.flip_triangles(&triangles, &points);
 

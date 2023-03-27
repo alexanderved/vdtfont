@@ -178,44 +178,25 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let shared_points = self.shared_points_with(other);
         let opposite_points = self.opposite_points_with(other);
 
-        let is_shared_edge_connected_to_bounds =
-            if shared_points.len() == 2 && opposite_points.len() == 2 {
-                println!(
-                    "Opposite: {}",
-                    !(opposite_points[0].is_bounding() || opposite_points[1].is_bounding())
-                );
-                let res = (shared_points[0].is_bounding() || shared_points[1].is_bounding())
-                    && !(opposite_points[0].is_bounding() || opposite_points[1].is_bounding());
+        let is_shared_edge_connected_to_bounds = (shared_points.len() == 2
+            && opposite_points.len() == 2)
+            && (shared_points[0].is_bounding() || shared_points[1].is_bounding())
+            && !(opposite_points[0].is_bounding() || opposite_points[1].is_bounding());
 
-                println!("Res: {}", res);
-
-                res
-            } else {
-                false
-            };
-
-        let are_by_the_same_side_after_flip =
-            if shared_points.len() == 2 && opposite_points.len() == 2 {
-                let res = shared_points[0]
+        let are_by_the_same_side_after_flip = (shared_points.len() == 2
+            && opposite_points.len() == 2)
+            && shared_points[0]
+                .cross_product(&opposite_points[0], &opposite_points[1])
+                .signum()
+                != shared_points[1]
                     .cross_product(&opposite_points[0], &opposite_points[1])
-                    .signum()
-                    != shared_points[1]
-                        .cross_product(&opposite_points[0], &opposite_points[1])
-                        .signum();
-
-                println!("Cross: {}", res);
-
-                res
-            } else {
-                false
-            };
+                    .signum();
 
         is_shared_edge_connected_to_bounds && are_by_the_same_side_after_flip
     }
 
     pub(super) fn flip_with(&mut self, other: &mut DelaunayTriangleHandle<'arena>) -> bool {
         if self.is_flippable_with(other) {
-            println!("Flip");
             let mut neighbours = self.surrounding(other);
 
             {
