@@ -4,6 +4,8 @@ use crate::delaunay::{bounds::Bounds, DelaunayPoint, PointId};
 
 use arena_system::{Arena, Handle, RawHandle};
 
+use super::DelaunayPointHandle;
+
 pub(super) type TriangleId = i64;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -17,13 +19,14 @@ impl DelaunayTriangle {
         Self { vertices }
     }
 
-    pub(super) fn is_counterclockwise(&self, points: &Vec<DelaunayPoint>) -> bool {
-        points[self.vertices[1] as usize]
-            .cross_product(&points[self.vertices[0] as usize], &points[self.vertices[2] as usize])
-            < 0.0
+    pub(super) fn is_counterclockwise(&self, points: &Arena<DelaunayPoint>) -> bool {
+        points.handle::<DelaunayPointHandle>(self.vertices[1].into(), ()).cross_product(
+            &points.handle(self.vertices[0].into(), ()),
+            &points.handle(self.vertices[2].into(), ()),
+        ) < 0.0
     }
 
-    pub(super) fn make_counterclockwise(&mut self, points: &Vec<DelaunayPoint>) {
+    pub(super) fn make_counterclockwise(&mut self, points: &Arena<DelaunayPoint>) {
         if !self.is_counterclockwise(points) {
             unsafe {
                 let vertex1 = &mut self.vertices[1] as *mut _;
@@ -91,7 +94,7 @@ impl DelaunayTriangle {
         &mut self,
         other_id: TriangleId,
         triangles: &mut Vec<DelaunayTriangle>,
-        points: &Vec<DelaunayPoint>,
+        points: &Arena<DelaunayPoint>,
         bounds: &Bounds,
     ) {
         if self.is_flippable_with(other_id, triangles, bounds) {

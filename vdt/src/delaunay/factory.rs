@@ -61,19 +61,18 @@ impl DelaunayFactory {
             .sites()
             .iter()
             .map(|site| DelaunayPoint::new(site.x().floor(), site.y().floor(), false))
-            .collect::<Vec<DelaunayPoint>>();
-        let mut triangles = self.build_triangles(voronoi_image, &points)?;
+            .collect::<Arena<DelaunayPoint>>();
+        let mut triangles = self
+            .build_triangles(voronoi_image, &points)?
+            .into_iter()
+            .collect::<Arena<DelaunayTriangle>>();
 
         let mut voronoi_image_pixels = voronoi_image.to_pixels()?;
         let _bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
 
-        Ok(Delaunay::new(
-            dim,
-            points.into_iter().collect::<Arena<DelaunayPoint>>(),
-            triangles.into_iter().collect::<Arena<DelaunayTriangle>>(),
-        ))
+        Ok(Delaunay::new(dim, points, triangles))
     }
 
     fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {
@@ -97,7 +96,7 @@ impl DelaunayFactory {
     fn build_triangles(
         &mut self,
         voronoi_image: &VoronoiImage<'_>,
-        points: &Vec<DelaunayPoint>,
+        points: &Arena<DelaunayPoint>,
     ) -> anyhow::Result<Vec<DelaunayTriangle>> {
         let triangle_number = self.count_triangles(voronoi_image)?;
         if triangle_number == 0 {
@@ -129,7 +128,7 @@ impl DelaunayFactory {
     fn add_bounds(
         &self,
         dim: usize,
-        points: &mut Vec<DelaunayPoint>,
+        points: &mut Arena<DelaunayPoint>,
         voronoi_image_pixels: &mut Vec<Pixel>,
     ) -> Bounds {
         let first_bounding_point_id = points.len() as i64;
@@ -145,18 +144,16 @@ impl DelaunayFactory {
         ])
     }
 
-    fn add_bounding_points(&self, dim: usize, points: &mut Vec<DelaunayPoint>) {
+    fn add_bounding_points(&self, dim: usize, points: &mut Arena<DelaunayPoint>) {
         let min_x = -(dim as f32 * 10.0);
         let min_y = -(dim as f32 * 10.0);
         let max_x = dim as f32 * 10.0;
         let max_y = dim as f32 * 10.0;
 
-        points.append(&mut vec![
-            DelaunayPoint::new(min_x, min_y, true),
-            DelaunayPoint::new(max_x, min_y, true),
-            DelaunayPoint::new(max_x, max_y, true),
-            DelaunayPoint::new(min_x, max_y, true),
-        ]);
+        points.add(DelaunayPoint::new(min_x, min_y, true));
+        points.add(DelaunayPoint::new(max_x, min_y, true));
+        points.add(DelaunayPoint::new(max_x, max_y, true));
+        points.add(DelaunayPoint::new(min_x, max_y, true));
     }
 
     fn add_bounding_pixels(
@@ -195,8 +192,8 @@ impl DelaunayFactory {
     fn fix_convex_hull(
         &self,
         dim: usize,
-        points: &Vec<DelaunayPoint>,
-        triangles: &mut Vec<DelaunayTriangle>,
+        points: &Arena<DelaunayPoint>,
+        triangles: &mut Arena<DelaunayTriangle>,
         voronoi_image_pixels: &Vec<Pixel>,
     ) -> anyhow::Result<()> {
         let mut pixel_stack: Vec<&Pixel> = vec![];
@@ -216,7 +213,7 @@ impl DelaunayFactory {
 
                 let triangle = DelaunayTriangle::new([a, b, c]);
                 if triangle.is_counterclockwise(points) {
-                    triangles.push(triangle);
+                    triangles.add(triangle);
                     pixel_stack.pop();
                 } else {
                     break 'vertices;
