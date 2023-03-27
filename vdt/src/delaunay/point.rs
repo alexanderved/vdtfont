@@ -37,9 +37,9 @@ pub struct DelaunayPointHandle<'arena> {
 
 impl<'arena> DelaunayPointHandle<'arena> {
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
-        let this = self.get().unwrap().unwrap();
-        let origin = origin.get().unwrap().unwrap();
-        let other = other.get().unwrap().unwrap();
+        let this = self.get().unwrap();
+        let origin = origin.get().unwrap();
+        let other = other.get().unwrap();
 
         this.cross_product(&origin, &other)
     }

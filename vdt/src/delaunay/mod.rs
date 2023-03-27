@@ -35,22 +35,18 @@ impl Delaunay {
             .handle::<DelaunayTriangleHandle>(i.into(), &self.points)
             .get();
 
-        while let Ok(t) = tri {
-            let t = &t.unwrap();
-
+        while let Some(t) = tri {
             crate::draw_line(
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                self.points
+                *self.points
                     .handle::<DelaunayPointHandle>(t.vertices[0].into(), ())
                     .get()
-                    .unwrap()
                     .unwrap(),
-                self.points
+                *self.points
                     .handle::<DelaunayPointHandle>(t.vertices[1].into(), ())
                     .get()
-                    .unwrap()
                     .unwrap(),
             );
 
@@ -58,15 +54,13 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                self.points
+                *self.points
                     .handle::<DelaunayPointHandle>(t.vertices[1].into(), ())
                     .get()
-                    .unwrap()
                     .unwrap(),
-                self.points
+                *self.points
                     .handle::<DelaunayPointHandle>(t.vertices[2].into(), ())
                     .get()
-                    .unwrap()
                     .unwrap(),
             );
 
@@ -74,15 +68,13 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                self.points
+                *self.points
                     .handle::<DelaunayPointHandle>(t.vertices[0].into(), ())
                     .get()
-                    .unwrap()
                     .unwrap(),
-                self.points
+                *self.points
                     .handle::<DelaunayPointHandle>(t.vertices[2].into(), ())
                     .get()
-                    .unwrap()
                     .unwrap(),
             );
 

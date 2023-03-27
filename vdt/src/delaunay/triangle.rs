@@ -12,6 +12,7 @@ pub(super) type TriangleId = i64;
 #[repr(C)]
 pub(super) struct DelaunayTriangle {
     pub(super) vertices: [PointId; 3],
+    //pub(super) neighbours: [TriangleId; 3],
 }
 
 impl DelaunayTriangle {
@@ -36,79 +37,6 @@ impl DelaunayTriangle {
             }
         }
     }
-
-    pub(super) fn shared_points_with(
-        &self,
-        other_id: TriangleId,
-        triangles: &Vec<DelaunayTriangle>,
-    ) -> [PointId; 2] {
-        let mut shared_points = [-1; 2];
-        let mut last_shared_point = 0;
-
-        for point_id in self.vertices {
-            for other_point_id in triangles[other_id as usize].vertices {
-                if point_id == other_point_id {
-                    shared_points[last_shared_point] = point_id;
-                    last_shared_point += 1;
-                }
-            }
-        }
-
-        shared_points
-    }
-
-    pub(super) fn opposite_points_with(
-        &self,
-        other_id: TriangleId,
-        triangles: &Vec<DelaunayTriangle>,
-    ) -> [PointId; 2] {
-        let mut opposite_points = [-1; 2];
-        let shared_points = self.shared_points_with(other_id, triangles);
-
-        for (i, triangle) in [self, &triangles[other_id as usize]].into_iter().enumerate() {
-            for point_id in triangle.vertices {
-                if !shared_points.contains(&point_id) {
-                    opposite_points[i] = point_id;
-                    break;
-                }
-            }
-        }
-
-        opposite_points
-    }
-
-    pub(super) fn is_flippable_with(
-        &self,
-        other_id: TriangleId,
-        triangles: &Vec<DelaunayTriangle>,
-        bounds: &Bounds,
-    ) -> bool {
-        let shared_points = self.shared_points_with(other_id, triangles);
-        let is_shared_edge_connected_to_bounds =
-            bounds.contains(shared_points[0]) || bounds.contains(shared_points[1]);
-
-        is_shared_edge_connected_to_bounds
-    }
-
-    pub(super) fn flip_with(
-        &mut self,
-        other_id: TriangleId,
-        triangles: &mut Vec<DelaunayTriangle>,
-        points: &Arena<DelaunayPoint>,
-        bounds: &Bounds,
-    ) {
-        if self.is_flippable_with(other_id, triangles, bounds) {
-            let shared_points = self.shared_points_with(other_id, triangles);
-            let opposite_points = self.opposite_points_with(other_id, triangles);
-
-            self.vertices = [shared_points[0], opposite_points[0], opposite_points[1]];
-            triangles[other_id as usize].vertices =
-                [shared_points[1], opposite_points[0], opposite_points[1]];
-
-            self.make_counterclockwise(points);
-            triangles[other_id as usize].make_counterclockwise(points);
-        }
-    }
 }
 
 impl std::default::Default for DelaunayTriangle {
@@ -122,6 +50,105 @@ unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 pub(super) struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
     points: &'arena Arena<DelaunayPoint>,
+}
+
+impl<'arena> DelaunayTriangleHandle<'arena> {
+    pub(super) fn point_ids(&self) -> [PointId; 3] {
+        let this = self.get().unwrap();
+
+        this.vertices
+    }
+
+    pub(super) fn is_counterclockwise(&self) -> bool {
+        let this = self.get().unwrap();
+
+        this.is_counterclockwise(self.points)
+    }
+
+    pub(super) fn make_counterclockwise(&mut self) {
+        let mut this = self.get_mut().unwrap();
+
+        this.make_counterclockwise(self.points);
+    }
+
+    pub(super) fn shared_points_with(
+        &self,
+        other: &DelaunayTriangleHandle<'arena>,
+    ) -> [PointId; 2] {
+        let mut shared_points = [-1; 2];
+        let mut last_shared_point = 0;
+
+        let point_ids = self.point_ids();
+        let other_point_ids = other.point_ids();
+
+        for point_id in point_ids {
+            for other_point_id in other_point_ids {
+                if point_id == other_point_id {
+                    shared_points[last_shared_point] = point_id;
+                    last_shared_point += 1;
+                }
+            }
+        }
+
+        shared_points
+    }
+
+    pub(super) fn opposite_points_with(
+        &self,
+        other: &DelaunayTriangleHandle,
+    ) -> [PointId; 2] {
+        let mut opposite_points = [-1; 2];
+        let shared_points = self.shared_points_with(other);
+
+        let point_ids = self.point_ids();
+        let other_point_ids = other.point_ids();
+
+        for (i, point_ids) in [point_ids, other_point_ids].into_iter().enumerate() {
+            for point_id in point_ids {
+                if !shared_points.contains(&point_id) {
+                    opposite_points[i] = point_id;
+                    break;
+                }
+            }
+        }
+
+        opposite_points
+    }
+
+    pub(super) fn is_flippable_with(
+        &self,
+        other: &DelaunayTriangleHandle,
+        bounds: &Bounds,
+    ) -> bool {
+        let shared_points = self.shared_points_with(other);
+        let is_shared_edge_connected_to_bounds =
+            bounds.contains(shared_points[0]) || bounds.contains(shared_points[1]);
+
+        is_shared_edge_connected_to_bounds
+    }
+
+    pub(super) fn flip_with(
+        &mut self,
+        other: &mut DelaunayTriangleHandle,
+        bounds: &Bounds,
+    ) {
+        if self.is_flippable_with(other, bounds) {
+            let shared_points = self.shared_points_with(other);
+            let opposite_points = self.opposite_points_with(other);
+
+            {
+                let mut this = self.get_mut().unwrap();
+                let mut other = other.get_mut().unwrap();
+
+                this.vertices = [shared_points[0], opposite_points[0], opposite_points[1]];
+                other.vertices =
+                    [shared_points[1], opposite_points[0], opposite_points[1]];
+            }
+
+            self.make_counterclockwise();
+            other.make_counterclockwise();
+        }
+    }
 }
 
 impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {

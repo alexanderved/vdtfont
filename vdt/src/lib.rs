@@ -1,5 +1,4 @@
 pub mod delaunay;
-pub mod list;
 pub mod opencl;
 pub mod voronoi;
 
