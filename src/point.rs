@@ -7,12 +7,12 @@ use arena_system::{Handle, RawHandle};
 pub(super) type PointId = i64;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub struct DelaunayPoint {
+pub struct Point {
     coords: Float2,
     is_bounding: bool,
 }
 
-impl DelaunayPoint {
+impl Point {
     pub fn new(x: f32, y: f32, is_bounding: bool) -> Self {
         Self { coords: Float2::new(x, y), is_bounding }
     }
@@ -42,11 +42,11 @@ impl DelaunayPoint {
 }
 
 #[derive(Debug, Clone)]
-pub struct DelaunayPointHandle<'arena> {
-    raw: RawHandle<'arena, DelaunayPoint>,
+pub struct PointHandle<'arena> {
+    raw: RawHandle<'arena, Point>,
 }
 
-impl<'arena> DelaunayPointHandle<'arena> {
+impl<'arena> PointHandle<'arena> {
     pub fn is_bounding(&self) -> bool {
         self.get().unwrap().is_bounding
     }
@@ -60,8 +60,8 @@ impl<'arena> DelaunayPointHandle<'arena> {
     }
 }
 
-impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
-    type Type = DelaunayPoint;
+impl<'arena> Handle<'arena> for PointHandle<'arena> {
+    type Type = Point;
     type Userdata = ();
 
     fn from_raw(raw: RawHandle<'arena, Self::Type>, _userdata: Self::Userdata) -> Self {
@@ -73,10 +73,10 @@ impl<'arena> Handle<'arena> for DelaunayPointHandle<'arena> {
     }
 }
 
-impl PartialEq for DelaunayPointHandle<'_> {
+impl PartialEq for PointHandle<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.index() == other.index()
     }
 }
 
-impl Eq for DelaunayPointHandle<'_> {}
+impl Eq for PointHandle<'_> {}

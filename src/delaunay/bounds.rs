@@ -1,4 +1,4 @@
-use super::point::PointId;
+use crate::point::PointId;
 
 pub(crate) struct Bounds([PointId; 4]);
 
@@ -7,7 +7,7 @@ impl Bounds {
         Self(point_ids)
     }
 
-    pub(crate) fn contains(&self, point_id: PointId) -> bool {
+    pub(crate) fn _contains(&self, point_id: PointId) -> bool {
         self.0.contains(&point_id)
     }
 }

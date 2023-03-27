@@ -1,11 +1,9 @@
 #![allow(unused)]
 
-use crate::delaunay::{DelaunayPoint, PointId};
+use crate::point::{Point, PointId, PointHandle};
 
 use arena_system::{Arena, Handle, RawHandle};
 use smallvec::SmallVec;
-
-use super::DelaunayPointHandle;
 
 pub(super) type TriangleId = i64;
 
@@ -22,9 +20,9 @@ impl DelaunayTriangle {
         Self { vertices, neighbours: [-1; 3], neighbours_number: 0 }
     }
 
-    pub(super) fn is_counterclockwise(&self, points: &Arena<DelaunayPoint>) -> bool {
+    pub(super) fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
         points
-            .handle::<DelaunayPointHandle>(self.vertices[1].into(), ())
+            .handle::<PointHandle>(self.vertices[1].into(), ())
             .cross_product(
                 &points.handle(self.vertices[0].into(), ()),
                 &points.handle(self.vertices[2].into(), ()),
@@ -32,7 +30,7 @@ impl DelaunayTriangle {
             < 0.0
     }
 
-    pub(super) fn make_counterclockwise(&mut self, points: &Arena<DelaunayPoint>) {
+    pub(super) fn make_counterclockwise(&mut self, points: &Arena<Point>) {
         if !self.is_counterclockwise(points) {
             unsafe {
                 let vertex1 = &mut self.vertices[1] as *mut _;
@@ -55,11 +53,11 @@ unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 #[derive(Debug, Clone)]
 pub(super) struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
-    points: &'arena Arena<DelaunayPoint>,
+    points: &'arena Arena<Point>,
 }
 
 impl<'arena> DelaunayTriangleHandle<'arena> {
-    pub(super) fn points(&self) -> [DelaunayPointHandle<'arena>; 3] {
+    pub(super) fn points(&self) -> [PointHandle<'arena>; 3] {
         let vertices = self.get().unwrap().vertices;
 
         [
@@ -69,7 +67,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         ]
     }
 
-    pub(super) fn set_points(&self, points: [DelaunayPointHandle; 3]) {
+    pub(super) fn set_points(&self, points: [PointHandle; 3]) {
         let mut this = self.get_mut().unwrap();
 
         this.vertices =
@@ -134,8 +132,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     pub(super) fn shared_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
-    ) -> SmallVec<[DelaunayPointHandle; 2]> {
-        let mut shared_points = SmallVec::<[DelaunayPointHandle; 2]>::new();
+    ) -> SmallVec<[PointHandle; 2]> {
+        let mut shared_points = SmallVec::<[PointHandle; 2]>::new();
 
         let points = self.points();
         let other_points = other.points();
@@ -155,8 +153,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     pub(super) fn opposite_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
-    ) -> SmallVec<[DelaunayPointHandle; 2]> {
-        let mut opposite_points = SmallVec::<[DelaunayPointHandle; 2]>::new();
+    ) -> SmallVec<[PointHandle; 2]> {
+        let mut opposite_points = SmallVec::<[PointHandle; 2]>::new();
         let shared_points = self.shared_points_with(other);
 
         let points = self.points();
@@ -240,7 +238,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
 impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {
     type Type = DelaunayTriangle;
-    type Userdata = &'arena Arena<DelaunayPoint>;
+    type Userdata = &'arena Arena<Point>;
 
     fn from_raw(raw: RawHandle<'arena, Self::Type>, userdata: Self::Userdata) -> Self {
         Self { raw, points: userdata }

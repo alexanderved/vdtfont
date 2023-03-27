@@ -1,12 +1,13 @@
 pub mod delaunay;
 pub mod opencl;
 pub mod voronoi;
+pub mod point;
 
 pub extern crate ocl;
 
 use std::{mem, time};
 
-use delaunay::DelaunayPoint;
+use point::Point;
 
 fn bench(f: impl FnOnce() -> anyhow::Result<()>) -> time::Duration {
     let now = std::time::Instant::now();
@@ -51,8 +52,8 @@ pub fn draw_line(
     bitmap: &mut Vec<f32>,
     width: usize,
     height: usize,
-    p0: DelaunayPoint,
-    p1: DelaunayPoint,
+    p0: Point,
+    p1: Point,
 ) {
     let mut x0 = p0.x();
     let mut y0 = p0.y();
