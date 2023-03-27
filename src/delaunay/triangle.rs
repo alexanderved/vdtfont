@@ -73,43 +73,41 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
     pub(super) fn neighbours(&self) -> SmallVec<[DelaunayTriangleHandle<'arena>; 3]> {
         let neighbour_ids = self.get().unwrap().neighbours;
-        let mut neighbour_handles = SmallVec::new();
-
-        for neighbour_id in neighbour_ids {
-            if neighbour_id != -1 {
-                neighbour_handles.push(self.arena().handle(neighbour_id.into(), self.points))
-            }
-        }
-
-        neighbour_handles
+        neighbour_ids
+            .into_iter()
+            .filter(|neighbour_id| *neighbour_id != -1)
+            .map(|neighbour_id| self.arena().handle(neighbour_id.into(), self.points))
+            .collect()
     }
 
-    pub(super) fn set_neghbours(&self, neighbours: SmallVec<[DelaunayTriangleHandle<'arena>; 3]>) {
-        let mut this = self.get_mut().unwrap();
+    pub(super) fn set_neghbours(
+        &self,
+        new_neighbours: SmallVec<[DelaunayTriangleHandle<'arena>; 3]>,
+    ) {
+        let mut neighbours = &mut self.get_mut().unwrap().neighbours;
+        *neighbours = [-1; 3];
 
-        let mut new_neighbours = [-1; 3];
-        for (i, neighbour) in neighbours.into_iter().enumerate() {
-            new_neighbours[i] = neighbour.index().into();
-        }
-
-        this.neighbours = new_neighbours;
+        neighbours
+            .iter_mut()
+            .zip(new_neighbours.into_iter())
+            .for_each(|(neighbour, new_neighbour)| *neighbour = new_neighbour.index().into());
     }
 
     pub(super) fn surrounding(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
-    ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 4]> {
-        let mut neighbours: SmallVec<[_; 4]> = self
+    ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
+        let mut neighbours: SmallVec<[_; 6]> = self
             .neighbours()
             .into_iter()
-            .filter(|n| n.index() != other.index())
             .collect();
 
-        for other_neighbour in other.neighbours() {
-            if !neighbours.contains(&other_neighbour) && other_neighbour != *self {
-                neighbours.push(other_neighbour);
-            }
-        }
+        let mut other_neighbours: SmallVec<[_; 3]> = other.neighbours()
+            .into_iter()
+            .filter(|other_neighbour| !neighbours.contains(&other_neighbour))
+            .collect();
+
+        neighbours.append(&mut other_neighbours);
 
         neighbours
     }
@@ -132,14 +130,10 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     ) -> SmallVec<[PointHandle; 2]> {
         let mut shared_points = SmallVec::<[PointHandle; 2]>::new();
 
-        let points = self.points();
-        let other_points = other.points();
-
-        for point in points {
-            for other_point in other_points.iter() {
-                if point == *other_point {
+        for other_point in other.points() {
+            for point in self.points() {
+                if point == other_point {
                     shared_points.push(point);
-                    break;
                 }
             }
         }
@@ -151,22 +145,12 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         &self,
         other: &DelaunayTriangleHandle<'arena>,
     ) -> SmallVec<[PointHandle; 2]> {
-        let mut opposite_points = SmallVec::<[PointHandle; 2]>::new();
         let shared_points = self.shared_points_with(other);
-
-        let points = self.points();
-        let other_points = other.points();
-
-        for points in [points, other_points].into_iter() {
-            for point in points {
-                if !shared_points.contains(&point) {
-                    opposite_points.push(point);
-                    break;
-                }
-            }
-        }
-
-        opposite_points
+        self.points()
+            .into_iter()
+            .chain(other.points().into_iter())
+            .filter(|p| !shared_points.contains(&p))
+            .collect()
     }
 
     pub(super) fn is_flippable_with(&self, other: &DelaunayTriangleHandle) -> bool {
@@ -213,15 +197,12 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             self.make_counterclockwise();
             other.make_counterclockwise();
 
-            neighbours.append(&mut SmallVec::from([self.clone(), other.clone()]));
-
             for triangle in [self, other] {
-                let mut new_neighbours = SmallVec::<[DelaunayTriangleHandle; 3]>::new();
-                for neighbour in neighbours.iter().cloned() {
-                    if triangle.shared_points_with(&neighbour).len() == 2 {
-                        new_neighbours.push(neighbour);
-                    }
-                }
+                let mut new_neighbours: SmallVec<[_; 3]> = neighbours
+                    .iter()
+                    .cloned()
+                    .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
+                    .collect();
 
                 triangle.set_neghbours(new_neighbours);
             }

@@ -5,8 +5,8 @@ mod swapchain;
 pub use factory::VoronoiImageFactory;
 pub use pixel::Pixel;
 
-pub use crate::point::{Point, PointId};
 use crate::opencl::ImageView;
+pub use crate::point::{Point, PointId};
 
 use std::borrow::Cow;
 
