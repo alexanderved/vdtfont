@@ -203,6 +203,10 @@ impl DelaunayFactory {
                 if last.nearest_site_id() == pixel.nearest_site_id() {
                     continue 'pixels;
                 }
+                
+                if pixel_stack.len() < 2 {
+                    break 'vertices;
+                }
 
                 let a = match pixel_stack.get(pixel_stack.len() - 2) {
                     Some(val) => val.nearest_site_id(),
