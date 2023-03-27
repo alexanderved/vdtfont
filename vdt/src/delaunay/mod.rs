@@ -40,11 +40,13 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                *self.points
+                *self
+                    .points
                     .handle::<DelaunayPointHandle>(t.vertices[0].into(), ())
                     .get()
                     .unwrap(),
-                *self.points
+                *self
+                    .points
                     .handle::<DelaunayPointHandle>(t.vertices[1].into(), ())
                     .get()
                     .unwrap(),
@@ -54,11 +56,13 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                *self.points
+                *self
+                    .points
                     .handle::<DelaunayPointHandle>(t.vertices[1].into(), ())
                     .get()
                     .unwrap(),
-                *self.points
+                *self
+                    .points
                     .handle::<DelaunayPointHandle>(t.vertices[2].into(), ())
                     .get()
                     .unwrap(),
@@ -68,11 +72,13 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                *self.points
+                *self
+                    .points
                     .handle::<DelaunayPointHandle>(t.vertices[0].into(), ())
                     .get()
                     .unwrap(),
-                *self.points
+                *self
+                    .points
                     .handle::<DelaunayPointHandle>(t.vertices[2].into(), ())
                     .get()
                     .unwrap(),
