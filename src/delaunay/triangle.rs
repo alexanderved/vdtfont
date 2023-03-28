@@ -2,7 +2,7 @@
 
 use crate::point::{Point, PointHandle, PointId};
 
-use arena_system::{Arena, Handle, RawHandle};
+use arena_system::{Arena, Handle, Index, RawHandle};
 use smallvec::SmallVec;
 
 pub(super) type TriangleId = i64;
@@ -80,7 +80,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
-    pub(super) fn set_neghbours(
+    pub(super) fn set_neighbours(
         &self,
         new_neighbours: SmallVec<[DelaunayTriangleHandle<'arena>; 3]>,
     ) {
@@ -93,16 +93,32 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .for_each(|(neighbour, new_neighbour)| *neighbour = new_neighbour.index().into());
     }
 
+    pub(super) fn is_neighbour(&self, neighbour: &DelaunayTriangleHandle<'arena>) -> bool {
+        self.neighbours().contains(neighbour)
+    }
+
+    pub(super) fn replace_neighbour(
+        &self,
+        index: Index,
+        new_neighbour: DelaunayTriangleHandle<'arena>,
+    ) {
+        let mut neighbours = self.neighbours();
+        let position = neighbours.iter().position(|n| n.index() == index);
+
+        if let Some(position) = position {
+            neighbours[position] = new_neighbour;
+            self.set_neighbours(neighbours);
+        }
+    }
+
     pub(super) fn surrounding(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
     ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
-        let mut neighbours: SmallVec<[_; 6]> = self
-            .neighbours()
-            .into_iter()
-            .collect();
+        let mut neighbours: SmallVec<[_; 6]> = self.neighbours().into_iter().collect();
 
-        let mut other_neighbours: SmallVec<[_; 3]> = other.neighbours()
+        let mut other_neighbours: SmallVec<[_; 3]> = other
+            .neighbours()
             .into_iter()
             .filter(|other_neighbour| !neighbours.contains(&other_neighbour))
             .collect();
@@ -197,14 +213,26 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             self.make_counterclockwise();
             other.make_counterclockwise();
 
-            for triangle in [self, other] {
+            let triangles = [self, other];
+
+            for i in 0..triangles.len() {
+                let triangle = &*triangles[i];
+                let other_triangle = &*triangles[(i + 1) % 2];
+
                 let mut new_neighbours: SmallVec<[_; 3]> = neighbours
                     .iter()
                     .cloned()
                     .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
+                    .map(|neighbour| {
+                        if neighbour.is_neighbour(other_triangle) {
+                            neighbour.replace_neighbour(other_triangle.index(), triangle.clone());
+                        }
+
+                        neighbour
+                    })
                     .collect();
 
-                triangle.set_neghbours(new_neighbours);
+                triangle.set_neighbours(new_neighbours);
             }
 
             true
