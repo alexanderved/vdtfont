@@ -9,7 +9,7 @@ pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
 
 fn generate_random_points(dim: usize) -> Vec<Point> {
     let mut rng = rand::thread_rng();
-    let len: usize = rng.gen_range(30..=30); //=dim.min(512));
+    let len: usize = rng.gen_range(128..=128); //=dim.min(512));
 
     let res = (0..len)
         .into_iter()

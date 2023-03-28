@@ -267,19 +267,19 @@ impl DelaunayFactory {
     }
 
     fn flip_triangles(&self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
-        loop {
-            let mut is_changed = false;
-            for i in 0..triangles.len() {
-                let mut handle = triangles.handle::<DelaunayTriangleHandle>(i.into(), points);
+        let mut is_flipped = true;
+        while is_flipped {
+            is_flipped = (0..triangles.len())
+                .into_iter()
+                .map(|i| i.into())
+                .map(|i| triangles.handle::<DelaunayTriangleHandle>(i, points))
+                .fold(false, |mut is_flipped, mut handle| {
+                    for mut neighbour in handle.neighbours() {
+                        is_flipped |= handle.flip_with(&mut neighbour);
+                    }
 
-                for mut neighbour in handle.neighbours() {
-                    is_changed = is_changed || handle.flip_with(&mut neighbour);
-                }
-            }
-
-            if !is_changed {
-                break;
-            }
+                    is_flipped
+                });
         }
     }
 }
