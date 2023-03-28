@@ -134,10 +134,12 @@ impl VoronoiImageFactory {
             .set_default_global_work_size((dim, dim).into())
             .set_default_local_work_size((8, 8).into());
 
+        #[allow(non_snake_case)]
+        let N = dim;
         let max_n = dim.ilog2();
         iter::once(max_n)
             .chain(1..=max_n)
-            .map(|n| dim / (1 << n))
+            .map(|n| N / (1 << n))
             .for_each(|k| {
                 self.swapchain
                     .render(|last_frame, next_frame| {
