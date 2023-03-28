@@ -1,3 +1,4 @@
+use arena_system::Arena;
 use rand::Rng;
 
 use vdtfont::delaunay::{Delaunay, DelaunayFactory};
@@ -68,7 +69,7 @@ fn main() -> anyhow::Result<()> {
         ocl::Queue::new(&context, device, Some(ocl::CommandQueueProperties::PROFILING_ENABLE))?;
 
     let dim = IMG_DIM / 2;
-    let random = generate_random_points(dim);
+    let random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
 
     //let now = std::time::Instant::now();
 
@@ -77,7 +78,7 @@ fn main() -> anyhow::Result<()> {
 
     let now = std::time::Instant::now();
 
-    let voronoi_image = voronoi_image_factory.construct_borrowed(random.clone(), dim)?;
+    let voronoi_image = voronoi_image_factory.construct_borrowed(random, dim)?;
     let delaunay = delaunay_factory.construct(&voronoi_image)?;
 
     let dur = now.elapsed();

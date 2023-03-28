@@ -3,6 +3,7 @@ pub mod opencl;
 pub mod point;
 pub mod voronoi;
 
+pub extern crate arena_system;
 pub extern crate ocl;
 
 use std::{mem, time};

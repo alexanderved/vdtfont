@@ -1,4 +1,4 @@
-use arena_system::{Arena, Handle};
+use arena_system::{Arena, Handle, RawHandle};
 
 use super::bounds::Bounds;
 use super::triangle::{DelaunayTriangle, TriangleId};
@@ -6,7 +6,7 @@ use super::Delaunay;
 
 use crate::delaunay::DelaunayTriangleHandle;
 use crate::opencl::Buffer;
-use crate::point::{Point, PointId};
+use crate::point::{Point, PointHandle, PointId};
 use crate::voronoi::{Pixel, VoronoiImage};
 
 pub struct DelaunayFactory {
@@ -71,7 +71,7 @@ impl DelaunayFactory {
         let dim = voronoi_image.dim();
         let mut points = voronoi_image
             .sites()
-            .iter()
+            .handle_iter::<PointHandle>(())
             .map(|site| Point::new(site.x().floor(), site.y().floor(), false, -1))
             .collect::<Arena<Point>>();
         let mut triangles = self
@@ -246,8 +246,10 @@ impl DelaunayFactory {
     }
 
     fn find_neighbours(&mut self, triangles: &mut Arena<DelaunayTriangle>) -> anyhow::Result<()> {
-        let mut triangles_vec: Vec<DelaunayTriangle> =
-            triangles.handle_iter().map(|h| *h.get().unwrap()).collect();
+        let mut triangles_vec: Vec<DelaunayTriangle> = triangles
+            .handle_iter::<RawHandle<DelaunayTriangle>>(())
+            .map(|h| *h.get().unwrap())
+            .collect();
         self.triangles_buffer.write(&triangles_vec)?;
 
         self.find_neighbours_kernel

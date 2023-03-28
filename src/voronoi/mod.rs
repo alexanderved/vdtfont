@@ -10,10 +10,12 @@ pub use crate::point::{Point, PointId};
 
 use std::borrow::Cow;
 
+use arena_system::Arena;
+
 pub struct VoronoiImage<'a> {
     dim: usize,
 
-    sites: Vec<Point>,
+    sites: Arena<Point>,
     image: Cow<'a, ImageView<i32>>,
 }
 
@@ -22,7 +24,7 @@ impl<'a> VoronoiImage<'a> {
         self.dim
     }
 
-    pub fn sites(&self) -> &Vec<Point> {
+    pub fn sites(&self) -> &Arena<Point> {
         &self.sites
     }
 
@@ -48,7 +50,7 @@ impl<'a> VoronoiImage<'a> {
             .collect())
     }
 
-    fn new(dim: usize, sites: Vec<Point>, image: Cow<'a, ImageView<i32>>) -> Self {
+    fn new(dim: usize, sites: Arena<Point>, image: Cow<'a, ImageView<i32>>) -> Self {
         Self { dim, sites, image }
     }
 }

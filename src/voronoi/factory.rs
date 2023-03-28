@@ -1,9 +1,11 @@
+use arena_system::Arena;
+
 use super::swapchain::Swapchain;
 use super::VoronoiImage;
 
 use crate::ocl::{self, prm::Float2};
 use crate::opencl::Buffer;
-use crate::point::Point;
+use crate::point::{Point, PointHandle};
 
 use std::{borrow::Cow, iter};
 
@@ -70,7 +72,7 @@ impl VoronoiImageFactory {
 
     pub fn construct_owned(
         &mut self,
-        sites: Vec<Point>,
+        sites: Arena<Point>,
         dim: usize,
     ) -> anyhow::Result<VoronoiImage<'static>> {
         self.draw_voronoi(&sites, dim)?;
@@ -82,7 +84,7 @@ impl VoronoiImageFactory {
 
     pub fn construct_borrowed<'s>(
         &'s mut self,
-        sites: Vec<Point>,
+        sites: Arena<Point>,
         dim: usize,
     ) -> anyhow::Result<VoronoiImage<'s>> {
         self.draw_voronoi(&sites, dim)?;
@@ -90,7 +92,7 @@ impl VoronoiImageFactory {
         Ok(VoronoiImage::new(dim, sites, Cow::Borrowed(self.swapchain.last())))
     }
 
-    fn draw_voronoi(&mut self, sites: &Vec<Point>, dim: usize) -> anyhow::Result<()> {
+    fn draw_voronoi(&mut self, sites: &Arena<Point>, dim: usize) -> anyhow::Result<()> {
         self.swapchain.set_dim(dim)?;
         self.swapchain.clear()?;
 
@@ -101,8 +103,11 @@ impl VoronoiImageFactory {
         Ok(())
     }
 
-    fn plot_sites(&mut self, sites: &Vec<Point>) -> anyhow::Result<()> {
-        let raw_sites = sites.iter().map(|s| s.coords()).collect::<Vec<Float2>>();
+    fn plot_sites(&mut self, sites: &Arena<Point>) -> anyhow::Result<()> {
+        let raw_sites = sites
+            .handle_iter::<PointHandle>(())
+            .map(|s| s.coords())
+            .collect::<Vec<Float2>>();
         self.sites_buffer.write(&raw_sites)?;
 
         self.plot_sites_kernel
@@ -129,15 +134,16 @@ impl VoronoiImageFactory {
             .set_default_global_work_size((dim, dim).into())
             .set_default_local_work_size((8, 8).into());
 
-        iter::once(dim.ilog2())
-            .chain(1..=dim.ilog2())
-            .map(|v| dim / (1 << v))
-            .for_each(|v| {
+        let max_n = dim.ilog2();
+        iter::once(max_n)
+            .chain(1..=max_n)
+            .map(|n| dim / (1 << n))
+            .for_each(|k| {
                 self.swapchain
                     .render(|last_frame, next_frame| {
                         self.fill_voronoi_kernel.set_arg(0, last_frame.ocl_image())?;
                         self.fill_voronoi_kernel.set_arg(1, next_frame.ocl_image())?;
-                        self.fill_voronoi_kernel.set_arg(2, v as i32)?;
+                        self.fill_voronoi_kernel.set_arg(2, k as i32)?;
 
                         unsafe {
                             self.fill_voronoi_kernel.enq()?;
