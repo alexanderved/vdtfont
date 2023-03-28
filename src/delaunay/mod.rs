@@ -2,9 +2,9 @@ mod bounds;
 mod factory;
 mod triangle;
 
+pub(crate) use bounds::*;
 pub use factory::DelaunayFactory;
 pub use triangle::*;
-//pub(crate) use bounds::*;
 
 use crate::point::*;
 
@@ -15,6 +15,8 @@ pub struct Delaunay {
 
     points: Arena<Point>,
     triangles: Arena<DelaunayTriangle>,
+
+    bounds: Bounds,
 }
 
 impl Delaunay {
@@ -70,7 +72,12 @@ impl Delaunay {
         bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * a) as u8]).collect()
     }
 
-    fn new(dim: usize, points: Arena<Point>, triangles: Arena<DelaunayTriangle>) -> Self {
-        Self { dim, points, triangles }
+    fn new(
+        dim: usize,
+        points: Arena<Point>,
+        triangles: Arena<DelaunayTriangle>,
+        bounds: Bounds,
+    ) -> Self {
+        Self { dim, points, triangles, bounds }
     }
 }

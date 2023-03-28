@@ -80,14 +80,14 @@ impl DelaunayFactory {
             .collect::<Arena<DelaunayTriangle>>();
 
         let mut voronoi_image_pixels = voronoi_image.to_pixels()?;
-        let _bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
+        let bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
 
         self.find_neighbours(&mut triangles)?;
         self.flip_triangles(&triangles, &points);
 
-        Ok(Delaunay::new(dim, points, triangles))
+        Ok(Delaunay::new(dim, points, triangles, bounds))
     }
 
     fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {
