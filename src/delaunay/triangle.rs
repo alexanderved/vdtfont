@@ -1,33 +1,31 @@
-#![allow(unused)]
-
 use crate::point::{Point, PointHandle, PointId};
 
 use arena_system::{Arena, Handle, Index, RawHandle};
 use smallvec::SmallVec;
 
-pub(super) type TriangleId = i64;
+pub type TriangleId = i64;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
-pub(super) struct DelaunayTriangle {
-    pub(super) vertices: [PointId; 3],
-    pub(super) neighbours: [TriangleId; 3],
-    pub(super) neighbours_number: i32,
+pub struct DelaunayTriangle {
+    pub vertices: [PointId; 3],
+    pub neighbours: [TriangleId; 3],
+    pub neighbours_number: i32,
 }
 
 impl DelaunayTriangle {
-    pub(super) fn new(vertices: [PointId; 3]) -> Self {
+    pub fn new(vertices: [PointId; 3]) -> Self {
         Self { vertices, neighbours: [-1; 3], neighbours_number: 0 }
     }
 
-    pub(super) fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
+    pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
         points.handle::<PointHandle>(self.vertices[1].into(), ()).cross_product(
             &points.handle(self.vertices[0].into(), ()),
             &points.handle(self.vertices[2].into(), ()),
         ) < 0.0
     }
 
-    pub(super) fn make_counterclockwise(&mut self, points: &Arena<Point>) {
+    pub fn make_counterclockwise(&mut self, points: &Arena<Point>) {
         if !self.is_counterclockwise(points) {
             unsafe {
                 let vertex1 = &mut self.vertices[1] as *mut _;
@@ -48,13 +46,13 @@ impl std::default::Default for DelaunayTriangle {
 unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 
 #[derive(Debug, Clone)]
-pub(super) struct DelaunayTriangleHandle<'arena> {
+pub struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
     points: &'arena Arena<Point>,
 }
 
 impl<'arena> DelaunayTriangleHandle<'arena> {
-    pub(super) fn points(&self) -> [PointHandle<'arena>; 3] {
+    pub fn points(&self) -> [PointHandle<'arena>; 3] {
         let vertices = self.get().unwrap().vertices;
 
         [
@@ -64,14 +62,14 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         ]
     }
 
-    pub(super) fn set_points(&self, points: [PointHandle; 3]) {
+    pub fn set_points(&self, points: [PointHandle; 3]) {
         let mut this = self.get_mut().unwrap();
 
         this.vertices =
             [points[0].index().into(), points[1].index().into(), points[2].index().into()]
     }
 
-    pub(super) fn neighbours(&self) -> SmallVec<[DelaunayTriangleHandle<'arena>; 3]> {
+    pub fn neighbours(&self) -> SmallVec<[DelaunayTriangleHandle<'arena>; 3]> {
         let neighbour_ids = self.get().unwrap().neighbours;
         neighbour_ids
             .into_iter()
@@ -80,11 +78,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
-    pub(super) fn set_neighbours(
-        &self,
-        new_neighbours: SmallVec<[DelaunayTriangleHandle<'arena>; 3]>,
-    ) {
-        let mut neighbours = &mut self.get_mut().unwrap().neighbours;
+    pub fn set_neighbours(&self, new_neighbours: SmallVec<[DelaunayTriangleHandle<'arena>; 3]>) {
+        let neighbours = &mut self.get_mut().unwrap().neighbours;
         *neighbours = [-1; 3];
 
         neighbours
@@ -93,15 +88,11 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .for_each(|(neighbour, new_neighbour)| *neighbour = new_neighbour.index().into());
     }
 
-    pub(super) fn is_neighbour(&self, neighbour: &DelaunayTriangleHandle<'arena>) -> bool {
+    pub fn is_neighbour(&self, neighbour: &DelaunayTriangleHandle<'arena>) -> bool {
         self.neighbours().contains(neighbour)
     }
 
-    pub(super) fn replace_neighbour(
-        &self,
-        index: Index,
-        new_neighbour: DelaunayTriangleHandle<'arena>,
-    ) {
+    pub fn replace_neighbour(&self, index: Index, new_neighbour: DelaunayTriangleHandle<'arena>) {
         let mut neighbours = self.neighbours();
         let position = neighbours.iter().position(|n| n.index() == index);
 
@@ -111,7 +102,19 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
-    pub(super) fn surrounding(
+    pub fn remove_neighbour(&self, index: Index) {
+        let mut neighbours = self.neighbours();
+        let position = neighbours.iter().position(|n| n.index() == index);
+
+        if let Some(position) = position {
+            neighbours[position] = self
+                .arena()
+                .handle::<DelaunayTriangleHandle>(<i64 as Into<Index>>::into(-1i64), self.points);
+            self.set_neighbours(neighbours);
+        }
+    }
+
+    pub fn surrounding(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
     ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
@@ -128,36 +131,28 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         neighbours
     }
 
-    pub(super) fn is_counterclockwise(&self) -> bool {
+    pub fn is_counterclockwise(&self) -> bool {
         let this = self.get().unwrap();
 
         this.is_counterclockwise(self.points)
     }
 
-    pub(super) fn make_counterclockwise(&mut self) {
+    pub fn make_counterclockwise(&mut self) {
         let mut this = self.get_mut().unwrap();
 
         this.make_counterclockwise(self.points);
     }
 
-    pub(super) fn shared_points_with(
+    pub fn shared_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
     ) -> SmallVec<[PointHandle; 2]> {
-        let mut shared_points = SmallVec::<[PointHandle; 2]>::new();
+        let other_points = other.points();
 
-        for other_point in other.points() {
-            for point in self.points() {
-                if point == other_point {
-                    shared_points.push(point);
-                }
-            }
-        }
-
-        shared_points
+        self.points().into_iter().filter(|p| other_points.contains(p)).collect()
     }
 
-    pub(super) fn opposite_points_with(
+    pub fn opposite_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
     ) -> SmallVec<[PointHandle; 2]> {
@@ -169,30 +164,94 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
-    pub(super) fn is_flippable_with(&self, other: &DelaunayTriangleHandle) -> bool {
+    pub fn in_circle_with(&self, other: &DelaunayTriangleHandle) -> bool {
+        let s = self.shared_points_with(other);
+        let o = self.opposite_points_with(other);
+
+        let s = [
+            *s[0].get().unwrap(),
+            *s[1].get().unwrap(),
+        ];
+        let o = [
+            *o[0].get().unwrap(),
+            *o[1].get().unwrap(),
+        ];
+        let p = [o[0], s[1], o[1], s[0]];
+
+        let center = p[3];
+        let mut points = p[0..3]
+            .into_iter()
+            .map(|p| Point::new(p.x() - center.x(), p.y() - center.y(), false, -1))
+            .collect::<Vec<Point>>();
+
+        points.sort_by(|a, b| {
+            libm::atan2f(a.y(), a.x())
+                .partial_cmp(&libm::atan2f(b.y(), b.x()))
+                .unwrap()
+        });
+
+        let p = points.into_iter().rev().collect::<Vec<Point>>();
+
+        let abdet = p[0].x() * p[1].y() - p[1].x() * p[0].y();
+        let bcdet = p[1].x() * p[2].y() - p[2].x() * p[1].y();
+        let cadet = p[2].x() * p[0].y() - p[0].x() * p[2].y();
+
+        let alift = p[0].x() * p[0].x() + p[0].y() * p[0].y();
+        let blift = p[1].x() * p[1].x() + p[1].y() * p[1].y();
+        let clift = p[2].x() * p[2].x() + p[2].y() * p[2].y();
+
+        alift * bcdet + blift * cadet + clift * abdet > 0.0
+    }
+
+    pub fn is_flippable_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let shared_points = self.shared_points_with(other);
         let opposite_points = self.opposite_points_with(other);
 
-        let is_shared_edge_connected_to_bounds = (shared_points.len() == 2
-            && opposite_points.len() == 2)
-            && (shared_points[0].is_bounding() || shared_points[1].is_bounding())
-            && !(opposite_points[0].is_bounding() || opposite_points[1].is_bounding());
+        if !(shared_points.len() == 2 && opposite_points.len() == 2) {
+            return false;
+        }
 
-        let are_by_the_same_side_after_flip = (shared_points.len() == 2
-            && opposite_points.len() == 2)
-            && shared_points[0]
+        let is_shared_edge_connected_to_bounds =
+            shared_points[0].is_bounding() || shared_points[1].is_bounding();
+
+        let by_the_same_side_after_flip = shared_points[0]
+            .cross_product(&opposite_points[0], &opposite_points[1])
+            .signum()
+            == shared_points[1]
                 .cross_product(&opposite_points[0], &opposite_points[1])
-                .signum()
-                != shared_points[1]
-                    .cross_product(&opposite_points[0], &opposite_points[1])
-                    .signum();
+                .signum();
 
-        is_shared_edge_connected_to_bounds && are_by_the_same_side_after_flip
+        let is_contour = shared_points[0].previous_in_outline() == shared_points[1]
+            || shared_points[1].previous_in_outline() == shared_points[0];
+
+        let satisfies_delaunay_condition = !self.in_circle_with(other);
+
+        if by_the_same_side_after_flip {
+            return false;
+        }
+
+        if is_shared_edge_connected_to_bounds { 
+            return true;
+        }
+
+        if is_contour {
+            return false;
+        }
+
+        if satisfies_delaunay_condition {
+            return false;
+        }
+
+        true
     }
 
-    pub(super) fn flip_with(&mut self, other: &mut DelaunayTriangleHandle<'arena>) -> bool {
-        if self.is_flippable_with(other) {
-            let mut neighbours = self.surrounding(other);
+    pub fn flip_with(
+        &mut self,
+        other: &mut DelaunayTriangleHandle<'arena>,
+        mut deep: usize,
+    ) -> bool {
+        if self.is_flippable_with(other) && deep != 0 {
+            let neighbours = self.surrounding(other);
 
             {
                 let shared_points = self.shared_points_with(other);
@@ -213,13 +272,13 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             self.make_counterclockwise();
             other.make_counterclockwise();
 
-            let triangles = [self, other];
+            let triangles = [&*self, &*other];
 
             for i in 0..triangles.len() {
-                let triangle = &*triangles[i];
-                let other_triangle = &*triangles[(i + 1) % 2];
+                let triangle = triangles[i];
+                let other_triangle = triangles[(i + 1) % 2];
 
-                let mut new_neighbours: SmallVec<[_; 3]> = neighbours
+                let new_neighbours: SmallVec<[_; 3]> = neighbours
                     .iter()
                     .cloned()
                     .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
@@ -234,6 +293,16 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
                 triangle.set_neighbours(new_neighbours);
             }
+
+            deep -= 1;
+
+            self.neighbours().into_iter().filter(|n| *n != *other).for_each(|mut n| {
+                self.flip_with(&mut n, deep);
+            });
+
+            other.neighbours().into_iter().filter(|n| *n != *self).for_each(|mut n| {
+                other.flip_with(&mut n, deep);
+            });
 
             true
         } else {

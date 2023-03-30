@@ -30,8 +30,34 @@ impl Point {
         self.coords
     }
 
+    pub fn set_coords(&mut self, coords: Float2) {
+        self.coords = coords;
+    }
+
     pub fn is_bounding(&self) -> bool {
         self.is_bounding
+    }
+
+    pub fn previous_in_outline(&self) -> PointId {
+        self.previous_in_outline
+    }
+
+    pub fn set_previous_in_outline(&mut self, previous_in_outline: PointId) {
+        self.previous_in_outline = previous_in_outline;
+    }
+
+    pub fn midpoint(&self, other: &Point) -> Point {
+        Point::new((self.x() + other.x()) / 2.0, (self.y() + other.y()) / 2.0, false, -1)
+    }
+
+    pub fn distance_squared(&self, other: &Point) -> f32 {
+        let p = Point::new(self.x() - other.x(), self.y() - other.y(), false, -1);
+
+        p.x().powi(2) + p.y().powi(2)
+    }
+
+    pub fn distance(&self, other: &Point) -> f32 {
+        self.distance_squared(other).sqrt()
     }
 
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
@@ -64,10 +90,16 @@ impl<'arena> PointHandle<'arena> {
         self.get().unwrap().is_bounding
     }
 
+    pub fn previous_in_outline(&self) -> PointHandle<'arena> {
+        let this = self.get().expect("Can't get the point");
+
+        self.arena().handle(this.previous_in_outline().into(), ())
+    }
+
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
-        let this = self.get().unwrap();
-        let origin = origin.get().unwrap();
-        let other = other.get().unwrap();
+        let this = self.get().expect("Can't get the point");
+        let origin = origin.get().expect("Can't get the origin point");
+        let other = other.get().expect("Can't get the other point");
 
         this.cross_product(&origin, &other)
     }

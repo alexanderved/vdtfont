@@ -137,24 +137,21 @@ impl VoronoiImageFactory {
         #[allow(non_snake_case)]
         let N = dim;
         let max_n = dim.ilog2();
-        iter::once(max_n)
-            .chain(1..=max_n)
-            .map(|n| N / (1 << n))
-            .for_each(|k| {
-                self.swapchain
-                    .render(|last_frame, next_frame| {
-                        self.fill_voronoi_kernel.set_arg(0, last_frame.ocl_image())?;
-                        self.fill_voronoi_kernel.set_arg(1, next_frame.ocl_image())?;
-                        self.fill_voronoi_kernel.set_arg(2, k as i32)?;
+        iter::once(max_n).chain(1..=max_n).map(|n| N / (1 << n)).for_each(|k| {
+            self.swapchain
+                .render(|last_frame, next_frame| {
+                    self.fill_voronoi_kernel.set_arg(0, last_frame.ocl_image())?;
+                    self.fill_voronoi_kernel.set_arg(1, next_frame.ocl_image())?;
+                    self.fill_voronoi_kernel.set_arg(2, k as i32)?;
 
-                        unsafe {
-                            self.fill_voronoi_kernel.enq()?;
-                        }
+                    unsafe {
+                        self.fill_voronoi_kernel.enq()?;
+                    }
 
-                        Ok(())
-                    })
-                    .unwrap();
-            });
+                    Ok(())
+                })
+                .unwrap();
+        });
 
         Ok(())
     }
@@ -182,6 +179,8 @@ impl VoronoiImageFactory {
 
             let changed_pixels_number = self.changed_pixels_number_buffer.first()?;
             self.changed_pixels_number_buffer.clear()?;
+
+            println!("Changed pixel number: {}", changed_pixels_number);
 
             is_conquered = changed_pixels_number != 0;
         }

@@ -14,7 +14,7 @@ pub struct Delaunay {
     dim: usize,
 
     points: Arena<Point>,
-    triangles: Arena<DelaunayTriangle>,
+    pub triangles: Arena<DelaunayTriangle>,
 
     bounds: Bounds,
 }

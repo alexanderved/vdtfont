@@ -72,7 +72,14 @@ impl DelaunayFactory {
         let mut points = voronoi_image
             .sites()
             .handle_iter::<PointHandle>(())
-            .map(|site| Point::new(site.x().floor(), site.y().floor(), false, -1))
+            .map(|site| {
+                Point::new(
+                    site.x().floor(),
+                    site.y().floor(),
+                    false,
+                    site.previous_in_outline().index().into(),
+                )
+            })
             .collect::<Arena<Point>>();
         let mut triangles = self
             .build_triangles(voronoi_image, &points)?
@@ -269,20 +276,13 @@ impl DelaunayFactory {
     }
 
     fn flip_triangles(&self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
-        let mut is_flipped = true;
-        while is_flipped {
-            is_flipped = (0..triangles.len())
-                .into_iter()
-                .map(|i| i.into())
-                .map(|i| triangles.handle::<DelaunayTriangleHandle>(i, points))
-                .fold(false, |mut is_flipped, mut handle| {
-                    for mut neighbour in handle.neighbours() {
-                        is_flipped |= handle.flip_with(&mut neighbour);
-                    }
-
-                    is_flipped
-                });
-        }
+        (0..triangles.len())
+            .into_iter()
+            .map(|i| i.into())
+            .map(|i| triangles.handle::<DelaunayTriangleHandle>(i, points))
+            .for_each(|mut handle| {
+                handle.neighbours().into_iter().all(|mut n| handle.flip_with(&mut n, 128));
+            });
     }
 }
 

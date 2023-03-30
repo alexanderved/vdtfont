@@ -59,7 +59,6 @@ int count_shared_points(Triangle triangle0, Triangle triangle1) {
         for (int j = 0; j < 3; j++) {
             if (triangle0.vertices[i] == triangle1.vertices[j]) {
                 shared_points_number++;
-                break;
             }
         }
     }
@@ -118,6 +117,8 @@ __kernel void build_triangles(
         for (int i = 0; i < 2; i++) {
             triangles[triangle_offset + i] = (Triangle) {
                 .vertices = { vertex.v[i], vertex.v[i + 1], vertex.v[i + 2] },
+                .neighbours = { -1, -1, -1 },
+                .neighbours_number = 0,
             };
         }
     }
@@ -131,6 +132,8 @@ __kernel void find_neighbours(__global Triangle *triangles) {
 
     if (shared_points_number == 2) {
         int neighbour_idx = atomic_add(&triangle->neighbours_number, 1);
-        triangle->neighbours[neighbour_idx] = get_global_id(1);
+        if (neighbour_idx < 3) {
+            triangle->neighbours[neighbour_idx] = get_global_id(1);
+        }
     }
 }

@@ -1,13 +1,18 @@
+#[allow(unused)]
 use arena_system::Arena;
+
+use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
-use vdtfont::delaunay::{Delaunay, DelaunayFactory};
-use vdtfont::point::Point;
+use vdtfont::delaunay::{Delaunay, DelaunayFactory, *};
+use vdtfont::point::{Point, PointHandle};
+use vdtfont::text::*;
 use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
 pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
 
+#[allow(unused)]
 fn generate_random_points(dim: usize) -> Vec<Point> {
     let mut rng = rand::thread_rng();
     let len: usize = rng.gen_range(128..=128); //=dim.min(512));
@@ -69,6 +74,51 @@ fn main() -> anyhow::Result<()> {
         ocl::Queue::new(&context, device, Some(ocl::CommandQueueProperties::PROFILING_ENABLE))?;
 
     let dim = IMG_DIM / 2;
+
+    let font =
+        include_bytes!("../../../.deprecated/font_rasterizer/examples/fonts/OpenSans-Italic.ttf");
+
+    let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
+    let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
+
+    let glyph_id = parsed_face.glyph_index('D').unwrap();
+
+    let mut outliner = outliner::Outliner::new();
+    let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
+
+    let height: f32 =
+        (parsed_face.as_face_ref().ascender() - parsed_face.as_face_ref().descender()).into();
+    let h_factor = IMG_DIM as f32 / height * 5.0 / 6.0;
+    let v_factor = IMG_DIM as f32 / height * 5.0 / 6.0;
+
+    let bounds = ttfp::Rect {
+        x_min: (rect.x_min as f32 * h_factor) as i16,
+        x_max: (rect.x_max as f32 * h_factor) as i16,
+        y_min: (rect.y_min as f32 * v_factor) as i16,
+        y_max: (rect.y_max as f32 * v_factor) as i16,
+    };
+
+    println!("The number of points: {}", outliner.points.len());
+    println!("The shortest distance: {}", outliner.smallest_distance * h_factor);
+
+    outliner.points = (0..outliner.points.len())
+        .into_iter()
+        .map(|i| {
+            let new_x = outliner.points.handle::<PointHandle>(i.into(), ()).x() * h_factor
+                - bounds.x_min as f32;
+            let new_y = bounds.height() as f32
+                - outliner.points.handle::<PointHandle>(i.into(), ()).y() * v_factor
+                + bounds.y_min as f32;
+
+            let mut point = outliner.points.try_borrow_mut(i.into()).unwrap();
+            point.set_coords(ocl::prm::Float2::new(new_x, new_y));
+
+            //println!("Point: {}, {}", new_x, new_y);
+
+            *point
+        })
+        .collect();
+
     let random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
 
     //let now = std::time::Instant::now();
@@ -78,13 +128,25 @@ fn main() -> anyhow::Result<()> {
 
     let now = std::time::Instant::now();
 
-    let voronoi_image = voronoi_image_factory.construct_borrowed(random, dim)?;
+    let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
     let delaunay = delaunay_factory.construct(&voronoi_image)?;
 
     let dur = now.elapsed();
     println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
 
     save(&voronoi_image, &delaunay, "voronoi.png")?;
+
+    /* delaunay
+    .triangles
+    .handle_iter::<DelaunayTriangleHandle>(delaunay.points())
+    .for_each(|t| {
+        let points = t.points();
+
+        print!("Triangle(");
+        print!("pointi({}, {}), ", points[0].x(), points[0].y());
+        print!("pointi({}, {}), ", points[1].x(), points[1].y());
+        println!("pointi({}, {})),", points[2].x(), points[2].y());
+    }); */
 
     Ok(())
 }
