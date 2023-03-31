@@ -249,14 +249,14 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                 let opposite_points = self.opposite_points_with(other);
 
                 self.set_points([
-                    shared_points[0].clone(),
-                    opposite_points[0].clone(),
-                    opposite_points[1].clone(),
+                    shared_points[0],
+                    opposite_points[0],
+                    opposite_points[1],
                 ]);
                 other.set_points([
-                    shared_points[1].clone(),
-                    opposite_points[0].clone(),
-                    opposite_points[1].clone(),
+                    shared_points[1],
+                    opposite_points[0],
+                    opposite_points[1],
                 ]);
             }
 
