@@ -1,7 +1,7 @@
 pub mod delaunay;
+pub mod font;
 pub mod opencl;
 pub mod point;
-pub mod font;
 pub mod voronoi;
 
 pub extern crate arena_system;

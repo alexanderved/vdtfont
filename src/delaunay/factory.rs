@@ -73,7 +73,7 @@ impl DelaunayFactory {
             .sites()
             .handle_iter::<PointHandle>(())
             .map(|site| {
-                Point::new(
+                Point::with_is_bounding_and_previous(
                     site.x().floor(),
                     site.y().floor(),
                     false,
@@ -172,10 +172,10 @@ impl DelaunayFactory {
         let max_x = dim as f32 * 10.0;
         let max_y = dim as f32 * 10.0;
 
-        points.add(Point::new(min_x, min_y, true, -1));
-        points.add(Point::new(max_x, min_y, true, -1));
-        points.add(Point::new(max_x, max_y, true, -1));
-        points.add(Point::new(min_x, max_y, true, -1));
+        points.add(Point::with_is_bounding(min_x, min_y, true));
+        points.add(Point::with_is_bounding(max_x, min_y, true));
+        points.add(Point::with_is_bounding(max_x, max_y, true));
+        points.add(Point::with_is_bounding(min_x, max_y, true));
     }
 
     fn add_bounding_pixels(

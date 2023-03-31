@@ -5,8 +5,8 @@ use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
 use vdtfont::delaunay::{Delaunay, DelaunayFactory};
-use vdtfont::point::{Point, PointHandle};
 use vdtfont::font::*;
+use vdtfont::point::{Point, PointHandle};
 use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
@@ -26,7 +26,7 @@ fn generate_random_points(dim: usize) -> Vec<Point> {
             let x_fract = rng.gen_range(0..100) as f32 / 100.0;
             let y_fract = rng.gen_range(0..100) as f32 / 100.0;
 
-            Point::new(x + x_fract, y + y_fract, false, -1)
+            Point::new(x + x_fract, y + y_fract)
         })
         .collect::<Vec<Point>>();
 
@@ -75,8 +75,7 @@ fn main() -> anyhow::Result<()> {
 
     let dim = IMG_DIM / 2;
 
-    let font =
-        include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
+    let font = include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);

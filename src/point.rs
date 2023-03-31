@@ -14,7 +14,32 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new(x: f32, y: f32, is_bounding: bool, previous_in_outline: PointId) -> Self {
+    pub fn new(x: f32, y: f32) -> Self {
+        Self { coords: Float2::new(x, y), is_bounding: false, previous_in_outline: -1 }
+    }
+
+    pub fn with_is_bounding(
+        x: f32,
+        y: f32,
+        is_bounding: bool,
+    ) -> Self {
+        Self { coords: Float2::new(x, y), is_bounding, previous_in_outline: -1 }
+    }
+
+    pub fn with_previous(
+        x: f32,
+        y: f32,
+        previous_in_outline: PointId,
+    ) -> Self {
+        Self { coords: Float2::new(x, y), is_bounding: false, previous_in_outline }
+    }
+
+    pub fn with_is_bounding_and_previous(
+        x: f32,
+        y: f32,
+        is_bounding: bool,
+        previous_in_outline: PointId,
+    ) -> Self {
         Self { coords: Float2::new(x, y), is_bounding, previous_in_outline }
     }
 
@@ -47,11 +72,11 @@ impl Point {
     }
 
     pub fn midpoint(&self, other: &Point) -> Point {
-        Point::new((self.x() + other.x()) / 2.0, (self.y() + other.y()) / 2.0, false, -1)
+        Point::new((self.x() + other.x()) / 2.0, (self.y() + other.y()) / 2.0)
     }
 
     pub fn distance_squared(&self, other: &Point) -> f32 {
-        let p = Point::new(self.x() - other.x(), self.y() - other.y(), false, -1);
+        let p = Point::new(self.x() - other.x(), self.y() - other.y());
 
         p.x().powi(2) + p.y().powi(2)
     }
@@ -90,8 +115,8 @@ impl<'arena> PointHandle<'arena> {
     }
 
     pub fn skew_product(&self, origin: &Self, other: &Self) -> f32 {
-        let a = Point::new(self.x() - origin.x(), self.y() - origin.y(), false, -1);
-        let b = Point::new(other.x() - origin.x(), other.y() - origin.y(), false, -1);
+        let a = Point::new(self.x() - origin.x(), self.y() - origin.y());
+        let b = Point::new(other.x() - origin.x(), other.y() - origin.y());
 
         a.x() * b.y() - a.y() * b.x()
     }

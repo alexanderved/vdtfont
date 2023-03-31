@@ -27,12 +27,9 @@ impl DelaunayTriangle {
 
     pub fn make_counterclockwise(&mut self, points: &Arena<Point>) {
         if !self.is_counterclockwise(points) {
-            unsafe {
-                let vertex1 = &mut self.vertices[1] as *mut _;
-                let vertex2 = &mut self.vertices[2] as *mut _;
+            let (vertices0, vertices1) = self.vertices[1..].split_at_mut(1);
 
-                std::mem::swap(&mut *vertex1, &mut *vertex2);
-            }
+            std::mem::swap(&mut vertices0[0], &mut vertices1[0]);
         }
     }
 }
@@ -103,14 +100,11 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     pub fn remove_neighbour(&self, index: Index) {
-        let mut neighbours = self.neighbours();
-        let position = neighbours.iter().position(|n| n.index() == index);
+        let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
+        let position = neighbour_ids.iter().position(|n| *n == index.into());
 
         if let Some(position) = position {
-            neighbours[position] = self
-                .arena()
-                .handle::<DelaunayTriangleHandle>(<i64 as Into<Index>>::into(-1i64), self.points);
-            self.set_neighbours(neighbours);
+            neighbour_ids[position] = -1i64;
         }
     }
 
@@ -168,20 +162,14 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
 
-        let s = [
-            *s[0].get().unwrap(),
-            *s[1].get().unwrap(),
-        ];
-        let o = [
-            *o[0].get().unwrap(),
-            *o[1].get().unwrap(),
-        ];
+        let s = [*s[0].get().unwrap(), *s[1].get().unwrap()];
+        let o = [*o[0].get().unwrap(), *o[1].get().unwrap()];
         let p = [o[0], s[1], o[1], s[0]];
 
         let center = p[3];
         let mut points = p[0..3]
             .into_iter()
-            .map(|p| Point::new(p.x() - center.x(), p.y() - center.y(), false, -1))
+            .map(|p| Point::new(p.x() - center.x(), p.y() - center.y()))
             .collect::<Vec<Point>>();
 
         points.sort_by(|a, b| {
@@ -234,7 +222,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             return false;
         }
 
-        if is_shared_edge_connected_to_bounds { 
+        if is_shared_edge_connected_to_bounds {
             return true;
         }
 
