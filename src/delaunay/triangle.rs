@@ -259,7 +259,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             self.make_counterclockwise();
             other.make_counterclockwise();
 
-            let triangles = [&*self, &*other];
+            let triangles = [*self, *other];
 
             for i in 0..triangles.len() {
                 let triangle = triangles[i];
@@ -267,11 +267,11 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
                 let new_neighbours: SmallVec<[_; 3]> = neighbours
                     .iter()
-                    .cloned()
+                    .copied()
                     .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
                     .map(|neighbour| {
-                        if neighbour.is_neighbour(other_triangle) {
-                            neighbour.replace_neighbour(other_triangle.index(), triangle.clone());
+                        if neighbour.is_neighbour(&other_triangle) {
+                            neighbour.replace_neighbour(other_triangle.index(), triangle);
                         }
 
                         neighbour
