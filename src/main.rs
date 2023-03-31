@@ -4,9 +4,9 @@ use arena_system::Arena;
 use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
-use vdtfont::delaunay::{Delaunay, DelaunayFactory, *};
+use vdtfont::delaunay::{Delaunay, DelaunayFactory};
 use vdtfont::point::{Point, PointHandle};
-use vdtfont::text::*;
+use vdtfont::font::*;
 use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
@@ -76,20 +76,20 @@ fn main() -> anyhow::Result<()> {
     let dim = IMG_DIM / 2;
 
     let font =
-        include_bytes!("../../../.deprecated/font_rasterizer/examples/fonts/OpenSans-Italic.ttf");
+        include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
-    let glyph_id = parsed_face.glyph_index('D').unwrap();
+    let glyph_id = parsed_face.glyph_index('r').unwrap();
 
     let mut outliner = outliner::Outliner::new();
     let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
 
     let height: f32 =
         (parsed_face.as_face_ref().ascender() - parsed_face.as_face_ref().descender()).into();
-    let h_factor = IMG_DIM as f32 / height * 5.0 / 6.0;
-    let v_factor = IMG_DIM as f32 / height * 5.0 / 6.0;
+    let h_factor = dim as f32 / height;
+    let v_factor = dim as f32 / height;
 
     let bounds = ttfp::Rect {
         x_min: (rect.x_min as f32 * h_factor) as i16,
@@ -100,15 +100,14 @@ fn main() -> anyhow::Result<()> {
 
     println!("The number of points: {}", outliner.points.len());
     println!("The shortest distance: {}", outliner.smallest_distance * h_factor);
+    println!("The height of a glyph: {}", height);
 
     outliner.points = (0..outliner.points.len())
         .into_iter()
         .map(|i| {
-            let new_x = outliner.points.handle::<PointHandle>(i.into(), ()).x() * h_factor
-                - bounds.x_min as f32;
-            let new_y = bounds.height() as f32
-                - outliner.points.handle::<PointHandle>(i.into(), ()).y() * v_factor
-                + bounds.y_min as f32;
+            let p = outliner.points.handle::<PointHandle>(i.into(), ());
+            let new_x = p.x() * h_factor;
+            let new_y = bounds.height() as f32 - p.y() * v_factor;
 
             let mut point = outliner.points.try_borrow_mut(i.into()).unwrap();
             point.set_coords(ocl::prm::Float2::new(new_x, new_y));
@@ -119,7 +118,7 @@ fn main() -> anyhow::Result<()> {
         })
         .collect();
 
-    let random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
+    let _random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
 
     //let now = std::time::Instant::now();
 
