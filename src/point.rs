@@ -1,7 +1,5 @@
 use crate::ocl::prm::Float2;
 
-use std::cmp::{Eq, PartialEq};
-
 use arena_system::{Handle, RawHandle};
 
 pub type PointId = i64;
@@ -86,7 +84,7 @@ impl Point {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PointHandle<'arena> {
     raw: RawHandle<'arena, Point>,
 }
@@ -130,15 +128,7 @@ impl<'arena> Handle<'arena> for PointHandle<'arena> {
         Self { raw }
     }
 
-    fn as_raw(&self) -> &RawHandle<'arena, Self::Type> {
-        &self.raw
+    fn to_raw(&self) -> RawHandle<'arena, Self::Type> {
+        self.raw
     }
 }
-
-impl PartialEq for PointHandle<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.index() == other.index()
-    }
-}
-
-impl Eq for PointHandle<'_> {}

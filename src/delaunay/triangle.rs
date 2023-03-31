@@ -5,7 +5,7 @@ use smallvec::SmallVec;
 
 pub type TriangleId = i64;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct DelaunayTriangle {
     pub vertices: [PointId; 3],
@@ -304,15 +304,27 @@ impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {
         Self { raw, points: userdata }
     }
 
-    fn as_raw(&self) -> &RawHandle<'arena, Self::Type> {
-        &self.raw
+    fn to_raw(&self) -> RawHandle<'arena, Self::Type> {
+        self.raw
     }
 }
 
 impl PartialEq for DelaunayTriangleHandle<'_> {
     fn eq(&self, other: &Self) -> bool {
-        self.index() == other.index()
+        self.to_raw() == other.to_raw()
     }
 }
 
 impl Eq for DelaunayTriangleHandle<'_> {}
+
+impl PartialOrd for DelaunayTriangleHandle<'_> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_raw().partial_cmp(&other.to_raw())
+    }
+}
+
+impl Ord for DelaunayTriangleHandle<'_> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_raw().cmp(&other.to_raw())   
+    }
+}
