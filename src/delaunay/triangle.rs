@@ -90,12 +90,16 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     pub fn replace_neighbour(&self, index: Index, new_neighbour: DelaunayTriangleHandle<'arena>) {
-        let mut neighbours = self.neighbours();
-        let position = neighbours.iter().position(|n| n.index() == index);
+        self.remove_neighbour(index);
+        self.add_neighbour(new_neighbour);
+    }
+
+    pub fn add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) {
+        let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
+        let position = neighbour_ids.iter().position(|n| *n == -1);
 
         if let Some(position) = position {
-            neighbours[position] = new_neighbour;
-            self.set_neighbours(neighbours);
+            neighbour_ids[position] = new_neighbour.index().into();
         }
     }
 
@@ -270,9 +274,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                     .copied()
                     .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
                     .map(|neighbour| {
-                        if neighbour.is_neighbour(&other_triangle) {
-                            neighbour.replace_neighbour(other_triangle.index(), triangle);
-                        }
+                        neighbour.replace_neighbour(other_triangle.index(), triangle);
 
                         neighbour
                     })
