@@ -12,7 +12,7 @@ typedef struct Triangle {
 } Triangle;
 
 
-bool does_exist(int2 p, int dim) {
+bool exists(int2 p, int dim) {
     return p.x >= 0 && p.y >= 0 && p.x < dim && p.y < dim;
 }
 
@@ -21,8 +21,8 @@ bool is_undefined(int4 c) {
 }
 
 int4 get_color(read_only image2d_t src, int2 p, int dim) {
-    if (!does_exist(p, dim))
-        return (int4)(INT_MIN, INT_MIN, -1, -1);
+    if (!exists(p, dim))
+        return (int4)(-dim * 10, -dim * 10, -1, -1);
 
     sampler_t sampler_const =
         CLK_NORMALIZED_COORDS_FALSE |

@@ -4,7 +4,7 @@
 // color.z - index of the closest site
 // color.w - is color undefined (-1)
 
-bool does_exist(int2 p, int dim) {
+bool exists(int2 p, int dim) {
     return p.x >= 0 && p.y >= 0 && p.x < dim && p.y < dim;
 }
 
@@ -23,8 +23,8 @@ int2 nearest_site(int2 p, int2 s0, int2 s1) {
 }
 
 int4 get_color(read_only image2d_t src, int2 p, int dim) {
-    if (!does_exist(p, dim))
-        return (int4)(INT_MIN, INT_MIN, -1, -1);
+    if (!exists(p, dim))
+        return (int4)(-dim * 10, -dim * 10, -1, -1);
 
     sampler_t sampler_const =
         CLK_NORMALIZED_COORDS_FALSE |
@@ -89,7 +89,7 @@ __kernel void conquer_islands(
         quadrant = 3;
     }
 
-    int2 nearest_s = (int2)(INT_MIN, INT_MIN);
+    int2 nearest_s = (int2)(-dim * 10, -dim * 10);
     for (int i = 0; i < 3; i++) {
         int2 q = p + directions[quadrant][i];
         int4 q_color = get_color(src, q, dim);
@@ -103,7 +103,6 @@ __kernel void conquer_islands(
         nearest_s = nearest_site(p, nearest_s, q_color.xy);
     }
 
-    //write_imagei(dst, p, (int4)(0, 0, 0, DIM - 1));
     write_imagei(dst, p, get_color(src, nearest_s, dim));
 
     atomic_inc(changed_number);
