@@ -59,13 +59,6 @@ impl Point {
     pub fn distance(&self, other: &Point) -> f32 {
         self.distance_squared(other).sqrt()
     }
-
-    pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
-        let a = Self::new(self.x() - origin.x(), self.y() - origin.y(), false, -1);
-        let b = Self::new(other.x() - origin.x(), other.y() - origin.y(), false, -1);
-
-        a.x() * b.y() - a.y() * b.x()
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -97,11 +90,10 @@ impl<'arena> PointHandle<'arena> {
     }
 
     pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
-        let this = self.get().expect("Can't get the point");
-        let origin = origin.get().expect("Can't get the origin point");
-        let other = other.get().expect("Can't get the other point");
+        let a = Point::new(self.x() - origin.x(), self.y() - origin.y(), false, -1);
+        let b = Point::new(other.x() - origin.x(), other.y() - origin.y(), false, -1);
 
-        this.cross_product(&origin, &other)
+        a.x() * b.y() - a.y() * b.x()
     }
 }
 
