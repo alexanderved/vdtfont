@@ -89,7 +89,7 @@ impl<'arena> PointHandle<'arena> {
         self.arena().handle(this.previous_in_outline().into(), ())
     }
 
-    pub fn cross_product(&self, origin: &Self, other: &Self) -> f32 {
+    pub fn skew_product(&self, origin: &Self, other: &Self) -> f32 {
         let a = Point::new(self.x() - origin.x(), self.y() - origin.y(), false, -1);
         let b = Point::new(other.x() - origin.x(), other.y() - origin.y(), false, -1);
 

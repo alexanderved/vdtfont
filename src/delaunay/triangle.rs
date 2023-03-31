@@ -19,7 +19,7 @@ impl DelaunayTriangle {
     }
 
     pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
-        points.handle::<PointHandle>(self.vertices[1].into(), ()).cross_product(
+        points.handle::<PointHandle>(self.vertices[1].into(), ()).skew_product(
             &points.handle(self.vertices[0].into(), ()),
             &points.handle(self.vertices[2].into(), ()),
         ) < 0.0
@@ -215,10 +215,10 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             shared_points[0].is_bounding() || shared_points[1].is_bounding();
 
         let by_the_same_side_after_flip = shared_points[0]
-            .cross_product(&opposite_points[0], &opposite_points[1])
+            .skew_product(&opposite_points[0], &opposite_points[1])
             .signum()
             == shared_points[1]
-                .cross_product(&opposite_points[0], &opposite_points[1])
+                .skew_product(&opposite_points[0], &opposite_points[1])
                 .signum();
 
         let is_contour = shared_points[0].previous_in_outline() == shared_points[1]
