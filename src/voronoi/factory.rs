@@ -162,8 +162,8 @@ impl VoronoiImageFactory {
             .set_default_global_work_size((dim, dim).into())
             .set_default_local_work_size((8, 8).into());
 
-        let mut is_conquered = true;
-        while is_conquered {
+        let mut is_conquered = false;
+        while !is_conquered {
             self.swapchain.render(|last_frame, next_frame| {
                 self.conquer_islands_kernel.set_arg(0, last_frame.ocl_image())?;
                 self.conquer_islands_kernel.set_arg(1, next_frame.ocl_image())?;
@@ -182,7 +182,7 @@ impl VoronoiImageFactory {
 
             println!("Changed pixel number: {}", changed_pixels_number);
 
-            is_conquered = changed_pixels_number != 0;
+            is_conquered = changed_pixels_number == 0;
         }
 
         Ok(())

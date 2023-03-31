@@ -164,7 +164,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
-    pub fn in_circle_with(&self, other: &DelaunayTriangleHandle) -> bool {
+    pub fn is_in_circle_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
 
@@ -224,18 +224,18 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let is_contour = shared_points[0].previous_in_outline() == shared_points[1]
             || shared_points[1].previous_in_outline() == shared_points[0];
 
-        let satisfies_delaunay_condition = !self.in_circle_with(other);
+        let satisfies_delaunay_condition = !self.is_in_circle_with(other);
 
         if by_the_same_side_after_flip {
             return false;
         }
 
-        if is_shared_edge_connected_to_bounds { 
-            return true;
-        }
-
         if is_contour {
             return false;
+        }
+
+        if is_shared_edge_connected_to_bounds { 
+            return true;
         }
 
         if satisfies_delaunay_condition {
@@ -250,7 +250,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         other: &mut DelaunayTriangleHandle<'arena>,
         mut deep: usize,
     ) -> bool {
-        if self.is_flippable_with(other) && deep != 0 {
+        let is_flippable = self.is_flippable_with(other) && deep != 0;
+        if is_flippable {
             let neighbours = self.surrounding(other);
 
             {
@@ -303,11 +304,9 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             other.neighbours().into_iter().filter(|n| *n != *self).for_each(|mut n| {
                 other.flip_with(&mut n, deep);
             });
-
-            true
-        } else {
-            false
         }
+
+        is_flippable
     }
 }
 
