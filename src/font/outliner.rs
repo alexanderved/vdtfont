@@ -10,12 +10,12 @@ pub struct Outliner {
     pub last_move: PointId,
     pub points: Arena<Point>,
 
-    pub smallest_distance: f32,
+    pub shortest_distance: f32,
 }
 
 impl Outliner {
     pub fn new() -> Self {
-        Self { last: -1, last_move: -1, points: Arena::new(), smallest_distance: f32::MAX }
+        Self { last: -1, last_move: -1, points: Arena::new(), shortest_distance: f32::MAX }
     }
 }
 
@@ -36,7 +36,7 @@ impl ttfp::OutlineBuilder for Outliner {
         let last = *self.points.try_borrow(self.last.into()).unwrap();
         let p1 = Point::new(x1, y1, false, self.last);
 
-        self.smallest_distance = self.smallest_distance.min(last.distance(&p1));
+        self.shortest_distance = self.shortest_distance.min(last.distance(&p1));
 
         self.points.add(p1);
         self.last = self.points.len() as i64 - 1;
@@ -55,7 +55,7 @@ impl ttfp::OutlineBuilder for Outliner {
             let mut p0 = self.points.try_borrow_mut(i.into()).unwrap();
             let p1 = self.points.try_borrow((i - 1).into()).unwrap();
 
-            self.smallest_distance = self.smallest_distance.min(p0.distance(&p1));
+            self.shortest_distance = self.shortest_distance.min(p0.distance(&p1));
 
             p0.set_previous_in_outline(i - 1);
         });
@@ -77,7 +77,7 @@ impl ttfp::OutlineBuilder for Outliner {
             let mut p0 = self.points.try_borrow_mut(i.into()).unwrap();
             let p1 = self.points.try_borrow((i - 1).into()).unwrap();
 
-            self.smallest_distance = self.smallest_distance.min(p0.distance(&p1));
+            self.shortest_distance = self.shortest_distance.min(p0.distance(&p1));
 
             p0.set_previous_in_outline(i - 1);
         });

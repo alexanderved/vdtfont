@@ -99,7 +99,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     println!("The number of points: {}", outliner.points.len());
-    println!("The shortest distance: {}", outliner.smallest_distance * h_factor);
+    println!("The shortest distance: {}", outliner.shortest_distance * h_factor);
     println!("The height of a glyph: {}", height);
 
     outliner.points = (0..outliner.points.len())
