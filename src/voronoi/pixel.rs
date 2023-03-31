@@ -13,7 +13,7 @@ impl Pixel {
         Self {
             x,
             y,
-            nearest_site: Point::new(raw_data[0] as f32, raw_data[1] as f32, false, -1),
+            nearest_site: Point::new(raw_data[0] as f32, raw_data[1] as f32),
             nearest_site_id: raw_data[2],
         }
     }

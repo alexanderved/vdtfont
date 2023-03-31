@@ -12,7 +12,7 @@ ocl = "0.19"
 anyhow = "1.0"
 rand = "0.8"
 image = "0.24"
-arena_system = { version = "0.0.12", git = "https://github.com/alexanderved/arena_system" }
+arena_system = { version = "0.0.13", git = "https://github.com/alexanderved/arena_system" }
 smallvec = "1.10.0"
 owned_ttf_parser = "0.18"
 libm = "0.2.6"

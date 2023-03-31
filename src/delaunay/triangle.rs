@@ -42,7 +42,7 @@ impl std::default::Default for DelaunayTriangle {
 
 unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
     points: &'arena Arena<Point>,
@@ -162,8 +162,6 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
 
-        let s = [*s[0].get().unwrap(), *s[1].get().unwrap()];
-        let o = [*o[0].get().unwrap(), *o[1].get().unwrap()];
         let p = [o[0], s[1], o[1], s[0]];
 
         let center = p[3];
@@ -318,5 +316,3 @@ impl PartialEq for DelaunayTriangleHandle<'_> {
 }
 
 impl Eq for DelaunayTriangleHandle<'_> {}
-
-pub struct Triangle;

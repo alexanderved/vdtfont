@@ -86,7 +86,7 @@ impl Point {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct PointHandle<'arena> {
     raw: RawHandle<'arena, Point>,
 }
