@@ -211,7 +211,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                 .skew_product(&opposite_points[0], &opposite_points[1])
                 .signum();
 
-        let is_contour = shared_points[0].previous_in_outline() == shared_points[1]
+        let has_contour_edge = shared_points[0].previous_in_outline() == shared_points[1]
             || shared_points[1].previous_in_outline() == shared_points[0];
 
         let satisfies_delaunay_condition = !self.is_in_circle_with(other);
@@ -220,7 +220,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             return false;
         }
 
-        if is_contour {
+        if has_contour_edge {
             return false;
         }
 
