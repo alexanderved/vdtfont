@@ -212,7 +212,7 @@ impl DelaunayFactory {
     }
 
     fn fix_convex_hull(
-        &self,
+        &mut self,
         dim: usize,
         points: &Arena<Point>,
         triangles: &mut Vec<DelaunayTriangle>,
@@ -245,12 +245,12 @@ impl DelaunayFactory {
             pixel_stack.push(pixel);
         }
 
+        self.triangles_buffer.write(triangles)?;
+
         Ok(())
     }
 
     fn find_neighbours(&mut self, triangles: &mut Vec<DelaunayTriangle>) -> anyhow::Result<()> {
-        self.triangles_buffer.write(triangles)?;
-
         self.find_neighbours_kernel
             .set_default_global_work_size((triangles.len(), triangles.len()).into())
             .set_default_local_work_size((1, 1).into());
