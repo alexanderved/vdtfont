@@ -276,11 +276,11 @@ impl DelaunayFactory {
             .into_iter()
             .map(|i| i.into())
             .map(|i| triangles.handle::<DelaunayTriangleHandle>(i, points))
-            .for_each(|mut handle| {
-                handle
+            .for_each(|mut triangle_handle| {
+                triangle_handle
                     .neighbours()
                     .into_iter()
-                    .all(|mut neighbour| handle.flip_with(&mut neighbour, 128));
+                    .all(|mut neighbour| triangle_handle.flip_with(&mut neighbour, 128));
             });
     }
 }
