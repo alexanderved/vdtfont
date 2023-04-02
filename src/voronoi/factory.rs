@@ -25,7 +25,7 @@ impl VoronoiImageFactory {
     pub fn new(queue: ocl::Queue, max_dim: usize) -> anyhow::Result<Self> {
         let swapchain = Swapchain::new(&queue, max_dim)?;
         let program = ocl::Program::builder()
-            .src_file("src/kernels/voronoi.cl")
+            .src_file("src/opencl/kernels/voronoi.cl")
             .build(&queue.context())?;
 
         let plot_sites_kernel = ocl::Kernel::builder()

@@ -23,7 +23,7 @@ pub struct DelaunayFactory {
 impl DelaunayFactory {
     pub fn new(queue: ocl::Queue) -> anyhow::Result<Self> {
         let program = ocl::Program::builder()
-            .src_file("src/kernels/delaunay.cl")
+            .src_file("src/opencl/kernels/delaunay.cl")
             .build(&queue.context())?;
 
         let count_triangles_kernel = ocl::Kernel::builder()
@@ -71,7 +71,7 @@ impl DelaunayFactory {
         let dim = voronoi_image.dim();
         let mut points = self.collect_discrete_points(voronoi_image.sites());
         let mut triangles = self.build_triangles(voronoi_image, &points)?;
-        
+
         let mut voronoi_image_pixels = voronoi_image.to_pixels()?;
         let bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
