@@ -69,8 +69,23 @@ impl DelaunayFactory {
 
     pub fn construct(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<Delaunay> {
         let dim = voronoi_image.dim();
-        let mut points = voronoi_image
-            .sites()
+        let mut points = self.collect_discrete_points(voronoi_image.sites());
+        let mut triangles = self.build_triangles(voronoi_image, &points)?;
+        
+        let mut voronoi_image_pixels = voronoi_image.to_pixels()?;
+        let bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
+
+        self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
+        self.find_neighbours(&mut triangles)?;
+
+        let triangles: Arena<DelaunayTriangle> = triangles.into();
+        self.flip_triangles(&triangles, &points);
+
+        Ok(Delaunay::new(dim, points, triangles, bounds))
+    }
+
+    fn collect_discrete_points(&self, points: &Arena<Point>) -> Arena<Point> {
+        points
             .handle_iter::<PointHandle>(())
             .map(|site| {
                 Point::with_previous(
@@ -79,21 +94,7 @@ impl DelaunayFactory {
                     site.previous_in_outline().index().into(),
                 )
             })
-            .collect::<Arena<Point>>();
-        let mut triangles = self.build_triangles(voronoi_image, &points)?;
-
-        let mut voronoi_image_pixels = voronoi_image.to_pixels()?;
-        let bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
-
-        self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
-        self.find_neighbours(&mut triangles)?;
-
-        let triangles = triangles
-            .into_iter()
-            .collect::<Arena<DelaunayTriangle>>();
-        self.flip_triangles(&triangles, &points);
-
-        Ok(Delaunay::new(dim, points, triangles, bounds))
+            .collect::<Arena<Point>>()
     }
 
     fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {
