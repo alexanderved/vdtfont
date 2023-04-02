@@ -102,6 +102,10 @@ impl<'arena> PointHandle<'arena> {
         self.get().unwrap().coords
     }
 
+    pub fn set_coords(&mut self, coords: Float2) {
+        self.get_mut().unwrap().coords = coords;
+    }
+
     pub fn is_bounding(&self) -> bool {
         self.get().unwrap().is_bounding
     }
