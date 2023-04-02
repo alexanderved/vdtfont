@@ -97,24 +97,6 @@ impl DelaunayFactory {
             .collect::<Arena<Point>>()
     }
 
-    fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {
-        self.count_triangles_kernel
-            .set_default_global_work_size((voronoi_image.dim(), voronoi_image.dim()).into())
-            .set_default_local_work_size((8, 8).into());
-
-        self.count_triangles_kernel.set_arg(0, voronoi_image.image().ocl_image())?;
-        self.count_triangles_kernel
-            .set_arg(1, self.triangle_number_buffer.as_raw())?;
-
-        unsafe {
-            self.count_triangles_kernel.enq()?;
-        }
-
-        let triangle_number = self.triangle_number_buffer.first()?;
-
-        Ok(triangle_number)
-    }
-
     fn build_triangles(
         &mut self,
         voronoi_image: &VoronoiImage<'_>,
@@ -145,6 +127,24 @@ impl DelaunayFactory {
         triangles.iter_mut().for_each(|t| t.make_counterclockwise(points));
 
         Ok(triangles)
+    }
+
+    fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {
+        self.count_triangles_kernel
+            .set_default_global_work_size((voronoi_image.dim(), voronoi_image.dim()).into())
+            .set_default_local_work_size((8, 8).into());
+
+        self.count_triangles_kernel.set_arg(0, voronoi_image.image().ocl_image())?;
+        self.count_triangles_kernel
+            .set_arg(1, self.triangle_number_buffer.as_raw())?;
+
+        unsafe {
+            self.count_triangles_kernel.enq()?;
+        }
+
+        let triangle_number = self.triangle_number_buffer.first()?;
+
+        Ok(triangle_number)
     }
 
     fn add_bounds(
