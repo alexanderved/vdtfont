@@ -80,7 +80,7 @@ fn main() -> anyhow::Result<()> {
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
-    let glyph_id = parsed_face.glyph_index('r').unwrap();
+    let glyph_id = parsed_face.glyph_index('t').unwrap();
 
     let mut outliner = outliner::Outliner::new();
     let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();

@@ -88,8 +88,7 @@ impl DelaunayFactory {
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
         self.find_neighbours(&mut triangles)?;
 
-        let triangles = self
-            .build_triangles(voronoi_image, &points)?
+        let triangles = triangles
             .into_iter()
             .collect::<Arena<DelaunayTriangle>>();
         self.flip_triangles(&triangles, &points);
