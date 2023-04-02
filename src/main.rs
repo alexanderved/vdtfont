@@ -108,7 +108,7 @@ fn main() -> anyhow::Result<()> {
             let new_x = p.x() * h_factor;
             let new_y = bounds.height() as f32 - p.y() * v_factor;
 
-            let mut point = outliner.points.try_borrow_mut(i.into()).unwrap();
+            let mut point = outliner.points.lookup_mut(i.into()).unwrap();
             point.set_coords(ocl::prm::Float2::new(new_x, new_y));
 
             //println!("Point: {}, {}", new_x, new_y);

@@ -37,7 +37,7 @@ impl Delaunay {
             .handle::<DelaunayTriangleHandle>(i.into(), &self.points)
             .get();
 
-        while let Some(t) = tri {
+        while let Ok(t) = tri {
             crate::draw_line(
                 &mut bitmap,
                 self.dim,

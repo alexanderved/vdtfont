@@ -33,7 +33,7 @@ impl ttfp::OutlineBuilder for Outliner {
     fn line_to(&mut self, x1: f32, y1: f32) {
         //eprintln!("L {x1} {y1}");
 
-        let last = *self.points.try_borrow(self.last.into()).unwrap();
+        let last = *self.points.lookup(self.last.into()).unwrap();
         let p1 = Point::with_previous(x1, y1, self.last);
 
         self.shortest_distance = self.shortest_distance.min(last.distance(&p1));
@@ -48,12 +48,12 @@ impl ttfp::OutlineBuilder for Outliner {
         let p1 = Point::new(x1, y1);
         let p2 = Point::new(x2, y2);
 
-        let last = *self.points.try_borrow(self.last.into()).unwrap();
+        let last = *self.points.lookup(self.last.into()).unwrap();
         tesselate_quadric_curve((last, p1, p2), &mut self.points);
 
         (self.last + 1..self.points.len() as i64).into_iter().for_each(|i| {
-            let mut p0 = self.points.try_borrow_mut(i.into()).unwrap();
-            let p1 = self.points.try_borrow((i - 1).into()).unwrap();
+            let mut p0 = self.points.lookup_mut(i.into()).unwrap();
+            let p1 = self.points.lookup((i - 1).into()).unwrap();
 
             self.shortest_distance = self.shortest_distance.min(p0.distance(&p1));
 
@@ -70,12 +70,12 @@ impl ttfp::OutlineBuilder for Outliner {
         let p2 = Point::new(x2, y2);
         let p3 = Point::new(x3, y3);
 
-        let last = *self.points.try_borrow(self.last.into()).unwrap();
+        let last = *self.points.lookup(self.last.into()).unwrap();
         tesselate_cubic_curve((last, p1, p2, p3), &mut self.points);
 
         (self.last + 1..self.points.len() as i64).into_iter().for_each(|i| {
-            let mut p0 = self.points.try_borrow_mut(i.into()).unwrap();
-            let p1 = self.points.try_borrow((i - 1).into()).unwrap();
+            let mut p0 = self.points.lookup_mut(i.into()).unwrap();
+            let p1 = self.points.lookup((i - 1).into()).unwrap();
 
             self.shortest_distance = self.shortest_distance.min(p0.distance(&p1));
 
@@ -88,7 +88,7 @@ impl ttfp::OutlineBuilder for Outliner {
     fn close(&mut self) {
         //eprintln!("Z");
 
-        if let Some(mut m) = self.points.try_borrow_mut(self.last_move.into()) {
+        if let Ok(mut m) = self.points.lookup_mut(self.last_move.into()) {
             m.set_previous_in_outline(self.last);
         }
     }
