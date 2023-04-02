@@ -15,6 +15,7 @@ typedef struct TriangleFan {
     PointId center;
     int triangle_offset;
     int triangle_number;
+    int last_triangle_index;
 } TriangleFan;
 
 
@@ -70,6 +71,16 @@ int count_shared_points(Triangle triangle0, Triangle triangle1) {
     }
 
     return shared_points_number;
+}
+
+bool triangle_contains_point(Triangle triangle, PointId point) {
+    for (int i = 0; i < 3; i++) {
+        if (triangle.vertices[i] == point) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -151,10 +162,30 @@ __kernel void count_triangles_in_fans(
     Triangle triangle = triangles[get_global_id(0)];
     __global TriangleFan *triangle_fan = &triangle_fans[get_global_id(1)];
 
-    for (int i = 0; i < 3; i++) {
-        if (triangle.vertices[i] == triangle_fan->center) {
-            atomic_inc(&triangle_fan->triangle_number);
-            return;
-        }
+    if (triangle_contains_point(triangle, triangle_fan->center)) {
+        atomic_inc(&triangle_fan->triangle_number);
+    }
+}
+
+__kernel void calculate_triangle_offset_in_fans(
+    __global TriangleFan *triangle_fans,
+    __global int *free_triangle_index
+) {
+    __global TriangleFan *triangle_fan = &triangle_fans[get_global_id(0)];
+    triangle_fan->triangle_offset = atomic_add(free_triangle_index, triangle_fan->triangle_number);
+}
+
+__kernel void find_triangles_in_fans(
+    __global Triangle *triangles,
+    __global TriangleFan *triangle_fans,
+    __global TriangleId *flatten_triangle_fans
+) {
+    Triangle triangle = triangles[get_global_id(0)];
+    __global TriangleFan *triangle_fan = &triangle_fans[get_global_id(1)];
+
+    if (triangle_contains_point(triangle, triangle_fan->center)) {
+        int last_triangle_index = atomic_inc(&triangle_fan->last_triangle_index);
+        flatten_triangle_fans[triangle_fan->triangle_offset + last_triangle_index]
+            = get_global_id(0);
     }
 }

@@ -22,6 +22,11 @@ pub struct DelaunayFactory {
 
     count_triangles_in_fans_kernel: ocl::Kernel,
     triangle_fans_buffer: Buffer<TriangleFan>,
+
+    calculate_triangle_offset_in_fans_kernel: ocl::Kernel,
+
+    find_triangles_in_fans_kernel: ocl::Kernel,
+    flatten_triangle_fans_buffer: Buffer<TriangleId>,
 }
 
 impl DelaunayFactory {
@@ -49,17 +54,7 @@ impl DelaunayFactory {
             .arg(None::<&ocl::Buffer<TriangleId>>)
             .build()?;
         let triangles_buffer = Buffer::<DelaunayTriangle>::new(queue.clone())?;
-        let mut free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
-        free_triangle_index_buffer.write(&[0])?;
-
-        let count_triangles_in_fans_kernel = ocl::Kernel::builder()
-            .queue(queue.clone())
-            .program(&program)
-            .name("count_triangles_in_fans")
-            .arg(None::<&ocl::Buffer<DelaunayTriangle>>)
-            .arg(None::<&ocl::Buffer<TriangleId>>)
-            .arg(None::<&ocl::Buffer<TriangleFan>>)
-            .build()?;
+        let free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
 
         let calculate_triangle_neighbours_kernel = ocl::Kernel::builder()
             .queue(queue.clone())
@@ -67,7 +62,33 @@ impl DelaunayFactory {
             .name("calculate_triangle_neighbours")
             .arg(None::<&ocl::Buffer<DelaunayTriangle>>)
             .build()?;
+
+        let count_triangles_in_fans_kernel = ocl::Kernel::builder()
+            .queue(queue.clone())
+            .program(&program)
+            .name("count_triangles_in_fans")
+            .arg(None::<&ocl::Buffer<DelaunayTriangle>>)
+            .arg(None::<&ocl::Buffer<TriangleFan>>)
+            .build()?;
         let triangle_fans_buffer = Buffer::<TriangleFan>::new(queue.clone())?;
+
+        let calculate_triangle_offset_in_fans_kernel = ocl::Kernel::builder()
+            .queue(queue.clone())
+            .program(&program)
+            .name("calculate_triangle_offset_in_fans")
+            .arg(None::<&ocl::Buffer<TriangleFan>>)
+            .arg(None::<&ocl::Buffer<i32>>)
+            .build()?;
+
+        let find_triangles_in_fans_kernel = ocl::Kernel::builder()
+            .queue(queue.clone())
+            .program(&program)
+            .name("find_triangles_in_fans")
+            .arg(None::<&ocl::Buffer<DelaunayTriangle>>)
+            .arg(None::<&ocl::Buffer<TriangleFan>>)
+            .arg(None::<&ocl::Buffer<TriangleId>>)
+            .build()?;
+        let flatten_triangle_fans_buffer = Buffer::<TriangleId>::new(queue.clone())?;
 
         Ok(Self {
             count_triangles_kernel,
@@ -81,6 +102,11 @@ impl DelaunayFactory {
 
             count_triangles_in_fans_kernel,
             triangle_fans_buffer,
+
+            calculate_triangle_offset_in_fans_kernel,
+
+            find_triangles_in_fans_kernel,
+            flatten_triangle_fans_buffer,
         })
     }
 
@@ -94,6 +120,33 @@ impl DelaunayFactory {
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
         self.calculate_triangle_neighbours(&mut triangles)?;
+
+        {
+            let mut _triangle_fans = self.create_triangle_fans(points.len())?;
+            self.count_triangles_in_fans()?;
+            self.calculate_triangle_offset_in_fans()?;
+            let flatten_triangle_fans = self.find_triangles_in_fans()?;
+
+            self.triangle_fans_buffer.read(&mut _triangle_fans)?;
+            for (i, t) in triangles.iter().enumerate() {
+                if t.vertices.contains(&_triangle_fans[1].center) {
+                    println!("{i}: {:?}", t);
+                }
+            }
+
+            println!("\n{:?}", points.lookup(0i64.into()).unwrap());
+            println!("{:?}", points.lookup(1i64.into()).unwrap());
+
+            points
+                .handle_iter::<PointHandle>(())
+                .for_each(|p| if p.previous_in_outline().index() == arena_system::Index::new(102i64) {
+                    println!("{:?}", p.index())
+                });
+
+            println!("\n{:?}", _triangle_fans[0]);
+
+            println!("\n{:?}", flatten_triangle_fans);
+        }
 
         let triangles: Arena<DelaunayTriangle> = triangles.into();
         self.flip_triangles(&triangles, &points);
@@ -126,6 +179,8 @@ impl DelaunayFactory {
 
         let mut triangles = vec![DelaunayTriangle::default(); triangle_number as usize];
         self.triangles_buffer.write(&triangles)?;
+
+        self.free_triangle_index_buffer.write(&[0])?;
 
         self.build_triangles_kernel
             .set_default_global_work_size((voronoi_image.dim(), voronoi_image.dim()).into())
@@ -287,13 +342,22 @@ impl DelaunayFactory {
         Ok(())
     }
 
-    fn count_triangles_in_fans(
-        &mut self,
-        triangles: &Vec<DelaunayTriangle>,
-        triangle_fans: &mut Vec<TriangleFan>,
-    ) -> anyhow::Result<()> {
+    fn create_triangle_fans(&mut self, points_number: usize) -> anyhow::Result<Vec<TriangleFan>> {
+        let triangle_fans = (0..points_number as PointId)
+            .into_iter()
+            .map(TriangleFan::new)
+            .collect::<Vec<TriangleFan>>();
+
+        self.triangle_fans_buffer.write(&triangle_fans)?;
+
+        Ok(triangle_fans)
+    }
+
+    fn count_triangles_in_fans(&mut self) -> anyhow::Result<()> {
         self.count_triangles_in_fans_kernel
-            .set_default_global_work_size((triangles.len(), triangle_fans.len()).into())
+            .set_default_global_work_size(
+                (self.triangles_buffer.len(), self.triangle_fans_buffer.len()).into(),
+            )
             .set_default_local_work_size((1, 1).into());
 
         self.count_triangles_in_fans_kernel
@@ -305,20 +369,53 @@ impl DelaunayFactory {
             self.count_triangles_in_fans_kernel.enq()?;
         }
 
-        self.triangle_fans_buffer.read(triangle_fans)?;
+        Ok(())
+    }
+
+    fn calculate_triangle_offset_in_fans(&mut self) -> anyhow::Result<()> {
+        self.free_triangle_index_buffer.write(&[0])?;
+
+        self.calculate_triangle_offset_in_fans_kernel
+            .set_default_global_work_size(self.triangle_fans_buffer.len().into())
+            .set_default_local_work_size((1, 1).into());
+
+        self.calculate_triangle_offset_in_fans_kernel
+            .set_arg(0, self.triangle_fans_buffer.as_raw())?;
+        self.calculate_triangle_offset_in_fans_kernel
+            .set_arg(1, self.free_triangle_index_buffer.as_raw())?;
+
+        unsafe {
+            self.calculate_triangle_offset_in_fans_kernel.enq()?;
+        }
 
         Ok(())
     }
 
-    fn create_triangle_fans(&mut self, points_number: usize) -> anyhow::Result<Vec<TriangleFan>> {
-        let triangle_fans = (0..points_number as PointId)
-            .into_iter()
-            .map(TriangleFan::new)
-            .collect::<Vec<TriangleFan>>();
+    fn find_triangles_in_fans(&mut self) -> anyhow::Result<Vec<TriangleId>> {
+        let mut flatten_triangle_fans =
+            vec![-1; self.triangles_buffer.len() * 3];
+        self.flatten_triangle_fans_buffer.write(&flatten_triangle_fans)?;
 
-        self.triangle_fans_buffer.write(&triangle_fans)?;
+        self.find_triangles_in_fans_kernel
+            .set_default_global_work_size(
+                (self.triangles_buffer.len(), self.triangle_fans_buffer.len()).into(),
+            )
+            .set_default_local_work_size((1, 1).into());
 
-        Ok(triangle_fans)
+        self.find_triangles_in_fans_kernel
+            .set_arg(0, self.triangles_buffer.as_raw())?;
+        self.find_triangles_in_fans_kernel
+            .set_arg(1, self.triangle_fans_buffer.as_raw())?;
+        self.find_triangles_in_fans_kernel
+            .set_arg(2, self.flatten_triangle_fans_buffer.as_raw())?;
+
+        unsafe {
+            self.find_triangles_in_fans_kernel.enq()?;
+        }
+
+        self.flatten_triangle_fans_buffer.read(&mut flatten_triangle_fans)?;
+
+        Ok(flatten_triangle_fans)
     }
 
     fn flip_triangles(&self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
