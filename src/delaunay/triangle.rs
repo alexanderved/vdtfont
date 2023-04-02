@@ -248,16 +248,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                 let shared_points = self.shared_points_with(other);
                 let opposite_points = self.opposite_points_with(other);
 
-                self.set_points([
-                    shared_points[0],
-                    opposite_points[0],
-                    opposite_points[1],
-                ]);
-                other.set_points([
-                    shared_points[1],
-                    opposite_points[0],
-                    opposite_points[1],
-                ]);
+                self.set_points([shared_points[0], opposite_points[0], opposite_points[1]]);
+                other.set_points([shared_points[1], opposite_points[0], opposite_points[1]]);
             }
 
             self.make_counterclockwise();
@@ -327,6 +319,6 @@ impl PartialOrd for DelaunayTriangleHandle<'_> {
 
 impl Ord for DelaunayTriangleHandle<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.to_raw().cmp(&other.to_raw())   
+        self.to_raw().cmp(&other.to_raw())
     }
 }

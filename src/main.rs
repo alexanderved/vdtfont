@@ -101,16 +101,14 @@ fn main() -> anyhow::Result<()> {
     println!("The shortest distance: {}", outliner.shortest_distance * h_factor);
     println!("The height of a glyph: {}", height);
 
-    (0..outliner.points.len())
-        .into_iter()
-        .for_each(|i| {
-            let p = outliner.points.handle::<PointHandle>(i.into(), ());
-            let new_x = p.x() * h_factor;
-            let new_y = bounds.height() as f32 - p.y() * v_factor;
+    (0..outliner.points.len()).into_iter().for_each(|i| {
+        let p = outliner.points.handle::<PointHandle>(i.into(), ());
+        let new_x = p.x() * h_factor;
+        let new_y = bounds.height() as f32 - p.y() * v_factor;
 
-            let mut point = outliner.points.handle::<PointHandle>(i.into(), ());
-            point.set_coords(ocl::prm::Float2::new(new_x, new_y));
-        });
+        let mut point = outliner.points.handle::<PointHandle>(i.into(), ());
+        point.set_coords(ocl::prm::Float2::new(new_x, new_y));
+    });
 
     let _random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
 

@@ -16,19 +16,11 @@ impl Point {
         Self { coords: Float2::new(x, y), is_bounding: false, previous_in_outline: -1 }
     }
 
-    pub fn with_is_bounding(
-        x: f32,
-        y: f32,
-        is_bounding: bool,
-    ) -> Self {
+    pub fn with_is_bounding(x: f32, y: f32, is_bounding: bool) -> Self {
         Self { coords: Float2::new(x, y), is_bounding, previous_in_outline: -1 }
     }
 
-    pub fn with_previous(
-        x: f32,
-        y: f32,
-        previous_in_outline: PointId,
-    ) -> Self {
+    pub fn with_previous(x: f32, y: f32, previous_in_outline: PointId) -> Self {
         Self { coords: Float2::new(x, y), is_bounding: false, previous_in_outline }
     }
 
