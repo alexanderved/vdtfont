@@ -17,7 +17,7 @@ pub struct DelaunayFactory {
     triangles_buffer: Buffer<DelaunayTriangle>,
     free_triangle_index_buffer: Buffer<i32>,
 
-    find_neighbours_kernel: ocl::Kernel,
+    calculate_triangle_neighbours_kernel: ocl::Kernel,
 }
 
 impl DelaunayFactory {
@@ -48,10 +48,10 @@ impl DelaunayFactory {
         let mut free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
         free_triangle_index_buffer.write(&[0])?;
 
-        let find_neighbours_kernel = ocl::Kernel::builder()
+        let calculate_triangle_neighbours_kernel = ocl::Kernel::builder()
             .queue(queue.clone())
             .program(&program)
-            .name("find_neighbours")
+            .name("calculate_triangle_neighbours")
             .arg(None::<&ocl::Buffer<DelaunayTriangle>>)
             .build()?;
 
@@ -63,7 +63,7 @@ impl DelaunayFactory {
             triangles_buffer,
             free_triangle_index_buffer,
 
-            find_neighbours_kernel,
+            calculate_triangle_neighbours_kernel,
         })
     }
 
@@ -76,7 +76,7 @@ impl DelaunayFactory {
         let bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
-        self.find_neighbours(&mut triangles)?;
+        self.calculate_triangle_neighbours(&mut triangles)?;
 
         let triangles: Arena<DelaunayTriangle> = triangles.into();
         self.flip_triangles(&triangles, &points);
@@ -250,15 +250,19 @@ impl DelaunayFactory {
         Ok(())
     }
 
-    fn find_neighbours(&mut self, triangles: &mut Vec<DelaunayTriangle>) -> anyhow::Result<()> {
-        self.find_neighbours_kernel
+    fn calculate_triangle_neighbours(
+        &mut self,
+        triangles: &mut Vec<DelaunayTriangle>,
+    ) -> anyhow::Result<()> {
+        self.calculate_triangle_neighbours_kernel
             .set_default_global_work_size((triangles.len(), triangles.len()).into())
             .set_default_local_work_size((1, 1).into());
 
-        self.find_neighbours_kernel.set_arg(0, self.triangles_buffer.as_raw())?;
+        self.calculate_triangle_neighbours_kernel
+            .set_arg(0, self.triangles_buffer.as_raw())?;
 
         unsafe {
-            self.find_neighbours_kernel.enq()?;
+            self.calculate_triangle_neighbours_kernel.enq()?;
         }
 
         self.triangles_buffer.read(triangles)?;

@@ -124,7 +124,7 @@ __kernel void build_triangles(
     }
 }
 
-__kernel void find_neighbours(__global Triangle *triangles) {
+__kernel void calculate_triangle_neighbours(__global Triangle *triangles) {
     __global Triangle *triangle = &triangles[get_global_id(0)];
     Triangle supposed_neighbour = triangles[get_global_id(1)];
 
@@ -137,3 +137,5 @@ __kernel void find_neighbours(__global Triangle *triangles) {
         }
     }
 }
+
+__kernel void calculate_triangle_fans(__global Triangle *triangles) {}
