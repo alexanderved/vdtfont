@@ -11,6 +11,12 @@ typedef struct Triangle {
     int neighbours_number;
 } Triangle;
 
+typedef struct TriangleFan {
+    PointId center;
+    int triangle_offset;
+    int triangle_number;
+} TriangleFan;
+
 
 bool exists(int2 p, int dim) {
     return p.x >= 0 && p.y >= 0 && p.x < dim && p.y < dim;
@@ -131,11 +137,24 @@ __kernel void calculate_triangle_neighbours(__global Triangle *triangles) {
     int shared_points_number = count_shared_points(*triangle, supposed_neighbour);
 
     if (shared_points_number == 2) {
-        int neighbour_idx = atomic_add(&triangle->neighbours_number, 1);
+        int neighbour_idx = atomic_inc(&triangle->neighbours_number);
         if (neighbour_idx < 3) {
             triangle->neighbours[neighbour_idx] = get_global_id(1);
         }
     }
 }
 
-__kernel void calculate_triangle_fans(__global Triangle *triangles) {}
+__kernel void count_triangles_in_fans(
+    __global Triangle *triangles,
+    __global TriangleFan *triangle_fans
+) {
+    Triangle triangle = triangles[get_global_id(0)];
+    __global TriangleFan *triangle_fan = &triangle_fans[get_global_id(1)];
+
+    for (int i = 0; i < 3; i++) {
+        if (triangle.vertices[i] == triangle_fan->center) {
+            atomic_inc(&triangle_fan->triangle_number);
+            return;
+        }
+    }
+}

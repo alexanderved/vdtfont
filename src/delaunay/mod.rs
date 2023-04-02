@@ -1,6 +1,7 @@
 mod bounds;
 mod factory;
 mod triangle;
+mod triangle_fan;
 
 pub(crate) use bounds::*;
 pub use factory::DelaunayFactory;
