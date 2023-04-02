@@ -1,4 +1,4 @@
-use arena_system::{Arena, Handle, RawHandle};
+use arena_system::{Arena, Handle};
 
 use super::bounds::Bounds;
 use super::triangle::{DelaunayTriangle, TriangleId};
@@ -73,25 +73,25 @@ impl DelaunayFactory {
             .sites()
             .handle_iter::<PointHandle>(())
             .map(|site| {
-                Point::with_is_bounding_and_previous(
+                Point::with_previous(
                     site.x().floor(),
                     site.y().floor(),
-                    false,
                     site.previous_in_outline().index().into(),
                 )
             })
             .collect::<Arena<Point>>();
-        let mut triangles = self
-            .build_triangles(voronoi_image, &points)?
-            .into_iter()
-            .collect::<Arena<DelaunayTriangle>>();
+        let mut triangles = self.build_triangles(voronoi_image, &points)?;
 
         let mut voronoi_image_pixels = voronoi_image.to_pixels()?;
         let bounds = self.add_bounds(dim, &mut points, &mut voronoi_image_pixels);
 
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
-
         self.find_neighbours(&mut triangles)?;
+
+        let triangles = self
+            .build_triangles(voronoi_image, &points)?
+            .into_iter()
+            .collect::<Arena<DelaunayTriangle>>();
         self.flip_triangles(&triangles, &points);
 
         Ok(Delaunay::new(dim, points, triangles, bounds))
@@ -215,7 +215,7 @@ impl DelaunayFactory {
         &self,
         dim: usize,
         points: &Arena<Point>,
-        triangles: &mut Arena<DelaunayTriangle>,
+        triangles: &mut Vec<DelaunayTriangle>,
         voronoi_image_pixels: &Vec<Pixel>,
     ) -> anyhow::Result<()> {
         let mut pixel_stack: Vec<&Pixel> = vec![];
@@ -235,7 +235,7 @@ impl DelaunayFactory {
 
                 let triangle = DelaunayTriangle::new([a, b, c]);
                 if triangle.is_counterclockwise(points) {
-                    triangles.add(triangle);
+                    triangles.push(triangle);
                     pixel_stack.pop();
                 } else {
                     break 'vertices;
@@ -248,15 +248,11 @@ impl DelaunayFactory {
         Ok(())
     }
 
-    fn find_neighbours(&mut self, triangles: &mut Arena<DelaunayTriangle>) -> anyhow::Result<()> {
-        let mut triangles_vec: Vec<DelaunayTriangle> = triangles
-            .handle_iter::<RawHandle<DelaunayTriangle>>(())
-            .map(|h| *h.get().unwrap())
-            .collect();
-        self.triangles_buffer.write(&triangles_vec)?;
+    fn find_neighbours(&mut self, triangles: &mut Vec<DelaunayTriangle>) -> anyhow::Result<()> {
+        self.triangles_buffer.write(triangles)?;
 
         self.find_neighbours_kernel
-            .set_default_global_work_size((triangles_vec.len(), triangles_vec.len()).into())
+            .set_default_global_work_size((triangles.len(), triangles.len()).into())
             .set_default_local_work_size((1, 1).into());
 
         self.find_neighbours_kernel.set_arg(0, self.triangles_buffer.as_raw())?;
@@ -265,8 +261,7 @@ impl DelaunayFactory {
             self.find_neighbours_kernel.enq()?;
         }
 
-        self.triangles_buffer.read(&mut triangles_vec)?;
-        *triangles = triangles_vec.into_iter().collect();
+        self.triangles_buffer.read(triangles)?;
 
         Ok(())
     }
