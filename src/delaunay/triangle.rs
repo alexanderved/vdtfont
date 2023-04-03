@@ -257,12 +257,12 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .chain(other.neighbours())
             .collect::<SmallVec<[DelaunayTriangleHandle; 6]>>();
 
-        let triangles = [*self, *other];
-        for i in 0..triangles.len() {
-            let triangle = triangles[i];
-            let other_triangle = triangles[(i + 1) % 2];
+        let mut triangles = [*self, *other].into_iter().cycle().peekable();
+        for _ in 0..2 {
+            let triangle = triangles.next().unwrap();
+            let other_triangle = *triangles.peek().unwrap();
 
-            let new_neighbours: SmallVec<[_; 3]> = neighbourhood
+            let new_neighbours = neighbourhood
                 .iter()
                 .copied()
                 .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
@@ -271,7 +271,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
                     neighbour
                 })
-                .collect();
+                .collect::<SmallVec<[DelaunayTriangleHandle; 3]>>();
 
             triangle.set_neighbours(new_neighbours);
         }
@@ -284,11 +284,15 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     ) -> bool {
         self.neighbours()
             .into_iter()
-            .filter(|neighbour| if let Some(exception) = exception {
-                *neighbour != exception
-            } else {
-                true
-            })
+            .filter(
+                |neighbour| {
+                    if let Some(exception) = exception {
+                        *neighbour != exception
+                    } else {
+                        true
+                    }
+                },
+            )
             .any(|mut neighbour| self.flip_with(&mut neighbour, deep))
     }
 }
