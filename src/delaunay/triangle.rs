@@ -112,23 +112,6 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
-    pub fn surrounding(
-        &self,
-        other: &DelaunayTriangleHandle<'arena>,
-    ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
-        let mut neighbours: SmallVec<[_; 6]> = self.neighbours().into_iter().collect();
-
-        let mut other_neighbours: SmallVec<[_; 3]> = other
-            .neighbours()
-            .into_iter()
-            .filter(|other_neighbour| !neighbours.contains(&other_neighbour))
-            .collect();
-
-        neighbours.append(&mut other_neighbours);
-
-        neighbours
-    }
-
     pub fn is_counterclockwise(&self) -> bool {
         let this = self.get().unwrap();
 
@@ -242,7 +225,11 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     ) -> bool {
         let is_flippable = self.is_flippable_with(other) && deep != 0;
         if is_flippable {
-            let neighbours = self.surrounding(other);
+            let neighbours = self
+                .neighbours()
+                .into_iter()
+                .chain(other.neighbours())
+                .collect::<SmallVec<[DelaunayTriangleHandle; 6]>>();
 
             {
                 let shared_points = self.shared_points_with(other);
