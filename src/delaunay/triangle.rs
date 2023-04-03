@@ -134,7 +134,10 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     ) -> SmallVec<[PointHandle; 2]> {
         let other_points = other.points();
 
-        self.points().into_iter().filter(|p| other_points.contains(p)).collect()
+        self.points()
+            .into_iter()
+            .filter(|point| other_points.contains(point))
+            .collect()
     }
 
     pub fn opposite_points_with(
@@ -144,8 +147,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let shared_points = self.shared_points_with(other);
         self.points()
             .into_iter()
-            .chain(other.points().into_iter())
-            .filter(|p| !shared_points.contains(&p))
+            .chain(other.points())
+            .filter(|point| !shared_points.contains(&point))
             .collect()
     }
 
