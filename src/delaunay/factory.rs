@@ -54,7 +54,8 @@ impl DelaunayFactory {
             .arg(None::<&ocl::Buffer<TriangleId>>)
             .build()?;
         let triangles_buffer = Buffer::<DelaunayTriangle>::new(queue.clone())?;
-        let free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
+        let mut free_triangle_index_buffer = Buffer::<i32>::new(queue.clone())?;
+        free_triangle_index_buffer.write(&[0])?;
 
         let calculate_triangle_neighbours_kernel = ocl::Kernel::builder()
             .queue(queue.clone())
@@ -180,7 +181,7 @@ impl DelaunayFactory {
         let mut triangles = vec![DelaunayTriangle::default(); triangle_number as usize];
         self.triangles_buffer.write(&triangles)?;
 
-        self.free_triangle_index_buffer.write(&[0])?;
+        self.free_triangle_index_buffer.clear()?;
 
         self.build_triangles_kernel
             .set_default_global_work_size((voronoi_image.dim(), voronoi_image.dim()).into())
@@ -373,7 +374,7 @@ impl DelaunayFactory {
     }
 
     fn calculate_triangle_offset_in_fans(&mut self) -> anyhow::Result<()> {
-        self.free_triangle_index_buffer.write(&[0])?;
+        self.free_triangle_index_buffer.clear()?;
 
         self.calculate_triangle_offset_in_fans_kernel
             .set_default_global_work_size(self.triangle_fans_buffer.len().into())
