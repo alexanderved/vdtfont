@@ -148,7 +148,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         self.points()
             .into_iter()
             .chain(other.points())
-            .filter(|point| !shared_points.contains(&point))
+            .filter(|point| !shared_points.contains(point))
             .collect()
     }
 

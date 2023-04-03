@@ -43,24 +43,30 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                *self.points.handle::<PointHandle>(t.vertices[0].into(), ()).get().unwrap(),
-                *self.points.handle::<PointHandle>(t.vertices[1].into(), ()).get().unwrap(),
+                (*self.points.handle::<PointHandle>(t.vertices[0].into(), ()).get().unwrap())
+                    .clone(),
+                (*self.points.handle::<PointHandle>(t.vertices[1].into(), ()).get().unwrap())
+                    .clone(),
             );
 
             crate::draw_line(
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                *self.points.handle::<PointHandle>(t.vertices[1].into(), ()).get().unwrap(),
-                *self.points.handle::<PointHandle>(t.vertices[2].into(), ()).get().unwrap(),
+                (*self.points.handle::<PointHandle>(t.vertices[1].into(), ()).get().unwrap())
+                    .clone(),
+                (*self.points.handle::<PointHandle>(t.vertices[2].into(), ()).get().unwrap())
+                    .clone(),
             );
 
             crate::draw_line(
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                *self.points.handle::<PointHandle>(t.vertices[0].into(), ()).get().unwrap(),
-                *self.points.handle::<PointHandle>(t.vertices[2].into(), ()).get().unwrap(),
+                (*self.points.handle::<PointHandle>(t.vertices[0].into(), ()).get().unwrap())
+                    .clone(),
+                (*self.points.handle::<PointHandle>(t.vertices[2].into(), ()).get().unwrap())
+                    .clone(),
             );
 
             i += 1;

@@ -122,32 +122,11 @@ impl DelaunayFactory {
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
         self.calculate_triangle_neighbours(&mut triangles)?;
 
-        {
-            let mut _triangle_fans = self.create_triangle_fans(points.len())?;
-            self.count_triangles_in_fans()?;
-            self.calculate_triangle_offset_in_fans()?;
-            let flatten_triangle_fans = self.find_triangles_in_fans()?;
+        self.calculate_triangle_fans(&mut points)?;
 
-            self.triangle_fans_buffer.read(&mut _triangle_fans)?;
-            for (i, t) in triangles.iter().enumerate() {
-                if t.vertices.contains(&_triangle_fans[1].center) {
-                    println!("{i}: {:?}", t);
-                }
-            }
-
-            println!("\n{:?}", points.lookup(0i64.into()).unwrap());
-            println!("{:?}", points.lookup(1i64.into()).unwrap());
-
-            points.handle_iter::<PointHandle>(()).for_each(|p| {
-                if p.previous_in_outline().index() == arena_system::Index::new(102i64) {
-                    println!("{:?}", p.index())
-                }
-            });
-
-            println!("\n{:?}", _triangle_fans[0]);
-
-            println!("\n{:?}", flatten_triangle_fans);
-        }
+        points
+            .handle_iter::<PointHandle>(())
+            .for_each(|h| println!("{:?}", h.index()));
 
         let triangles: Arena<DelaunayTriangle> = triangles.into();
         self.flip_triangles(&triangles, &points);
@@ -339,6 +318,25 @@ impl DelaunayFactory {
         }
 
         self.triangles_buffer.read(triangles)?;
+
+        Ok(())
+    }
+
+    fn calculate_triangle_fans(&mut self, points: &mut Arena<Point>) -> anyhow::Result<()> {
+        let mut triangle_fans = self.create_triangle_fans(points.len())?;
+        self.count_triangles_in_fans()?;
+        self.calculate_triangle_offset_in_fans()?;
+        let flatten_triangle_fans = self.find_triangles_in_fans()?;
+        self.triangle_fans_buffer.read(&mut triangle_fans)?;
+
+        triangle_fans.into_iter().for_each(|tf| {
+            let start = tf.triangle_offset as usize;
+            let end = tf.triangle_offset as usize + tf.triangle_number as usize;
+            points
+                .lookup_mut(tf.center.into())
+                .unwrap()
+                .set_triangle_fan(flatten_triangle_fans[start..end].into_iter().copied().collect());
+        });
 
         Ok(())
     }
