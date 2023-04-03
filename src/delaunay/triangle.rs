@@ -89,12 +89,16 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         self.neighbours().contains(neighbour)
     }
 
-    pub fn replace_neighbour(&self, index: Index, new_neighbour: DelaunayTriangleHandle<'arena>) {
-        self.remove_neighbour(index);
-        self.add_neighbour(new_neighbour);
+    pub fn try_replace_neighbour(
+        &self,
+        index: Index,
+        new_neighbour: DelaunayTriangleHandle<'arena>,
+    ) {
+        self.try_remove_neighbour(index);
+        self.try_add_neighbour(new_neighbour);
     }
 
-    pub fn add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) {
+    pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == -1);
 
@@ -103,7 +107,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
-    pub fn remove_neighbour(&self, index: Index) {
+    pub fn try_remove_neighbour(&self, index: Index) {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == index.into());
 
@@ -267,7 +271,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                 .copied()
                 .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
                 .map(|neighbour| {
-                    neighbour.replace_neighbour(other_triangle.index(), triangle);
+                    neighbour.try_replace_neighbour(other_triangle.index(), triangle);
 
                     neighbour
                 })
