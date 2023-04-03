@@ -264,16 +264,26 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
             deep -= 1;
 
-            self.neighbours().into_iter().filter(|n| *n != *other).for_each(|mut n| {
-                self.flip_with(&mut n, deep);
-            });
-
-            other.neighbours().into_iter().filter(|n| *n != *self).for_each(|mut n| {
-                other.flip_with(&mut n, deep);
-            });
+            self.flip_with_neighbours_except(Some(*other), deep);
+            other.flip_with_neighbours_except(Some(*self), deep);
         }
 
         is_flippable
+    }
+
+    pub fn flip_with_neighbours_except(
+        &mut self,
+        exception: Option<DelaunayTriangleHandle>,
+        deep: usize,
+    ) -> bool {
+        self.neighbours()
+            .into_iter()
+            .filter(|neighbour| if let Some(exception) = exception {
+                *neighbour != exception
+            } else {
+                true
+            })
+            .any(|mut neighbour| self.flip_with(&mut neighbour, deep))
     }
 }
 

@@ -138,11 +138,11 @@ impl DelaunayFactory {
             println!("\n{:?}", points.lookup(0i64.into()).unwrap());
             println!("{:?}", points.lookup(1i64.into()).unwrap());
 
-            points
-                .handle_iter::<PointHandle>(())
-                .for_each(|p| if p.previous_in_outline().index() == arena_system::Index::new(102i64) {
+            points.handle_iter::<PointHandle>(()).for_each(|p| {
+                if p.previous_in_outline().index() == arena_system::Index::new(102i64) {
                     println!("{:?}", p.index())
-                });
+                }
+            });
 
             println!("\n{:?}", _triangle_fans[0]);
 
@@ -393,8 +393,7 @@ impl DelaunayFactory {
     }
 
     fn find_triangles_in_fans(&mut self) -> anyhow::Result<Vec<TriangleId>> {
-        let mut flatten_triangle_fans =
-            vec![-1; self.triangles_buffer.len() * 3];
+        let mut flatten_triangle_fans = vec![-1; self.triangles_buffer.len() * 3];
         self.flatten_triangle_fans_buffer.write(&flatten_triangle_fans)?;
 
         self.find_triangles_in_fans_kernel
@@ -425,10 +424,7 @@ impl DelaunayFactory {
             .map(|i| i.into())
             .map(|i| triangles.handle::<DelaunayTriangleHandle>(i, points))
             .for_each(|mut triangle_handle| {
-                triangle_handle
-                    .neighbours()
-                    .into_iter()
-                    .all(|mut neighbour| triangle_handle.flip_with(&mut neighbour, 128));
+                triangle_handle.flip_with_neighbours_except(None, 128);
             });
     }
 }
