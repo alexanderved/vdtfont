@@ -99,7 +99,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
-    pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) -> bool{
+    pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) -> bool {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == -1);
 
@@ -271,6 +271,16 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .neighbours()
             .into_iter()
             .chain(other.neighbours())
+            .collect::<SmallVec<[DelaunayTriangleHandle; 6]>>();
+
+        let neighbourhood = neighbourhood
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|(i, neighbour)| {
+                neighbourhood.iter().copied().position(|n| n == *neighbour).unwrap() == *i
+            })
+            .map(|(_, neighbour)| neighbour)
             .collect::<SmallVec<[DelaunayTriangleHandle; 6]>>();
 
         let mut triangles = [*self, *other].into_iter().cycle().peekable();
