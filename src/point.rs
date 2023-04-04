@@ -154,7 +154,6 @@ impl<'arena> PointHandle<'arena> {
     pub fn triangle_fan(
         &self,
         triangles: &'arena Arena<DelaunayTriangle>,
-        points: &'arena Arena<Point>,
     ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
         self.get()
             .unwrap()
@@ -162,7 +161,7 @@ impl<'arena> PointHandle<'arena> {
             .iter()
             .copied()
             .map(|i| i.into())
-            .map(|i| triangles.handle(i, points))
+            .map(|i| triangles.handle(i, self.arena()))
             .collect()
     }
 
