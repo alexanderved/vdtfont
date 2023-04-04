@@ -124,10 +124,6 @@ impl DelaunayFactory {
 
         self.calculate_triangle_fans(&mut points)?;
 
-        points
-            .handle_iter::<PointHandle>(())
-            .for_each(|h| println!("{:?}", h.index()));
-
         let triangles: Arena<DelaunayTriangle> = triangles.into();
         self.flip_triangles(&triangles, &points);
 

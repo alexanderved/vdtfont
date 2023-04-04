@@ -94,25 +94,34 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         index: Index,
         new_neighbour: DelaunayTriangleHandle<'arena>,
     ) {
-        self.try_remove_neighbour(index);
-        self.try_add_neighbour(new_neighbour);
+        if self.try_remove_neighbour(index) {
+            self.try_add_neighbour(new_neighbour);
+        }
     }
 
-    pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) {
+    pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) -> bool{
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == -1);
 
         if let Some(position) = position {
             neighbour_ids[position] = new_neighbour.index().into();
+
+            true
+        } else {
+            false
         }
     }
 
-    pub fn try_remove_neighbour(&self, index: Index) {
+    pub fn try_remove_neighbour(&self, index: Index) -> bool {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == index.into());
 
         if let Some(position) = position {
             neighbour_ids[position] = -1i64;
+
+            true
+        } else {
+            false
         }
     }
 
