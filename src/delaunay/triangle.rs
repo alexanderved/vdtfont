@@ -200,8 +200,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             return false;
         }
 
-        let is_shared_edge_connected_to_bounds =
-            shared_points[0].is_bounding() || shared_points[1].is_bounding();
+        let is_opposite_point_on_bounds =
+            opposite_points[0].is_bounding() || opposite_points[1].is_bounding();
 
         let by_the_same_side_after_flip = shared_points[0]
             .skew_product(&opposite_points[0], &opposite_points[1])
@@ -223,8 +223,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             return false;
         }
 
-        if is_shared_edge_connected_to_bounds {
-            return true;
+        if is_opposite_point_on_bounds {
+            return false;
         }
 
         if satisfies_delaunay_condition {
