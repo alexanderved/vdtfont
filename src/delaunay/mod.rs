@@ -29,6 +29,15 @@ impl Delaunay {
         &self.points
     }
 
+    pub fn triangles(&self) -> &Arena<DelaunayTriangle> {
+        &self.triangles
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        self.bounds
+    }
+
+
     pub fn image(&self) -> Vec<u8> {
         let mut bitmap = vec![0.0; self.dim * self.dim];
 

@@ -1,13 +1,14 @@
 use crate::point::PointId;
 
-pub(crate) struct Bounds([PointId; 4]);
+#[derive(Debug, Clone, Copy)]
+pub struct Bounds([PointId; 4]);
 
 impl Bounds {
-    pub(crate) fn new(point_ids: [PointId; 4]) -> Self {
+    pub fn new(point_ids: [PointId; 4]) -> Self {
         Self(point_ids)
     }
 
-    pub(crate) fn _contains(&self, point_id: PointId) -> bool {
+    pub fn contains(&self, point_id: PointId) -> bool {
         self.0.contains(&point_id)
     }
 }
