@@ -122,10 +122,10 @@ impl DelaunayFactory {
         self.fix_convex_hull(dim, &points, &mut triangles, &voronoi_image_pixels)?;
         self.calculate_triangle_neighbours(&mut triangles)?;
 
-        self.calculate_triangle_fans(&mut points)?;
-
         let triangles: Arena<DelaunayTriangle> = triangles.into();
         self.flip_triangles(&triangles, &points);
+
+        self.calculate_triangle_fans(&mut points)?;
 
         Ok(Delaunay::new(dim, points, triangles, bounds))
     }
@@ -412,7 +412,7 @@ impl DelaunayFactory {
         Ok(flatten_triangle_fans)
     }
 
-    fn flip_triangles(&self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
+    fn flip_triangles(&mut self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
         (0..triangles.len())
             .into_iter()
             .map(|i| i.into())
@@ -420,6 +420,12 @@ impl DelaunayFactory {
             .for_each(|mut triangle_handle| {
                 triangle_handle.flip_with_neighbours_except(None, 128);
             });
+
+        let triangle_vec = triangles
+            .handle_iter::<DelaunayTriangleHandle>(points)
+            .map(|t| *t.get().unwrap())
+            .collect::<Vec<_>>();
+        self.triangles_buffer.write(&triangle_vec).unwrap();
     }
 }
 

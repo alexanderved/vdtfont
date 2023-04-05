@@ -75,12 +75,13 @@ fn main() -> anyhow::Result<()> {
 
     let dim = IMG_DIM / 2;
 
-    let font = include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
+    let font =
+        include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
-    let glyph_id = parsed_face.glyph_index('t').unwrap();
+    let glyph_id = parsed_face.glyph_index('r').unwrap();
 
     let mut outliner = outliner::Outliner::new();
     let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
@@ -114,10 +115,10 @@ fn main() -> anyhow::Result<()> {
 
     //let now = std::time::Instant::now();
 
+    let now = std::time::Instant::now();
+
     let mut voronoi_image_factory = VoronoiImageFactory::new(queue.clone(), IMG_DIM)?;
     let mut delaunay_factory = DelaunayFactory::new(queue.clone())?;
-
-    let now = std::time::Instant::now();
 
     let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
     let delaunay = delaunay_factory.construct(&voronoi_image)?;
@@ -126,18 +127,6 @@ fn main() -> anyhow::Result<()> {
     println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
 
     save(&voronoi_image, &delaunay, "voronoi.png")?;
-
-    /* delaunay
-    .triangles
-    .handle_iter::<DelaunayTriangleHandle>(delaunay.points())
-    .for_each(|t| {
-        let points = t.points();
-
-        print!("Triangle(");
-        print!("pointi({}, {}), ", points[0].x(), points[0].y());
-        print!("pointi({}, {}), ", points[1].x(), points[1].y());
-        println!("pointi({}, {})),", points[2].x(), points[2].y());
-    }); */
 
     Ok(())
 }
