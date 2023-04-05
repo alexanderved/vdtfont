@@ -94,8 +94,11 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         index: Index,
         new_neighbour: DelaunayTriangleHandle<'arena>,
     ) {
-        if self.try_remove_neighbour(index) {
-            self.try_add_neighbour(new_neighbour);
+        let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
+        let position = neighbour_ids.iter().position(|n| *n == index.into());
+
+        if let Some(position) = position {
+            neighbour_ids[position] = new_neighbour.index().into();
         }
     }
 
@@ -197,18 +200,16 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let opposite_points = self.opposite_points_with(other);
 
         if !(shared_points.len() == 2 && opposite_points.len() == 2) {
+            println!("Bad");
             return false;
         }
 
         let is_opposite_point_on_bounds =
             opposite_points[0].is_bounding() || opposite_points[1].is_bounding();
 
-        let by_the_same_side_after_flip = shared_points[0]
-            .skew_product(&opposite_points[0], &opposite_points[1])
-            .signum()
-            == shared_points[1]
-                .skew_product(&opposite_points[0], &opposite_points[1])
-                .signum();
+        let sp0 = shared_points[0].skew_product(&opposite_points[0], &opposite_points[1]);
+        let sp1 = shared_points[1].skew_product(&opposite_points[0], &opposite_points[1]);
+        let by_the_same_side_after_flip = sp0.signum() == sp1.signum();
 
         let has_contour_edge = shared_points[0].previous_in_outline() == shared_points[1]
             || shared_points[1].previous_in_outline() == shared_points[0];
@@ -267,37 +268,27 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     fn update_neighbours(&self, other: &DelaunayTriangleHandle<'arena>) {
-        let neighbourhood = self
-            .neighbours()
+        let mut neighbourhood = self.neighbours();
+        let mut other_neighbours = other.neighbours()
             .into_iter()
-            .chain(other.neighbours())
-            .collect::<SmallVec<[DelaunayTriangleHandle; 6]>>();
+            .filter(|n| !neighbourhood.contains(n))
+            .collect::<SmallVec<[_; 3]>>();
+        neighbourhood.append(&mut other_neighbours);
 
-        let neighbourhood = neighbourhood
-            .iter()
-            .copied()
-            .enumerate()
-            .filter(|(i, neighbour)| {
-                neighbourhood.iter().copied().position(|n| n == *neighbour).unwrap() == *i
-            })
-            .map(|(_, neighbour)| neighbour)
-            .collect::<SmallVec<[DelaunayTriangleHandle; 6]>>();
-
-        let mut triangles = [*self, *other].into_iter().cycle().peekable();
-        for _ in 0..2 {
-            let triangle = triangles.next().unwrap();
-            let other_triangle = *triangles.peek().unwrap();
+        let triangles = [*self, *other];
+        for i in 0..2 {
+            let triangle = triangles[i];
+            let other_triangle = triangles[(i + 1) % 2];
 
             let new_neighbours = neighbourhood
                 .iter()
                 .copied()
                 .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
-                .map(|neighbour| {
-                    neighbour.try_replace_neighbour(other_triangle.index(), triangle);
-
-                    neighbour
-                })
                 .collect::<SmallVec<[DelaunayTriangleHandle; 3]>>();
+
+            new_neighbours
+                .iter()
+                .for_each(|n| n.try_replace_neighbour(other_triangle.index(), triangle));
 
             triangle.set_neighbours(new_neighbours);
         }
