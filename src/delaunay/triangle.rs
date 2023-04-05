@@ -164,6 +164,15 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
+    pub fn opposite_edge_to(&self, vertex: PointHandle) -> [PointHandle; 2] {
+        self.points()
+            .into_iter()
+            .filter(|point| *point != vertex)
+            .collect::<SmallVec<[PointHandle; 2]>>()
+            .into_inner()
+            .expect("Triangle doesn't contain the specified vertex")
+    }
+
     pub fn is_in_circle_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
