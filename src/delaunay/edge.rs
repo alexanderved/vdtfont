@@ -3,6 +3,7 @@ use super::DelaunayTriangleHandle;
 use crate::point::PointHandle;
 
 use std::convert;
+use std::ops::ControlFlow;
 
 use smallvec::SmallVec;
 
@@ -53,8 +54,60 @@ impl<'arena> Edge<'arena> {
             || self.points[0] == other.points[1] && self.points[1] == other.points[0]
     }
 
-    pub fn find_triangle_track(&self) -> Vec<DelaunayTriangleHandle<'arena>> {
-        todo!()
+    pub fn find_triangle_track(&'arena self) -> Vec<DelaunayTriangleHandle<'arena>> {
+        let res = self.points()[0].triangle_fan().into_iter().try_for_each(|t| {
+            let opposite_edge = t.opposite_edge_to(self.points()[0]);
+
+            if opposite_edge.contains(self.points()[1]) || opposite_edge.intersects(&self) {
+                return ControlFlow::Break((opposite_edge, t));
+            }
+
+            ControlFlow::Continue(())
+        });
+
+        let (mut e, mut t) = match res {
+            ControlFlow::Break((e, t)) => (e, t),
+            _ => panic!("Triangle not found"),
+        };
+        let mut triangles = vec![t];
+
+        if t.points().contains(&self.points()[1]) {
+            return triangles;
+        }
+
+        t.set_is_visible(false);
+
+        loop {
+            println!("{:?}", t.points());
+            println!(
+                "{:?}",
+                t.neighbours()
+                    .into_iter()
+                    .map(|n| n.points())
+                    .collect::<Vec<_>>()
+            );
+
+            let n = t.neighbour_on_edge(e);
+            n.set_is_visible(false);
+            triangles.push(n);
+
+            if n.points().contains(&self.points()[1]) {
+                return triangles;
+            }
+
+            let edges = n.edges_except(e);
+            // println!("Edges {:?}", edges);
+
+            if edges[0].intersects(&self) {
+                println!("1 {:?}", edges[0]);
+                e = edges[0];
+            } else if edges[1].intersects(&self) {
+                println!("2 {:?}", edges[1]);
+                e = edges[1];
+            }
+
+            t = n;
+        }
     }
 }
 

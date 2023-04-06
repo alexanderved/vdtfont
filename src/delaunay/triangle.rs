@@ -15,11 +15,12 @@ pub struct DelaunayTriangle {
     pub vertices: [PointId; 3],
     pub neighbours: [TriangleId; 3],
     pub neighbours_number: i32,
+    pub is_visible: bool,
 }
 
 impl DelaunayTriangle {
     pub fn new(vertices: [PointId; 3]) -> Self {
-        Self { vertices, neighbours: [-1; 3], neighbours_number: 0 }
+        Self { vertices, neighbours: [-1; 3], neighbours_number: 0, is_visible: true }
     }
 
     pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
@@ -87,6 +88,14 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .iter_mut()
             .zip(new_neighbours.into_iter())
             .for_each(|(neighbour, new_neighbour)| *neighbour = new_neighbour.index().into());
+    }
+
+    pub fn is_visible(&self) -> bool {
+        self.get_mut().unwrap().is_visible
+    }
+
+    pub fn set_is_visible(&self, is_visible: bool) {
+        self.get_mut().unwrap().is_visible = is_visible;
     }
 
     pub fn edges(&self) -> SmallVec<[Edge<'arena>; 3]> {
@@ -195,7 +204,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .into()
     }
 
-    pub fn neighbour_on_edge(&self, edge: Edge) -> DelaunayTriangleHandle {
+    pub fn neighbour_on_edge(&self, edge: Edge) -> DelaunayTriangleHandle<'arena> {
         self.neighbours()
             .into_iter()
             .find(|n| edge == self.shared_points_with(n).into())
