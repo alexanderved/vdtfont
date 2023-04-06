@@ -4,7 +4,7 @@ use arena_system::Arena;
 use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
-use vdtfont::delaunay::{Delaunay, DelaunayFactory};
+use vdtfont::delaunay::{Delaunay, DelaunayFactory, Edge};
 use vdtfont::font::*;
 use vdtfont::point::{Point, PointHandle};
 use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
@@ -75,8 +75,7 @@ fn main() -> anyhow::Result<()> {
 
     let dim = IMG_DIM / 2;
 
-    let font =
-        include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
+    let font = include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
@@ -103,11 +102,11 @@ fn main() -> anyhow::Result<()> {
     println!("The height of a glyph: {}", height);
 
     (0..outliner.points.len()).into_iter().for_each(|i| {
-        let p = outliner.points.handle::<PointHandle>(i.into(), ());
+        let p = outliner.points.handle::<PointHandle>(i.into(), None);
         let new_x = p.x() * h_factor;
         let new_y = bounds.height() as f32 - p.y() * v_factor;
 
-        let mut point = outliner.points.handle::<PointHandle>(i.into(), ());
+        let mut point = outliner.points.handle::<PointHandle>(i.into(), None);
         point.set_coords(ocl::prm::Float2::new(new_x, new_y));
     });
 
@@ -122,6 +121,12 @@ fn main() -> anyhow::Result<()> {
 
     let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
     let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
+
+    let edge: Edge = [
+        delaunay.points().handle(1i64.into(), Some(delaunay.triangles())),
+        delaunay.points().handle(100i64.into(), Some(delaunay.triangles())),
+    ]
+    .into();
 
     delaunay.insert_edge([1, 100]);
 
