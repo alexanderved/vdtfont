@@ -104,11 +104,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     pub fn edges_except(&self, exception: Edge<'arena>) -> SmallVec<[Edge<'arena>; 2]> {
-        self
-            .edges()
-            .into_iter()
-            .filter(|edge| edge != &exception)
-            .collect()
+        self.edges().into_iter().filter(|edge| edge != &exception).collect()
     }
 
     pub fn is_neighbour(&self, neighbour: &DelaunayTriangleHandle<'arena>) -> bool {
@@ -190,21 +186,18 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
-    pub fn opposite_edge_to(&self, vertex: PointHandle) -> [PointHandle; 2] {
+    pub fn opposite_edge_to(&self, vertex: PointHandle) -> Edge<'arena> {
         self.points()
             .into_iter()
             .filter(|point| *point != vertex)
             .collect::<SmallVec<[PointHandle; 2]>>()
-            .into_inner()
-            .expect("Triangle doesn't contain the specified vertex")
+            .into()
     }
 
-    pub fn neighbour_on_edge(&self, edge: [PointHandle; 2]) -> DelaunayTriangleHandle {
+    pub fn neighbour_on_edge(&self, edge: Edge) -> DelaunayTriangleHandle {
         self.neighbours()
             .into_iter()
-            .find(|n| {
-                super::util::are_lines_equal(edge, self.shared_points_with(n).into_inner().unwrap())
-            })
+            .find(|n| edge == self.shared_points_with(n).into())
             .expect("No neighbour which shares the specified edge")
     }
 

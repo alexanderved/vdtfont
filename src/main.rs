@@ -4,7 +4,7 @@ use arena_system::Arena;
 use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
-use vdtfont::delaunay::{Delaunay, DelaunayFactory, Edge};
+use vdtfont::delaunay::{Delaunay, DelaunayFactory};
 use vdtfont::font::*;
 use vdtfont::point::{Point, PointHandle};
 use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
@@ -122,13 +122,7 @@ fn main() -> anyhow::Result<()> {
     let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
     let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
 
-    let edge: Edge = [
-        delaunay.points().handle(1i64.into(), Some(delaunay.triangles())),
-        delaunay.points().handle(100i64.into(), Some(delaunay.triangles())),
-    ]
-    .into();
-
-    delaunay.insert_edge([1, 100]);
+    delaunay.insert_edge([0, 100]);
 
     let dur = now.elapsed();
     println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
