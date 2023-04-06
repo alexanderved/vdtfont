@@ -132,7 +132,7 @@ impl DelaunayFactory {
 
     fn collect_discrete_points(&self, points: &Arena<Point>) -> Arena<Point> {
         points
-            .handle_iter::<PointHandle>(())
+            .handle_iter::<PointHandle>(None)
             .map(|site| {
                 Point::with_previous(
                     site.x().floor(),

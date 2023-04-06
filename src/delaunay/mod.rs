@@ -2,6 +2,7 @@ mod bounds;
 mod factory;
 mod triangle;
 mod triangle_fan;
+mod util;
 
 pub(crate) use bounds::*;
 pub use factory::DelaunayFactory;
@@ -37,7 +38,6 @@ impl Delaunay {
         self.bounds
     }
 
-
     pub fn image(&self) -> Vec<u8> {
         let mut bitmap = vec![0.0; self.dim * self.dim];
 
@@ -52,19 +52,9 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                (*self.points.handle::<PointHandle>(t.vertices[0].into(), ()).get().unwrap())
+                (*self.points.handle::<PointHandle>(t.vertices[0].into(), None).get().unwrap())
                     .clone(),
-                (*self.points.handle::<PointHandle>(t.vertices[1].into(), ()).get().unwrap())
-                    .clone(),
-            );
-
-            crate::draw_line(
-                &mut bitmap,
-                self.dim,
-                self.dim,
-                (*self.points.handle::<PointHandle>(t.vertices[1].into(), ()).get().unwrap())
-                    .clone(),
-                (*self.points.handle::<PointHandle>(t.vertices[2].into(), ()).get().unwrap())
+                (*self.points.handle::<PointHandle>(t.vertices[1].into(), None).get().unwrap())
                     .clone(),
             );
 
@@ -72,9 +62,19 @@ impl Delaunay {
                 &mut bitmap,
                 self.dim,
                 self.dim,
-                (*self.points.handle::<PointHandle>(t.vertices[0].into(), ()).get().unwrap())
+                (*self.points.handle::<PointHandle>(t.vertices[1].into(), None).get().unwrap())
                     .clone(),
-                (*self.points.handle::<PointHandle>(t.vertices[2].into(), ()).get().unwrap())
+                (*self.points.handle::<PointHandle>(t.vertices[2].into(), None).get().unwrap())
+                    .clone(),
+            );
+
+            crate::draw_line(
+                &mut bitmap,
+                self.dim,
+                self.dim,
+                (*self.points.handle::<PointHandle>(t.vertices[0].into(), None).get().unwrap())
+                    .clone(),
+                (*self.points.handle::<PointHandle>(t.vertices[2].into(), None).get().unwrap())
                     .clone(),
             );
 

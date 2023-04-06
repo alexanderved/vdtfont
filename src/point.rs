@@ -119,9 +119,10 @@ impl Point {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy)]
 pub struct PointHandle<'arena> {
     raw: RawHandle<'arena, Point>,
+    triangles: Option<&'arena Arena<DelaunayTriangle>>
 }
 
 impl<'arena> PointHandle<'arena> {
@@ -148,7 +149,7 @@ impl<'arena> PointHandle<'arena> {
     pub fn previous_in_outline(&self) -> PointHandle<'arena> {
         let this = self.get().expect("Can't get the point");
 
-        self.arena().handle(this.previous_in_outline().into(), ())
+        self.arena().handle(this.previous_in_outline().into(), self.triangles)
     }
 
     pub fn triangle_fan(
@@ -183,13 +184,32 @@ impl<'arena> PointHandle<'arena> {
 
 impl<'arena> Handle<'arena> for PointHandle<'arena> {
     type Type = Point;
-    type Userdata = ();
+    type Userdata = Option<&'arena Arena<DelaunayTriangle>>;
 
-    fn from_raw(raw: RawHandle<'arena, Self::Type>, _userdata: Self::Userdata) -> Self {
-        Self { raw }
+    fn from_raw(raw: RawHandle<'arena, Self::Type>, userdata: Self::Userdata) -> Self {
+        Self { raw, triangles: userdata }
     }
 
     fn to_raw(&self) -> RawHandle<'arena, Self::Type> {
         self.raw
+    }
+}
+
+impl PartialEq for PointHandle<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_raw() == other.to_raw()
+    }
+}
+impl Eq for PointHandle<'_> {}
+
+impl PartialOrd for PointHandle<'_> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_raw().partial_cmp(&other.to_raw())
+    }
+}
+
+impl Ord for PointHandle<'_> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_raw().cmp(&other.to_raw())
     }
 }

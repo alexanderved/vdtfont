@@ -19,9 +19,9 @@ impl DelaunayTriangle {
     }
 
     pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
-        points.handle::<PointHandle>(self.vertices[1].into(), ()).skew_product(
-            &points.handle(self.vertices[0].into(), ()),
-            &points.handle(self.vertices[2].into(), ()),
+        points.handle::<PointHandle>(self.vertices[1].into(), None).skew_product(
+            &points.handle(self.vertices[0].into(), None),
+            &points.handle(self.vertices[2].into(), None),
         ) < 0.0
     }
 
@@ -53,9 +53,9 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let vertices = self.get().unwrap().vertices;
 
         [
-            self.points.handle(vertices[0].into(), ()),
-            self.points.handle(vertices[1].into(), ()),
-            self.points.handle(vertices[2].into(), ()),
+            self.points.handle(vertices[0].into(), Some(self.arena())),
+            self.points.handle(vertices[1].into(), Some(self.arena())),
+            self.points.handle(vertices[2].into(), Some(self.arena())),
         ]
     }
 
