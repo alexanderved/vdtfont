@@ -127,6 +127,8 @@ impl DelaunayFactory {
 
         self.calculate_triangle_fans(&mut points)?;
 
+        self.reset()?;
+
         Ok(Delaunay::new(dim, points, triangles, bounds))
     }
 
@@ -426,6 +428,13 @@ impl DelaunayFactory {
             .map(|t| *t.get().unwrap())
             .collect::<Vec<_>>();
         self.triangles_buffer.write(&triangle_vec).unwrap();
+    }
+
+    fn reset(&mut self) -> anyhow::Result<()> {
+        self.triangle_number_buffer.clear()?;
+        self.free_triangle_index_buffer.clear()?;
+
+        Ok(())
     }
 }
 
