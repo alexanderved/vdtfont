@@ -2,6 +2,7 @@ use crate::point::PointHandle;
 
 use std::convert;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Edge<'arena> {
     points: [PointHandle<'arena>; 2],
 }
@@ -44,6 +45,14 @@ impl<'arena> Edge<'arena> {
             || self.points[0] == other.points[1] && self.points[1] == other.points[0]
     }
 }
+
+impl PartialEq for Edge<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_equal_to(other)
+    }
+}
+
+impl Eq for Edge<'_> {}
 
 impl<'arena> convert::From<[PointHandle<'arena>; 2]> for Edge<'arena> {
     fn from(points: [PointHandle<'arena>; 2]) -> Self {
