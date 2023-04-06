@@ -124,7 +124,7 @@ impl Point {
 #[derive(Clone, Copy)]
 pub struct PointHandle<'arena> {
     raw: RawHandle<'arena, Point>,
-    triangles: Option<&'arena Arena<DelaunayTriangle>>
+    triangles: Option<&'arena Arena<DelaunayTriangle>>,
 }
 
 impl<'arena> PointHandle<'arena> {

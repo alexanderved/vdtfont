@@ -8,16 +8,14 @@ pub struct Edge<'arena> {
 
 impl<'arena> Edge<'arena> {
     fn new(points: [PointHandle<'arena>; 2]) -> Self {
-        Self {
-            points
-        }
+        Self { points }
     }
 
     pub fn points(&self) -> [PointHandle<'arena>; 2] {
         self.points
     }
 
-    pub fn intersects(&self, other: Self) -> bool {
+    pub fn intersects(&self, other: &Self) -> bool {
         let det = (self.points[1].x() - self.points[0].x())
             * (other.points[1].y() - other.points[0].y())
             - (other.points[1].x() - other.points[0].x())
@@ -39,6 +37,11 @@ impl<'arena> Edge<'arena> {
 
             (0.0 < lambda && lambda < 1.0) && (0.0 < gamma && gamma < 1.0)
         }
+    }
+
+    pub fn is_equal_to(&self, other: &Self) -> bool {
+        self.points[0] == other.points[0] && self.points[1] == other.points[1]
+            || self.points[0] == other.points[1] && self.points[1] == other.points[0]
     }
 }
 
