@@ -10,12 +10,16 @@ pub struct Edge<'arena> {
 }
 
 impl<'arena> Edge<'arena> {
-    fn new(points: [PointHandle<'arena>; 2]) -> Self {
+    pub fn new(points: [PointHandle<'arena>; 2]) -> Self {
         Self { points }
     }
 
     pub fn points(&self) -> [PointHandle<'arena>; 2] {
         self.points
+    }
+
+    pub fn contains(&self, point: PointHandle<'arena>) -> bool {
+        self.points.contains(&point)
     }
 
     pub fn intersects(&self, other: &Self) -> bool {
