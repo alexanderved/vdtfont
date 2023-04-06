@@ -1,3 +1,5 @@
+use super::DelaunayTriangleHandle;
+
 use crate::point::PointHandle;
 
 use std::convert;
@@ -49,6 +51,10 @@ impl<'arena> Edge<'arena> {
     pub fn is_equal_to(&self, other: &Self) -> bool {
         self.points[0] == other.points[0] && self.points[1] == other.points[1]
             || self.points[0] == other.points[1] && self.points[1] == other.points[0]
+    }
+
+    pub fn find_triangle_track(&self) -> Vec<DelaunayTriangleHandle<'arena>> {
+        todo!()
     }
 }
 

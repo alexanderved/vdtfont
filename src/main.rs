@@ -122,7 +122,7 @@ fn main() -> anyhow::Result<()> {
     let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
     let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
 
-    delaunay.insert_edge([0, 100]);
+    delaunay.insert_edge([1, 63]);
 
     let dur = now.elapsed();
     println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());

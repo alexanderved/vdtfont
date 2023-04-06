@@ -51,6 +51,9 @@ impl Delaunay {
         let t = edge.points()[0].triangle_fan().into_iter().try_for_each(|t| {
             let opposite_edge = t.opposite_edge_to(edge.points()[0]);
 
+            // println!("Edge: {:?}", edge);
+            // println!("Opposite edge: {:?}", opposite_edge);
+
             if opposite_edge.contains(edge.points()[1]) {
                 return ControlFlow::Break(t);
             }
@@ -63,6 +66,11 @@ impl Delaunay {
                 println!("Tri edge: {:?}", tri_edge);
 
                 let edges = next.edges();
+                // println!("{:?}", edges);
+
+                println!("{}", edges[0].intersects(&edge));
+                println!("{}", edges[1].intersects(&edge));
+                println!("{}", edges[2].intersects(&edge));
 
                 if edges[0].intersects(&edge) && edges[0] != tri_edge {
                     println!("1 {:?}", edges[0]);
