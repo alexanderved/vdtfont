@@ -2,6 +2,8 @@ use crate::point::PointHandle;
 
 use std::convert;
 
+use smallvec::SmallVec;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Edge<'arena> {
     points: [PointHandle<'arena>; 2],
@@ -60,8 +62,20 @@ impl<'arena> convert::From<[PointHandle<'arena>; 2]> for Edge<'arena> {
     }
 }
 
+impl<'arena> convert::From<SmallVec<[PointHandle<'arena>; 2]>> for Edge<'arena> {
+    fn from(points: SmallVec<[PointHandle<'arena>; 2]>) -> Self {
+        Self::new(points.into_inner().expect("SmallVec is larger than [PointHandle; 2]"))
+    }
+}
+
 impl<'arena> convert::Into<[PointHandle<'arena>; 2]> for Edge<'arena> {
     fn into(self) -> [PointHandle<'arena>; 2] {
         self.points
+    }
+}
+
+impl<'arena> convert::Into<SmallVec<[PointHandle<'arena>; 2]>> for Edge<'arena> {
+    fn into(self) -> SmallVec<[PointHandle<'arena>; 2]> {
+        self.points.into()
     }
 }
