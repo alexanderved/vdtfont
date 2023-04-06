@@ -1,3 +1,5 @@
+use super::edge::Edge;
+
 use crate::point::{Point, PointHandle, PointId};
 
 use std::fmt;
@@ -85,6 +87,28 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .iter_mut()
             .zip(new_neighbours.into_iter())
             .for_each(|(neighbour, new_neighbour)| *neighbour = new_neighbour.index().into());
+    }
+
+    pub fn edges(&self) -> SmallVec<[Edge<'arena>; 3]> {
+        (0..3)
+            .into_iter()
+            .map(|i| i as i64)
+            .map(|i| {
+                [
+                    self.points.handle(i.into(), Some(self.arena())),
+                    self.points.handle(((i + 1) % 3).into(), Some(self.arena())),
+                ]
+            })
+            .map(|e| e.into())
+            .collect::<SmallVec<[Edge<'arena>; 3]>>()
+    }
+
+    pub fn edges_except(&self, exception: Edge<'arena>) -> SmallVec<[Edge<'arena>; 2]> {
+        self
+            .edges()
+            .into_iter()
+            .filter(|edge| edge != &exception)
+            .collect()
     }
 
     pub fn is_neighbour(&self, neighbour: &DelaunayTriangleHandle<'arena>) -> bool {
