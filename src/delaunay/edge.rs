@@ -13,6 +13,10 @@ impl<'arena> Edge<'arena> {
         }
     }
 
+    pub fn points(&self) -> [PointHandle<'arena>; 2] {
+        self.points
+    }
+
     pub fn intersects(&self, other: Self) -> bool {
         let det = (self.points[1].x() - self.points[0].x())
             * (other.points[1].y() - other.points[0].y())
@@ -41,5 +45,11 @@ impl<'arena> Edge<'arena> {
 impl<'arena> convert::From<[PointHandle<'arena>; 2]> for Edge<'arena> {
     fn from(points: [PointHandle<'arena>; 2]) -> Self {
         Self::new(points)
+    }
+}
+
+impl<'arena> convert::Into<[PointHandle<'arena>; 2]> for Edge<'arena> {
+    fn into(self) -> [PointHandle<'arena>; 2] {
+        self.points
     }
 }
