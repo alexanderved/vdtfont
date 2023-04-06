@@ -173,6 +173,15 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .expect("Triangle doesn't contain the specified vertex")
     }
 
+    pub fn neighbour_on_edge(&self, edge: [PointHandle; 2]) -> DelaunayTriangleHandle {
+        self.neighbours()
+            .into_iter()
+            .find(|n| {
+                super::util::are_lines_equal(edge, self.shared_points_with(n).into_inner().unwrap())
+            })
+            .expect("No neighbour which shares the specified edge")
+    }
+
     pub fn is_in_circle_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
@@ -278,7 +287,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
     fn update_neighbours(&self, other: &DelaunayTriangleHandle<'arena>) {
         let mut neighbourhood = self.neighbours();
-        let mut other_neighbours = other.neighbours()
+        let mut other_neighbours = other
+            .neighbours()
             .into_iter()
             .filter(|n| !neighbourhood.contains(n))
             .collect::<SmallVec<[_; 3]>>();
