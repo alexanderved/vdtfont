@@ -66,11 +66,7 @@ impl Delaunay {
                 println!("Tri edge: {:?}", tri_edge);
 
                 let edges = next.edges();
-                // println!("{:?}", edges);
-
-                println!("{}", edges[0].intersects(&edge));
-                println!("{}", edges[1].intersects(&edge));
-                println!("{}", edges[2].intersects(&edge));
+                println!("{:?}", edges);
 
                 if edges[0].intersects(&edge) && edges[0] != tri_edge {
                     println!("1 {:?}", edges[0]);

@@ -90,13 +90,14 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     pub fn edges(&self) -> SmallVec<[Edge<'arena>; 3]> {
+        let vertices = self.points();
         (0..3)
             .into_iter()
-            .map(|i| i as i64)
+            .map(|i| i as usize)
             .map(|i| {
                 [
-                    self.points.handle(i.into(), Some(self.arena())),
-                    self.points.handle(((i + 1) % 3).into(), Some(self.arena())),
+                    vertices[i],
+                    vertices[(i + 1) % 3],
                 ]
             })
             .map(|e| e.into())
