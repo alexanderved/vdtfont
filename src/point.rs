@@ -3,6 +3,8 @@ use crate::{
     ocl::prm::Float2,
 };
 
+use std::fmt;
+
 use arena_system::{Arena, Handle, RawHandle};
 use smallvec::SmallVec;
 
@@ -119,7 +121,7 @@ impl Point {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct PointHandle<'arena> {
     raw: RawHandle<'arena, Point>,
     triangles: Option<&'arena Arena<DelaunayTriangle>>
@@ -152,17 +154,14 @@ impl<'arena> PointHandle<'arena> {
         self.arena().handle(this.previous_in_outline().into(), self.triangles)
     }
 
-    pub fn triangle_fan(
-        &self,
-        triangles: &'arena Arena<DelaunayTriangle>,
-    ) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
+    pub fn triangle_fan(&self) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
         self.get()
             .unwrap()
             .triangle_fan
             .iter()
             .copied()
             .map(|i| i.into())
-            .map(|i| triangles.handle(i, self.arena()))
+            .map(|i| self.triangles.unwrap().handle(i, self.arena()))
             .collect()
     }
 
@@ -192,6 +191,12 @@ impl<'arena> Handle<'arena> for PointHandle<'arena> {
 
     fn to_raw(&self) -> RawHandle<'arena, Self::Type> {
         self.raw
+    }
+}
+
+impl fmt::Debug for PointHandle<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("PointHandle({:?})", self.to_raw()))
     }
 }
 
