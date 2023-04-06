@@ -105,7 +105,7 @@ impl VoronoiImageFactory {
 
     fn plot_sites(&mut self, sites: &Arena<Point>) -> anyhow::Result<()> {
         let raw_sites = sites
-            .handle_iter::<PointHandle>(())
+            .handle_iter::<PointHandle>(None)
             .map(|s| s.coords())
             .collect::<Vec<Float2>>();
         self.sites_buffer.write(&raw_sites)?;
