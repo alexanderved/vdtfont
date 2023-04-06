@@ -1,5 +1,7 @@
 use crate::point::{Point, PointHandle, PointId};
 
+use std::fmt;
+
 use arena_system::{Arena, Handle, Index, RawHandle};
 use smallvec::SmallVec;
 
@@ -42,7 +44,7 @@ impl std::default::Default for DelaunayTriangle {
 
 unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
     points: &'arena Arena<Point>,
@@ -343,6 +345,12 @@ impl<'arena> Handle<'arena> for DelaunayTriangleHandle<'arena> {
 
     fn to_raw(&self) -> RawHandle<'arena, Self::Type> {
         self.raw
+    }
+}
+
+impl fmt::Debug for DelaunayTriangleHandle<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("DelaunayTriangleHandle({:?})", self.to_raw()))
     }
 }
 
