@@ -132,11 +132,11 @@ __kernel void build_triangles(
         }
     } else if (triangle_number == 2) {
         for (int i = 0; i < 2; i++) {
-            triangles[triangle_offset + i] = (Triangle) {
-                .vertices = { vertex.v[i], vertex.v[i + 1], vertex.v[i + 2] },
-                .neighbours = { -1, -1, -1 },
-                .neighbours_number = 0,
-            };
+            __global Triangle *triangle = &triangles[triangle_offset + i];
+
+            for (int j = 0; j < 3; j++) {
+                triangle->vertices[j] = vertex.v[i + j];
+            }
         }
     }
 }
