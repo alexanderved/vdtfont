@@ -3,7 +3,6 @@ mod edge;
 mod factory;
 mod triangle;
 mod triangle_fan;
-mod util;
 
 pub(crate) use bounds::*;
 pub use edge::*;
