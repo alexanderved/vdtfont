@@ -1,12 +1,14 @@
 mod bounds;
 mod edge;
 mod factory;
+mod polygon;
 mod triangle;
 mod triangle_fan;
 
 pub(crate) use bounds::*;
 pub use edge::*;
 pub use factory::DelaunayFactory;
+pub use polygon::Polygon;
 pub use triangle::*;
 
 use crate::point::*;
@@ -46,7 +48,10 @@ impl Delaunay {
         ]
         .into();
 
-        edge.find_triangle_track();
+        let triangle_track = edge.find_triangle_track();
+        let _polygon = Polygon::from(&triangle_track);
+
+        //println!("{:?}", polygon);
     }
 
     pub fn image(&self) -> Vec<u8> {
