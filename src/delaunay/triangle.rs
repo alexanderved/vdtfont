@@ -20,7 +20,15 @@ pub struct DelaunayTriangle {
 
 impl DelaunayTriangle {
     pub fn new(vertices: [PointId; 3]) -> Self {
-        Self { vertices, neighbours: [-1; 3], neighbours_number: 0, is_visible: false }
+        Self { vertices, neighbours: [-1; 3], neighbours_number: 0, is_visible: true }
+    }
+
+    pub fn is_visible(&self) -> bool {
+        self.is_visible
+    }
+
+    pub fn set_is_visible(&mut self, is_visible: bool) {
+        self.is_visible = is_visible;
     }
 
     pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
@@ -36,6 +44,35 @@ impl DelaunayTriangle {
 
             std::mem::swap(&mut vertices0[0], &mut vertices1[0]);
         }
+    }
+
+    #[allow(non_snake_case)]
+    pub fn circumcircle_radius(&self, points: &Arena<Point>) -> f32 {
+        let A = points.handle::<PointHandle>(self.vertices[0].into(), None);
+        let B = points.handle::<PointHandle>(self.vertices[1].into(), None);
+        let C = points.handle::<PointHandle>(self.vertices[2].into(), None);
+
+        let mut a = [0.0; 4];
+        let mut b = [0.0; 2];
+        a[0] = (A.x() - B.x()) * 2.0;
+        a[1] = (A.y() - B.y()) * 2.0;
+        a[2] = (B.x() - C.x()) * 2.0;
+        a[3] = (B.y() - C.y()) * 2.0;
+        b[0] = A.x() * A.x() + A.y() * A.y() - B.x() * B.x() - B.y() * B.y();
+        b[1] = B.x() * B.x() + B.y() * B.y() - C.x() * C.x() - C.y() * C.y();
+
+        let det = a[0] * a[3] - a[1] * a[2];
+        if libm::fabsf(det) <= f32::EPSILON { return -1.0; }
+
+        let mut center = [0.0; 2];
+        center[0] = (b[0] * a[3] - a[1] * b[1]) / det;
+        center[1] = (a[0] * b[1] - b[0] * a[2]) / det;
+
+        let dx = A.x() - center[0];
+        let dy = A.y() - center[1];
+        let radius = libm::sqrtf(dx * dx + dy * dy);
+
+        radius
     }
 }
 
