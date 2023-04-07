@@ -20,7 +20,7 @@ pub struct DelaunayTriangle {
 
 impl DelaunayTriangle {
     pub fn new(vertices: [PointId; 3]) -> Self {
-        Self { vertices, neighbours: [-1; 3], neighbours_number: 0, is_visible: true }
+        Self { vertices, neighbours: [-1; 3], neighbours_number: 0, is_visible: false }
     }
 
     pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
@@ -215,7 +215,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
         polygon.sort_by_angle(origin);
 
-        let p = polygon.points()
+        let p = polygon
+            .points()
             .iter()
             .map(|p| Point::new(p.x() - origin.x(), p.y() - origin.y()))
             .rev()
