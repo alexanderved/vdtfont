@@ -58,7 +58,7 @@ impl<'arena> Edge<'arena> {
         let res = self.points()[0].triangle_fan().into_iter().try_for_each(|t| {
             let opposite_edge = t.opposite_edge_to(self.points()[0]);
 
-            if opposite_edge.contains(self.points()[1]) || opposite_edge.intersects(&self) {
+            if t.points().contains(&self.points()[1]) || opposite_edge.intersects(&self) {
                 return ControlFlow::Break((opposite_edge, t));
             }
 

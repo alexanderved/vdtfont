@@ -173,8 +173,7 @@ impl<'arena> PointHandle<'arena> {
     }
 
     pub fn is_connected_to(&self, other: PointHandle<'arena>) -> bool {
-        self
-            .triangle_fan()
+        self.triangle_fan()
             .into_iter()
             .find(|t| t.points().contains(&other))
             .is_some()
