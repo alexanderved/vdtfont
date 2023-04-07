@@ -1,9 +1,8 @@
-use crate::{
-    delaunay::{DelaunayTriangle, DelaunayTriangleHandle, TriangleId},
-    ocl::prm::Float2,
-};
+use crate::delaunay::{DelaunayTriangle, DelaunayTriangleHandle, TriangleId};
+use crate::ocl::prm::Float2;
 
 use std::fmt;
+use std::hash;
 
 use arena_system::{Arena, Handle, RawHandle};
 use smallvec::SmallVec;
@@ -224,5 +223,12 @@ impl PartialOrd for PointHandle<'_> {
 impl Ord for PointHandle<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.to_raw().cmp(&other.to_raw())
+    }
+}
+
+impl hash::Hash for PointHandle<'_> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        let index: i64 = self.index().into();
+        index.hash(state);
     }
 }
