@@ -134,9 +134,8 @@ __kernel void build_triangles(
     } else if (triangle_number == 2) {
         for (int i = 0; i < 2; i++) {
             __global Triangle *triangle = &triangles[triangle_offset + i];
-
             for (int j = 0; j < 3; j++) {
-                triangle->vertices[j] = vertex.v[i + j];
+                triangle->vertices[j] = vertex.v[(j + i * 2) % 4];
             }
         }
     }

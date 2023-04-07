@@ -75,20 +75,8 @@ impl<'arena> Edge<'arena> {
             return triangles;
         }
 
-        t.set_is_visible(false);
-
         loop {
-            println!("{:?}", t.points());
-            println!(
-                "{:?}",
-                t.neighbours()
-                    .into_iter()
-                    .map(|n| n.points())
-                    .collect::<Vec<_>>()
-            );
-
             let n = t.neighbour_on_edge(e);
-            n.set_is_visible(false);
             triangles.push(n);
 
             if n.points().contains(&self.points()[1]) {
@@ -96,13 +84,10 @@ impl<'arena> Edge<'arena> {
             }
 
             let edges = n.edges_except(e);
-            // println!("Edges {:?}", edges);
 
             if edges[0].intersects(&self) {
-                println!("1 {:?}", edges[0]);
                 e = edges[0];
             } else if edges[1].intersects(&self) {
-                println!("2 {:?}", edges[1]);
                 e = edges[1];
             }
 

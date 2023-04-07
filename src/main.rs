@@ -75,12 +75,14 @@ fn main() -> anyhow::Result<()> {
 
     let dim = IMG_DIM / 2;
 
-    let font = include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
+    #[rustfmt::skip]
+    let font =
+        include_bytes!("../../../.deprecated/font_rasterizer/examples/fonts/DejaVuSansMono.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
-    let glyph_id = parsed_face.glyph_index('r').unwrap();
+    let glyph_id = parsed_face.glyph_index('o').unwrap();
 
     let mut outliner = outliner::Outliner::new();
     let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
