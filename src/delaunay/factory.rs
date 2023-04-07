@@ -1,5 +1,3 @@
-use arena_system::{Arena, Handle};
-
 use super::bounds::Bounds;
 use super::triangle::{DelaunayTriangle, TriangleId};
 use super::triangle_fan::TriangleFan;
@@ -9,6 +7,9 @@ use crate::delaunay::DelaunayTriangleHandle;
 use crate::opencl::Buffer;
 use crate::point::{Point, PointHandle, PointId};
 use crate::voronoi::{Pixel, VoronoiImage};
+
+use arena_system::{Arena, Handle};
+use smallvec::ToSmallVec;
 
 pub struct DelaunayFactory {
     count_triangles_kernel: ocl::Kernel,
@@ -333,7 +334,7 @@ impl DelaunayFactory {
             points
                 .lookup_mut(tf.center.into())
                 .unwrap()
-                .set_triangle_fan(flatten_triangle_fans[start..end].into_iter().copied().collect());
+                .set_triangle_fan(flatten_triangle_fans[start..end].to_smallvec());
         });
 
         Ok(())
