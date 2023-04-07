@@ -173,6 +173,14 @@ impl<'arena> PointHandle<'arena> {
             triangle_fan.into_iter().map(|h| h.index().into()).collect();
     }
 
+    pub fn is_connected_to(&self, other: PointHandle<'arena>) -> bool {
+        self
+            .triangle_fan()
+            .into_iter()
+            .find(|t| t.points().contains(&other))
+            .is_some()
+    }
+
     pub fn skew_product(&self, origin: &Self, other: &Self) -> f32 {
         let a = Point::new(self.x() - origin.x(), self.y() - origin.y());
         let b = Point::new(other.x() - origin.x(), other.y() - origin.y());
