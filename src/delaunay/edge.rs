@@ -89,7 +89,7 @@ impl<'arena> Edge<'arena> {
         let mut edges = vec![e];
         let mut triangles = vec![t];
 
-        t.set_is_visible(true);
+        // t.set_is_visible(true);
 
         if t.points().contains(&self.points()[1]) {
             return (edges, triangles);
@@ -97,7 +97,7 @@ impl<'arena> Edge<'arena> {
 
         loop {
             let n = t.neighbour_on_edge(e);
-            n.set_is_visible(true);
+            // n.set_is_visible(true);
             triangles.push(n);
 
             if n.points().contains(&self.points()[1]) {

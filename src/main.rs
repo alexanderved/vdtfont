@@ -1,4 +1,4 @@
-use arena_system::Arena;
+use arena_system::{Arena, Handle, Index};
 
 use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
     //for i in 0..26 {
     //let c = char::from_u32('a' as u32 + i as u32).unwrap();
     //println!("{}", c);
-    let glyph_id = parsed_face.glyph_index('t').unwrap();
+    let glyph_id = parsed_face.glyph_index('w').unwrap();
 
     let mut outliner = outliner::Outliner::new();
     let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
@@ -123,8 +123,29 @@ fn main() -> anyhow::Result<()> {
 
     let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
     let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
+   
+    let mut edges: Vec<[i64; 2]> = vec![];
+    delaunay
+        .points()
+        .handle_iter::<PointHandle>(Some(delaunay.triangles()))
+        .for_each(|p| {
+            let pp = p.previous_in_outline();
+            if !p.is_connected_to(pp)
+                && p.index() != Index::from(-1i64)
+                && pp.index() != Index::from(-1i64)
+                && !p.triangle_fan().is_empty()
+                && !pp.triangle_fan().is_empty()
+            {
+                println!("{:?} {:?}", p, pp);
+                edges.push([p.index().into(), pp.index().into()]);
+            }
+        });
 
-    delaunay.insert_edge([1, 2]);
+    for e in edges {
+        println!("{:?}", e);
+
+        delaunay.insert_edge(e);
+    }
 
     let dur = now.elapsed();
     println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
