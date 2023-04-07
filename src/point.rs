@@ -177,6 +177,7 @@ impl<'arena> PointHandle<'arena> {
             .into_iter()
             .find(|t| t.points().contains(&other))
             .is_some()
+            && *self != other
     }
 
     pub fn skew_product(&self, origin: &Self, other: &Self) -> f32 {
@@ -184,6 +185,13 @@ impl<'arena> PointHandle<'arena> {
         let b = Point::new(other.x() - origin.x(), other.y() - origin.y());
 
         a.x() * b.y() - a.y() * b.x()
+    }
+
+    pub fn distance(&self, other: &PointHandle) -> f32 {
+        let this = self.get().expect("Can't get the point");
+        let other = other.get().expect("Can't get the other point");
+
+        this.distance(&*other)
     }
 }
 
