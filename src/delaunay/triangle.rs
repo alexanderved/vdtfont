@@ -1,4 +1,4 @@
-use super::edge::Edge;
+use super::{edge::Edge, Polygon};
 
 use crate::point::{Point, PointHandle, PointId};
 
@@ -103,12 +103,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         (0..3)
             .into_iter()
             .map(|i| i as usize)
-            .map(|i| {
-                [
-                    vertices[i],
-                    vertices[(i + 1) % 3],
-                ]
-            })
+            .map(|i| [vertices[i], vertices[(i + 1) % 3]])
             .map(|e| e.into())
             .collect::<SmallVec<[Edge<'arena>; 3]>>()
     }
@@ -215,21 +210,16 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
 
-        let p = [o[0], s[1], o[1], s[0]];
+        let origin = s[0];
+        let mut polygon = Polygon::new([o[0], s[1], o[1]].to_vec());
 
-        let center = p[3];
-        let mut points = p[0..3]
-            .into_iter()
-            .map(|p| Point::new(p.x() - center.x(), p.y() - center.y()))
+        polygon.sort_by_angle(origin);
+
+        let p = polygon.points()
+            .iter()
+            .map(|p| Point::new(p.x() - origin.x(), p.y() - origin.y()))
+            .rev()
             .collect::<Vec<Point>>();
-
-        points.sort_by(|a, b| {
-            libm::atan2f(a.y(), a.x())
-                .partial_cmp(&libm::atan2f(b.y(), b.x()))
-                .unwrap()
-        });
-
-        let p = points.into_iter().rev().collect::<Vec<Point>>();
 
         let abdet = p[0].x() * p[1].y() - p[1].x() * p[0].y();
         let bcdet = p[1].x() * p[2].y() - p[2].x() * p[1].y();
