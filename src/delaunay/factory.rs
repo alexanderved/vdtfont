@@ -416,10 +416,8 @@ impl DelaunayFactory {
     }
 
     fn flip_triangles(&mut self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
-        (0..triangles.len())
-            .into_iter()
-            .map(|i| i.into())
-            .map(|i| triangles.handle::<DelaunayTriangleHandle>(i, points))
+        triangles
+            .handle_iter::<DelaunayTriangleHandle>(points)
             .for_each(|mut triangle_handle| {
                 triangle_handle.flip_with_neighbours_except(None, 128);
             });
