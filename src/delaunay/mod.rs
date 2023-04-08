@@ -5,16 +5,17 @@ mod polygon;
 mod triangle;
 mod triangle_fan;
 
-pub use bounds::*;
-pub use edge::*;
+pub use bounds::Bounds;
+pub use edge::Edge;
 pub use factory::DelaunayFactory;
 pub use polygon::Polygon;
-pub use triangle::*;
+pub use triangle::{DelaunayTriangle, DelaunayTriangleHandle, TriangleId};
 
 use crate::point::*;
 
 use arena_system::{Arena, Handle, Index};
 
+/// A Delaunay triangulation.
 pub struct Delaunay {
     dim: usize,
 
@@ -25,26 +26,33 @@ pub struct Delaunay {
 }
 
 impl Delaunay {
+    /// Returns a dimaension of the triangulation.
     pub fn dim(&self) -> usize {
         self.dim
     }
 
+    /// Returns a reference to the arena of points in the triangulation.
     pub fn points(&self) -> &Arena<Point> {
         &self.points
     }
 
+    /// Returns a reference to the arena of triangles which the triangulation consits of.
     pub fn triangles(&self) -> &Arena<DelaunayTriangle> {
         &self.triangles
     }
 
+    /// Returns bounds of the triangulation.
     pub fn bounds(&self) -> Bounds {
         self.bounds
     }
 
+    /// Converts triangulation into raw parts: a dimension, bounds, points and triangles.
     pub fn into_raw_parts(self) -> (usize, Arena<Point>, Arena<DelaunayTriangle>, Bounds) {
         (self.dim, self.points, self.triangles, self.bounds)
     }
 
+    /// Inserts `triangle` into the triangulation and connects it to `supposed_neighbours`
+    /// if it shares two points with them.
     pub fn insert_triangle(
         &mut self,
         triangle: DelaunayTriangle,
@@ -55,6 +63,7 @@ impl Delaunay {
             .triangles
             .handle::<DelaunayTriangleHandle>(triangle_index, self.points());
 
+        // Connect `triangle` and `supposed_neighbours` to each other.
         supposed_neighbours
             .iter()
             .copied()
@@ -68,6 +77,7 @@ impl Delaunay {
                 triangle_handle.try_add_neighbour(neighbour);
             });
 
+        // Update triangle fans.
         triangle_handle.points().into_iter().for_each(|p| {
             p.add_triangle_to_fan(triangle_handle);
         });
@@ -75,6 +85,7 @@ impl Delaunay {
         triangle_index
     }
 
+    /// Removes a triangle with the index `triangle_index` from the triangulation.
     pub fn remove_triangle(&mut self, triangle_index: Index) {
         let triangle = self
             .triangles()
@@ -91,6 +102,7 @@ impl Delaunay {
         self.triangles.remove(triangle_index).unwrap();
     }
 
+    /// Inserts `edge` into the triangulation.
     pub fn insert_edge(&mut self, edge: [PointId; 2]) {
         let edge: Edge = [
             self.points().handle(edge[0].into(), Some(self.triangles())),
@@ -98,14 +110,18 @@ impl Delaunay {
         ]
         .into();
 
+        // Find edges and triangles which are intersected by the given `edge`.
         let (edge_track, triangle_track) = edge.find_triangle_track();
 
+        // Calculate contours around the `edge`.
         let contour0 = self.calculate_contour(edge, edge_track[0].points()[0], &edge_track);
         let contour1 = self.calculate_contour(edge, edge_track[0].points()[1], &edge_track);
 
+        // Triangulate the contours.
         let triangulation0 = self.triangulate_hole(contour0);
         let triangulation1 = self.triangulate_hole(contour1);
 
+        // Find triangles around the `triangle_track`.
         let mut neighbours = triangle_track
             .iter()
             .flat_map(|t| t.neighbours())
@@ -113,30 +129,41 @@ impl Delaunay {
             .map(|n| n.index())
             .collect::<Vec<_>>();
 
+        // Remove the triangles which are intersected by the given `edge`.
         let triangle_indices_to_remove =
             triangle_track.into_iter().map(|t| t.index()).collect::<Vec<_>>();
         triangle_indices_to_remove
             .into_iter()
             .for_each(|t| self.remove_triangle(t));
 
+        // Insert the triangulations of the contours into the triangulation.
         triangulation0.into_iter().chain(triangulation1).for_each(|t| {
             let triangle_index = self.insert_triangle(t, &neighbours);
             neighbours.push(triangle_index);
         });
     }
 
+    // Calculates a contour which starts from the first point of `base_line`, passes
+    // through the `control_point` and ends at the second point of `base_line`.
+    //
+    // Other points of the contour are obtained from `edge_track`.
+    //
+    // TODO: Fix algorithm of searching the next point in the contour because
+    // the current one may cause the creation of wrong contours.
     fn calculate_contour<'arena>(
         &self,
         base_line: Edge<'arena>,
-        starting_point: PointHandle<'arena>,
+        control_point: PointHandle<'arena>,
         edge_track: &[Edge<'arena>],
     ) -> Vec<PointHandle<'arena>> {
-        let mut contour = vec![base_line.points()[0], starting_point];
+        let mut contour = vec![base_line.points()[0], control_point];
         for e in edge_track[1..].iter() {
             let last = contour.last().unwrap();
             let d0 = last.distance(&e.points()[0]);
             let d1 = last.distance(&e.points()[1]);
 
+            // Move to the next point because one of the current points is
+            // the same as the previous one
             if d0 == 0.0 || d1 == 0.0 {
                 continue;
             }
@@ -152,10 +179,16 @@ impl Delaunay {
         contour
     }
 
+    // Triangulate the given `contour`.
+    //
+    // TODO: Fix this algorithm because it can cause the creation of triangles
+    // which intersects each other.
     fn triangulate_hole(&self, mut contour: Vec<PointHandle>) -> Vec<DelaunayTriangle> {
         let mut middle_vertex = 0;
         let mut smallest_triangle = None;
         let mut smallest_circle = f32::MAX;
+
+        // Find the triangle with the smallest circumcircle.
         for (i, points) in contour.windows(3).enumerate() {
             let t = DelaunayTriangle::new([
                 points[0].index().into(),
@@ -176,9 +209,12 @@ impl Delaunay {
 
         let mut triangulation = vec![];
         if let Some(smallest_triangle) = smallest_triangle {
+            // Update contour after obtaining the triangle from it.
             contour.remove(middle_vertex);
+            // Add the obtained triangle to the triangulation.
             triangulation.push(smallest_triangle);
 
+            // Triangulate the new contour if it has 3 points at least.
             if contour.len() >= 3 {
                 triangulation.append(&mut self.triangulate_hole(contour));
             }
@@ -187,74 +223,9 @@ impl Delaunay {
         triangulation
     }
 
-    pub fn image(&self) -> Vec<u8> {
-        let mut bitmap = vec![0.0; self.dim * self.dim];
-
-        self.triangles
-            .handle_iter::<DelaunayTriangleHandle>(&self.points)
-            .for_each(|t| {
-                if let Ok(t) = t.get() {
-                    if t.is_visible {
-                        crate::draw_line(
-                            &mut bitmap,
-                            self.dim,
-                            self.dim,
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[0].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[1].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                        );
-
-                        crate::draw_line(
-                            &mut bitmap,
-                            self.dim,
-                            self.dim,
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[1].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[2].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                        );
-
-                        crate::draw_line(
-                            &mut bitmap,
-                            self.dim,
-                            self.dim,
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[0].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[2].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                        );
-                    }
-                }
-            });
-
-        bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * a) as u8]).collect()
-    }
-
+    // Creates a new [`Delaunay`].
+    //
+    // The validity of `dim`, `points`, `triangles`, `bounds` is ensured by [`DelaunayFactory`].
     fn new(
         dim: usize,
         points: Arena<Point>,
