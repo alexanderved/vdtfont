@@ -8,31 +8,37 @@ use std::ops::ControlFlow;
 use arena_system::Handle;
 use smallvec::SmallVec;
 
+/// A straight line which is bounded by two points.
 #[derive(Debug, Clone, Copy)]
 pub struct Edge<'arena> {
     points: [PointHandle<'arena>; 2],
 }
 
 impl<'arena> Edge<'arena> {
+    /// Creates a new [`Edge`] from the given `points`.
     pub fn new(points: [PointHandle<'arena>; 2]) -> Self {
         Self { points }
     }
 
+    /// Returns the points which bounds the edge.
     pub fn points(&self) -> [PointHandle<'arena>; 2] {
         self.points
     }
 
+    /// Checks if the edge is in contour.
     pub fn is_contour(&self) -> bool {
-        (self.points[0] == self.points[1].previous_in_outline() 
-                && !self.points[0].index().is_invalid())
-            || (self.points[1] == self.points[0].previous_in_outline() 
-                    && !self.points[1].index().is_invalid())
+        (self.points[0] == self.points[1].previous_in_outline()
+            && !self.points[0].index().is_invalid())
+            || (self.points[1] == self.points[0].previous_in_outline()
+                && !self.points[1].index().is_invalid())
     }
 
+    /// Checks if the edge contains the `point`.
     pub fn contains(&self, point: PointHandle<'arena>) -> bool {
         self.points.contains(&point)
     }
 
+    /// Checks if the edge intersects the `other` edge.
     pub fn intersects(&self, other: &Self) -> bool {
         let det = (self.points[1].x() - self.points[0].x())
             * (other.points[1].y() - other.points[0].y())
@@ -57,32 +63,19 @@ impl<'arena> Edge<'arena> {
         }
     }
 
+    /// Checks if the edge is equal to the `other` edge.
     pub fn is_equal_to(&self, other: &Self) -> bool {
         self.points[0] == other.points[0] && self.points[1] == other.points[1]
             || self.points[0] == other.points[1] && self.points[1] == other.points[0]
     }
 
+    /// Finds all edges and triangles which are intersected by the edge.
     pub fn find_triangle_track(
         &'arena self,
     ) -> (Vec<Edge<'arena>>, Vec<DelaunayTriangleHandle<'arena>>) {
-        /* println!(
-            "Edge: ({}; {}), ({}; {})",
-            self.points()[0].x(),
-            self.points()[0].y(),
-            self.points()[1].x(),
-            self.points()[1].y(),
-        ); */
-
+        // Find the first edge and triangle which are intersected by the edge.
         let res = self.points()[0].triangle_fan().into_iter().try_for_each(|t| {
             let opposite_edge = t.opposite_edge_to(self.points()[0]);
-            /* println!(
-                "Opposite Edge: ({}; {}), ({}; {})",
-                opposite_edge.points()[0].x(),
-                opposite_edge.points()[0].y(),
-                opposite_edge.points()[1].x(),
-                opposite_edge.points()[1].y(),
-            ); */
-
             if t.points().contains(&self.points()[1]) || opposite_edge.intersects(&self) {
                 return ControlFlow::Break((opposite_edge, t));
             }
@@ -97,23 +90,25 @@ impl<'arena> Edge<'arena> {
         let mut edges = vec![e];
         let mut triangles = vec![t];
 
-        t.set_is_visible(true);
-
+        // If the first triangle contains the whole edge, return from the function.
         if t.points().contains(&self.points()[1]) {
             return (edges, triangles);
         }
 
         loop {
+            // Obtain the next triangle which is intersected by the edge.
             let n = t.neighbour_on_edge(e);
-            n.set_is_visible(true);
             triangles.push(n);
 
+            // If the triangle contains the whole edge, all intersected triangles are found,
+            // so return from the function.
             if n.points().contains(&self.points()[1]) {
                 return (edges, triangles);
             }
 
             let es = n.edges_except(e);
 
+            // Obtain the next edge which is intersected by the edge.
             if es[0].intersects(&self) {
                 e = es[0];
             } else if es[1].intersects(&self) {
