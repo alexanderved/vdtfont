@@ -2,7 +2,10 @@ use crate::point::Point;
 
 const OBJSPACE_FLATNESS: f32 = 0.35;
 
-pub fn tesselate_quadric_curve(p: (Point, Point, Point), points: &mut Vec<Point>) {
+// Tesselates a quadric curve.
+//
+// Adapted from stb_truetype: https://github.com/nothings/stb
+pub(super) fn tesselate_quadric_curve(p: (Point, Point, Point), points: &mut Vec<Point>) {
     let mp01 = p.0.midpoint(&p.1);
     let mp12 = p.1.midpoint(&p.2);
     let midpoint = mp01.midpoint(&mp12);
@@ -19,7 +22,10 @@ pub fn tesselate_quadric_curve(p: (Point, Point, Point), points: &mut Vec<Point>
     }
 }
 
-pub fn tesselate_cubic_curve(p: (Point, Point, Point, Point), points: &mut Vec<Point>) {
+// Tesselates a cubic curve.
+//
+// Adapted from stb_truetype: https://github.com/nothings/stb
+pub(super) fn tesselate_cubic_curve(p: (Point, Point, Point, Point), points: &mut Vec<Point>) {
     let longlen = p.0.distance(&p.1) + p.1.distance(&p.2) + p.2.distance(&p.3);
     let shortlen = p.0.distance(&p.3);
     let flatness_squared = longlen.powi(2) - shortlen.powi(2);
