@@ -15,12 +15,16 @@ impl<T: ocl::OclPrm> Buffer<T> {
         self.len
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn as_raw(&self) -> &ocl::Buffer<T> {
         &self.inner
     }
 
     pub fn read(&mut self, dst: &mut [T]) -> anyhow::Result<()> {
-        if self.len() == 0 {
+        if self.is_empty() {
             anyhow::bail!("Buffer is empty");
         }
 
@@ -41,7 +45,7 @@ impl<T: ocl::OclPrm> Buffer<T> {
     }
 
     pub fn first(&self) -> anyhow::Result<T> {
-        if self.len() == 0 {
+        if self.is_empty() {
             anyhow::bail!("Buffer is empty");
         }
 
@@ -52,7 +56,7 @@ impl<T: ocl::OclPrm> Buffer<T> {
     }
 
     pub fn clear(&mut self) -> anyhow::Result<()> {
-        if self.len() == 0 {
+        if self.is_empty() {
             anyhow::bail!("Buffer is empty");
         }
 

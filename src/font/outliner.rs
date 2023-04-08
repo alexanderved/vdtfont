@@ -18,6 +18,12 @@ impl Outliner {
     }
 }
 
+impl Default for Outliner {
+    fn default() -> Self {
+        Self::new()
+    }
+}    
+
 impl ttfp::OutlineBuilder for Outliner {
     fn move_to(&mut self, x: f32, y: f32) {
         //eprintln!("M {x} {y}");
@@ -50,7 +56,7 @@ impl ttfp::OutlineBuilder for Outliner {
         let last = self.points.get(self.last as usize).unwrap().clone();
         tesselate_quadric_curve((last, p1, p2), &mut self.points);
 
-        (self.last + 1..self.points.len() as i64).into_iter().for_each(|i| {
+        (self.last + 1..self.points.len() as i64).for_each(|i| {
             let p1 = self.points.get((i - 1) as usize).unwrap().clone();
             let p0 = self.points.get_mut(i as usize).unwrap();
 
@@ -72,7 +78,7 @@ impl ttfp::OutlineBuilder for Outliner {
         let last = self.points.get(self.last as usize).unwrap().clone();
         tesselate_cubic_curve((last, p1, p2, p3), &mut self.points);
 
-        (self.last + 1..self.points.len() as i64).into_iter().for_each(|i| {
+        (self.last + 1..self.points.len() as i64).for_each(|i| {
             let p1 = self.points.get((i - 1) as usize).unwrap().clone();
             let p0 = self.points.get_mut(i as usize).unwrap();
 

@@ -90,7 +90,7 @@ impl DelaunayFactory {
             .arg(None::<&ocl::Buffer<TriangleFan>>)
             .arg(None::<&ocl::Buffer<TriangleId>>)
             .build()?;
-        let flatten_triangle_fans_buffer = Buffer::<TriangleId>::new(queue.clone())?;
+        let flatten_triangle_fans_buffer = Buffer::<TriangleId>::new(queue)?;
 
         Ok(Self {
             count_triangles_kernel,
@@ -202,7 +202,7 @@ impl DelaunayFactory {
         &self,
         dim: usize,
         points: &mut Arena<Point>,
-        voronoi_image_pixels: &mut Vec<Pixel>,
+        voronoi_image_pixels: &mut [Pixel],
     ) -> Bounds {
         let first_bounding_point_id = points.len() as i64;
 
@@ -233,7 +233,7 @@ impl DelaunayFactory {
         &self,
         dim: usize,
         first_bounding_point_id: PointId,
-        voronoi_image_pixels: &mut Vec<Pixel>,
+        voronoi_image_pixels: &mut [Pixel],
     ) {
         let min_x = 0;
         let min_y = 0;
@@ -267,11 +267,11 @@ impl DelaunayFactory {
         dim: usize,
         points: &Arena<Point>,
         triangles: &mut Vec<DelaunayTriangle>,
-        voronoi_image_pixels: &Vec<Pixel>,
+        voronoi_image_pixels: &[Pixel],
     ) -> anyhow::Result<()> {
         let mut pixel_stack: Vec<&Pixel> = vec![];
 
-        'pixels: for pixel in voronoi_image_border_pixels_iter(dim, &voronoi_image_pixels) {
+        'pixels: for pixel in voronoi_image_border_pixels_iter(dim, voronoi_image_pixels) {
             'vertices: while let Some(last) = pixel_stack.last() {
                 if last.nearest_site_id() == pixel.nearest_site_id() {
                     continue 'pixels;
@@ -342,7 +342,6 @@ impl DelaunayFactory {
 
     fn create_triangle_fans(&mut self, points_number: usize) -> anyhow::Result<Vec<TriangleFan>> {
         let triangle_fans = (0..points_number as PointId)
-            .into_iter()
             .map(TriangleFan::new)
             .collect::<Vec<TriangleFan>>();
 
@@ -440,7 +439,7 @@ impl DelaunayFactory {
 #[rustfmt::skip]
 fn voronoi_image_border_pixels_iter(
     dim: usize,
-    voronoi_image_pixels: &Vec<Pixel>,
+    voronoi_image_pixels: &[Pixel],
 ) -> impl Iterator<Item = &Pixel> + '_ {
     let bottom_border_iter = voronoi_image_pixels
         .iter()

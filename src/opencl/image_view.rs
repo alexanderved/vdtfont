@@ -212,15 +212,15 @@ impl convert::From<&ocl::SpatialDims> for Dims {
     }
 }
 
-impl convert::Into<[usize; 3]> for Dims {
-    fn into(self) -> [usize; 3] {
-        self.0
+impl convert::From<Dims> for [usize; 3] {
+    fn from(dims: Dims) -> Self {
+        dims.0
     }
 }
 
-impl convert::Into<ocl::SpatialDims> for Dims {
-    fn into(self) -> ocl::SpatialDims {
-        self.0.into()
+impl convert::From<Dims> for ocl::SpatialDims {
+    fn from(dims: Dims) -> Self {
+        dims.0.into()
     }
 }
 

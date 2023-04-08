@@ -170,7 +170,7 @@ impl Font {
             .points()
             .handle::<PointHandle>(bounding_point_ids[0].into(), Some(delaunay.triangles()))
             .triangle_fan()[0];
-        self.remove_excess_triangles(&delaunay, bounding_triangle, false);
+        self.remove_excess_triangles(bounding_triangle, false);
 
         let (dim, points, triangles, _) = delaunay.into_raw_parts();
         let triangles = triangles
@@ -207,9 +207,9 @@ impl Font {
             });
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn remove_excess_triangles(
         &self,
-        delaunay: &Delaunay,
         starting_triangle: DelaunayTriangleHandle,
         is_visible: bool,
     ) {
@@ -222,7 +222,7 @@ impl Font {
             let has_contour_edge = starting_triangle.shared_edge_with(&n).is_contour();
             let is_visible = if has_contour_edge { !is_visible } else { is_visible };
 
-            self.remove_excess_triangles(delaunay, n, is_visible);
+            self.remove_excess_triangles(n, is_visible);
         });
     }
 }

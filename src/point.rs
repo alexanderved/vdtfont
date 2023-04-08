@@ -190,8 +190,7 @@ impl<'arena> PointHandle<'arena> {
     pub fn is_connected_to(&self, other: PointHandle<'arena>) -> bool {
         self.triangle_fan()
             .into_iter()
-            .find(|t| t.points().contains(&other))
-            .is_some()
+            .any(|t| t.points().contains(&other))
             && *self != other
     }
 
@@ -206,7 +205,7 @@ impl<'arena> PointHandle<'arena> {
         let this = self.get().expect("Can't get the point");
         let other = other.get().expect("Can't get the other point");
 
-        this.distance(&*other)
+        this.distance(&other)
     }
 }
 

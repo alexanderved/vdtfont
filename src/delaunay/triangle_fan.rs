@@ -1,5 +1,6 @@
 use crate::point::PointId;
 
+///
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 #[repr(C)]
 pub(super) struct TriangleFan {

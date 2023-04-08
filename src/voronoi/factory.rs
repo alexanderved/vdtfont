@@ -54,7 +54,7 @@ impl VoronoiImageFactory {
             .arg(None::<&ocl::Image<i32>>)
             .arg(None::<&ocl::Buffer<i32>>)
             .build()?;
-        let mut changed_pixels_number_buffer = Buffer::new(queue.clone())?;
+        let mut changed_pixels_number_buffer = Buffer::new(queue)?;
         changed_pixels_number_buffer.write(&[0])?;
 
         Ok(Self {
@@ -82,11 +82,11 @@ impl VoronoiImageFactory {
         Ok(VoronoiImage::new(dim, sites, Cow::Owned(copied_image)))
     }
 
-    pub fn construct_borrowed<'s>(
-        &'s mut self,
+    pub fn construct_borrowed(
+        &mut self,
         sites: Arena<Point>,
         dim: usize,
-    ) -> anyhow::Result<VoronoiImage<'s>> {
+    ) -> anyhow::Result<VoronoiImage<'_>> {
         self.draw_voronoi(&sites, dim)?;
 
         Ok(VoronoiImage::new(dim, sites, Cow::Borrowed(self.swapchain.last())))

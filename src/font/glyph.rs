@@ -21,15 +21,15 @@ impl convert::From<ttfp::GlyphId> for Glyph {
     }
 }
 
-impl convert::Into<u16> for Glyph {
-    fn into(self) -> u16 {
-        self.0
+impl convert::From<Glyph> for u16 {
+    fn from(glyph: Glyph) -> Self {
+        glyph.0
     }
 }
 
-impl convert::Into<ttfp::GlyphId> for Glyph {
-    fn into(self) -> ttfp::GlyphId {
-        ttfp::GlyphId(self.0)
+impl convert::From<Glyph> for ttfp::GlyphId {
+    fn from(glyph: Glyph) -> Self {
+        Self(glyph.0)
     }
 }
 

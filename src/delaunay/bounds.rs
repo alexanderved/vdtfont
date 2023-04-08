@@ -21,8 +21,8 @@ impl convert::From<[PointId; 4]> for Bounds {
     }
 }
 
-impl convert::Into<[PointId; 4]> for Bounds {
-    fn into(self) -> [PointId; 4] {
-        self.0
+impl convert::From<Bounds> for [PointId; 4] {
+    fn from(bounds: Bounds) -> Self {
+        bounds.0
     }
 }

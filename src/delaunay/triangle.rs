@@ -79,9 +79,8 @@ impl DelaunayTriangle {
 
         let dx = A.x() - center[0];
         let dy = A.y() - center[1];
-        let radius = libm::sqrtf(dx * dx + dy * dy);
 
-        radius
+        libm::sqrtf(dx * dx + dy * dy)
     }
 }
 
@@ -159,7 +158,6 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     pub fn edges(&self) -> SmallVec<[Edge<'arena>; 3]> {
         let vertices = self.points();
         (0..3)
-            .into_iter()
             .map(|i| i as usize)
             .map(|i| [vertices[i], vertices[(i + 1) % 3]])
             .map(|e| e.into())
@@ -383,7 +381,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             let new_neighbours = neighbourhood
                 .iter()
                 .copied()
-                .filter(|neighbour| triangle.shared_points_with(&neighbour).len() == 2)
+                .filter(|neighbour| triangle.shared_points_with(neighbour).len() == 2)
                 .collect::<SmallVec<[DelaunayTriangleHandle; 3]>>();
 
             new_neighbours

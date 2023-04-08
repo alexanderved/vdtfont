@@ -76,7 +76,7 @@ impl<'arena> Edge<'arena> {
         // Find the first edge and triangle which are intersected by the edge.
         let res = self.points()[0].triangle_fan().into_iter().try_for_each(|t| {
             let opposite_edge = t.opposite_edge_to(self.points()[0]);
-            if t.points().contains(&self.points()[1]) || opposite_edge.intersects(&self) {
+            if t.points().contains(&self.points()[1]) || opposite_edge.intersects(self) {
                 return ControlFlow::Break((opposite_edge, t));
             }
 
@@ -109,9 +109,9 @@ impl<'arena> Edge<'arena> {
             let es = n.edges_except(e);
 
             // Obtain the next edge which is intersected by the edge.
-            if es[0].intersects(&self) {
+            if es[0].intersects(self) {
                 e = es[0];
-            } else if es[1].intersects(&self) {
+            } else if es[1].intersects(self) {
                 e = es[1];
             }
 
@@ -142,14 +142,14 @@ impl<'arena> convert::From<SmallVec<[PointHandle<'arena>; 2]>> for Edge<'arena> 
     }
 }
 
-impl<'arena> convert::Into<[PointHandle<'arena>; 2]> for Edge<'arena> {
-    fn into(self) -> [PointHandle<'arena>; 2] {
-        self.points
+impl<'arena> convert::From<Edge<'arena>> for [PointHandle<'arena>; 2] {
+    fn from(edge: Edge<'arena>) -> Self {
+        edge.points
     }
 }
 
-impl<'arena> convert::Into<SmallVec<[PointHandle<'arena>; 2]>> for Edge<'arena> {
-    fn into(self) -> SmallVec<[PointHandle<'arena>; 2]> {
-        self.points.into()
+impl<'arena> convert::From<Edge<'arena>> for SmallVec<[PointHandle<'arena>; 2]> {
+    fn from(edge: Edge<'arena>) -> Self {
+        edge.points.into()
     }
 }

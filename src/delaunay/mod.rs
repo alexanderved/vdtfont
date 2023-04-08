@@ -56,7 +56,7 @@ impl Delaunay {
     pub fn insert_triangle(
         &mut self,
         triangle: DelaunayTriangle,
-        supposed_neighbours: &Vec<Index>,
+        supposed_neighbours: &[Index],
     ) -> Index {
         let triangle_index = self.triangles.add(triangle);
         let triangle_handle = self
@@ -71,7 +71,7 @@ impl Delaunay {
                 self.triangles
                     .handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
             })
-            .filter(|neigbour| triangle_handle.shared_points_with(&neigbour).len() == 2)
+            .filter(|neigbour| triangle_handle.shared_points_with(neigbour).len() == 2)
             .for_each(|neighbour| {
                 neighbour.try_add_neighbour(triangle_handle);
                 triangle_handle.try_add_neighbour(neighbour);
@@ -124,9 +124,9 @@ impl Delaunay {
         // Find triangles around the `triangle_track`.
         let mut neighbours = triangle_track
             .iter()
-            .flat_map(|t| t.neighbours())
-            .filter(|n| !triangle_track.contains(&n))
-            .map(|n| n.index())
+            .flat_map(|triangle| triangle.neighbours())
+            .filter(|neighbour| !triangle_track.contains(neighbour))
+            .map(|neighbour| neighbour.index())
             .collect::<Vec<_>>();
 
         // Remove the triangles which are intersected by the given `edge`.

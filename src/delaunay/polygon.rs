@@ -18,7 +18,7 @@ impl<'arena> Polygon<'arena> {
     }
 
     /// Creates a new [`Polygon`] from the vertices of the given triangles.
-    pub fn from_triangles(triangles: &Vec<DelaunayTriangleHandle<'arena>>) -> Self {
+    pub fn from_triangles(triangles: &[DelaunayTriangleHandle<'arena>]) -> Self {
         triangles
             .iter()
             .flat_map(|t| t.points())
@@ -64,8 +64,8 @@ impl<'arena> convert::From<&Vec<DelaunayTriangleHandle<'arena>>> for Polygon<'ar
     }
 }
 
-impl<'arena> convert::Into<Vec<PointHandle<'arena>>> for Polygon<'arena> {
-    fn into(self) -> Vec<PointHandle<'arena>> {
-        self.points
+impl<'arena> convert::From<Polygon<'arena>> for Vec<PointHandle<'arena>> {
+    fn from(polygon: Polygon<'arena>) -> Self {
+        polygon.points
     }
-}
+}   
