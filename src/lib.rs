@@ -1,11 +1,12 @@
+pub extern crate arena_system;
+pub extern crate ocl;
+extern crate owned_ttf_parser as ttfp;
+
 pub mod delaunay;
 pub mod font;
 pub mod opencl;
 pub mod point;
 pub mod voronoi;
-
-pub extern crate arena_system;
-pub extern crate ocl;
 
 use std::{mem, time};
 
