@@ -39,5 +39,5 @@ triangulates glyphs using GPU.
 To run the example use the following command:
 
 ```bash
-# cargo run --release --example simple
+cargo run --release --example simple
 ```
