@@ -6,7 +6,7 @@ pub use factory::VoronoiImageFactory;
 pub use pixel::Pixel;
 
 use crate::opencl::ImageView;
-pub use crate::point::{Point, PointId};
+use crate::point::Point;
 
 use std::borrow::Cow;
 

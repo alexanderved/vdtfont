@@ -1,7 +1,7 @@
 use super::DelaunayTriangleHandle;
 
 use crate::point::PointHandle;
-use crate::voronoi::Point;
+use crate::point::Point;
 
 use std::collections::HashSet;
 use std::convert;
