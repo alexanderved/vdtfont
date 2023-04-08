@@ -222,6 +222,13 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
+    pub fn shared_edge_with(
+        &self,
+        other: &DelaunayTriangleHandle<'arena>,
+    ) -> Edge {
+        self.shared_points_with(other).into()
+    }
+
     pub fn opposite_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
