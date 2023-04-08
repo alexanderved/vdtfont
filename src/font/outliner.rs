@@ -52,7 +52,7 @@ impl ttfp::OutlineBuilder for Outliner {
 
         (self.last + 1..self.points.len() as i64).into_iter().for_each(|i| {
             let p1 = self.points.get((i - 1) as usize).unwrap().clone();
-            let p0 = self.points.get_mut(i  as usize).unwrap();
+            let p0 = self.points.get_mut(i as usize).unwrap();
 
             self.shortest_distance = self.shortest_distance.min(p0.distance(&p1));
 
@@ -92,11 +92,6 @@ impl ttfp::OutlineBuilder for Outliner {
 
         if let Some(m) = self.points.get_mut(self.last_move as usize) {
             m.set_previous_in_outline(self.last);
-
-            /* self.points
-                .lookup_mut((self.last_move + 1).into())
-                .unwrap()
-                .set_previous_in_outline(self.last); */
         }
     }
 }
