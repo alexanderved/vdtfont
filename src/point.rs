@@ -4,7 +4,7 @@ use crate::ocl::prm::Float2;
 use std::fmt;
 use std::hash;
 
-use arena_system::{Arena, Handle, RawHandle};
+use arena_system::{Arena, Handle, RawHandle, Index};
 use smallvec::SmallVec;
 
 pub type PointId = i64;
@@ -170,6 +170,21 @@ impl<'arena> PointHandle<'arena> {
     ) {
         self.get_mut().unwrap().triangle_fan =
             triangle_fan.into_iter().map(|h| h.index().into()).collect();
+    }
+
+    pub fn add_triangle_to_fan(&self, triangle: DelaunayTriangleHandle) {
+        let triangle_fan = &mut self.get_mut().unwrap().triangle_fan;
+
+        triangle_fan.push(triangle.index().into());
+    }
+
+    pub fn remove_triangle_from_fan(&self, triangle_index: Index) {
+        let triangle_fan = &mut self.get_mut().unwrap().triangle_fan;
+        let position = triangle_fan.iter().position(|t| *t == triangle_index.into());
+
+        if let Some(position) = position {
+            triangle_fan.remove(position);
+        }
     }
 
     pub fn is_connected_to(&self, other: PointHandle<'arena>) -> bool {
