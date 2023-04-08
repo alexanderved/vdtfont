@@ -4,16 +4,17 @@ use crate::point::{Point, PointId};
 
 use owned_ttf_parser as ttfp;
 
-pub struct Outliner {
-    pub last: PointId,
-    pub last_move: PointId,
-    pub points: Vec<Point>,
+// A glyph outliner.
+pub(super) struct Outliner {
+    pub(super) last: PointId,
+    pub(super) last_move: PointId,
+    pub(super) points: Vec<Point>,
 
-    pub shortest_distance: f32,
+    pub(super) shortest_distance: f32,
 }
 
 impl Outliner {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self { last: -1, last_move: -1, points: Vec::new(), shortest_distance: f32::MAX }
     }
 }
