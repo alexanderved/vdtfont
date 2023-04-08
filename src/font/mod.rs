@@ -2,10 +2,10 @@ pub mod curve;
 pub mod glyph;
 pub mod outliner;
 
-pub use glyph::*;
+pub use glyph::{Glyph, OutlinedGlyph, TriangulatedGlyph};
 
 use crate::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangleHandle, DelaunayTriangle};
-use crate::point::*;
+use crate::point::{Point, PointHandle, PointId};
 use crate::voronoi::VoronoiImageFactory;
 
 use arena_system::{Arena, Handle};
