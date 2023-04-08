@@ -49,56 +49,19 @@ impl Delaunay {
         .into();
 
         let (edge_track, triangle_track) = edge.find_triangle_track();
+
+        let contour0 = self.calculate_contour(edge, edge_track[0].points()[0], &edge_track);
+        let contour1 = self.calculate_contour(edge, edge_track[0].points()[1], &edge_track);
+
+        let tri0 = self.triangulate_hole(contour0);
+        let tri1 = self.triangulate_hole(contour1);
+
         let mut neighbours = triangle_track
             .iter()
             .flat_map(|t| t.neighbours())
             .filter(|n| !triangle_track.contains(&n))
             .map(|n| n.index())
             .collect::<Vec<_>>();
-
-        let mut contour0 = vec![edge.points()[0], edge_track[0].points()[0]];
-        for e in edge_track[1..].iter() {
-            let last = contour0.last().unwrap();
-            let d0 = last.distance(&e.points()[0]);
-            let d1 = last.distance(&e.points()[1]);
-
-            if d0 == 0.0 || d1 == 0.0 {
-                continue;
-            }
-
-            if d0 < d1 {
-                contour0.push(e.points()[0]);
-            } else {
-                contour0.push(e.points()[1]);
-            }
-        }
-        contour0.push(edge.points()[1]);
-        //let contour0 = contour0.into_iter().rev().collect::<Vec<_>>();
-
-        let mut contour1 = vec![edge.points()[0], edge_track[0].points()[1]];
-        for e in edge_track[1..].iter() {
-            let last = contour1.last().unwrap();
-            let d0 = last.distance(&e.points()[0]);
-            let d1 = last.distance(&e.points()[1]);
-
-            if d0 == 0.0 || d1 == 0.0 {
-                continue;
-            }
-
-            if d0 < d1 {
-                contour1.push(e.points()[0]);
-            } else {
-                contour1.push(e.points()[1]);
-            }
-        }
-        contour1.push(edge.points()[1]);
-        let contour1 = contour1.into_iter().rev().collect::<Vec<_>>();
-
-        println!("Contour0: {:?}", contour0);
-        println!("Contour1: {:?}", contour1);
-
-        let tri0 = self.triangulate_hole(contour0);
-        let tri1 = self.triangulate_hole(contour1);
 
         let triangle_indices_to_remove = triangle_track
             .into_iter()
@@ -119,7 +82,34 @@ impl Delaunay {
         }
     }
 
-    pub fn triangulate_hole(&self, mut contour: Vec<PointHandle>) -> Vec<DelaunayTriangle> {
+    fn calculate_contour<'arena>(
+        &self,
+        base_line: Edge<'arena>,
+        starting_point: PointHandle<'arena>,
+        edge_track: &[Edge<'arena>],
+    ) -> Vec<PointHandle<'arena>> {
+        let mut contour = vec![base_line.points()[0], starting_point];
+        for e in edge_track[1..].iter() {
+            let last = contour.last().unwrap();
+            let d0 = last.distance(&e.points()[0]);
+            let d1 = last.distance(&e.points()[1]);
+
+            if d0 == 0.0 || d1 == 0.0 {
+                continue;
+            }
+
+            if d0 < d1 {
+                contour.push(e.points()[0]);
+            } else {
+                contour.push(e.points()[1]);
+            }
+        }
+        contour.push(base_line.points()[1]);
+
+        contour
+    }
+
+    fn triangulate_hole(&self, mut contour: Vec<PointHandle>) -> Vec<DelaunayTriangle> {
         let mut middle_vertex = 0;
         let mut smallest_triangle = None;
         let mut smallest_circle = f32::MAX;
@@ -141,17 +131,17 @@ impl Delaunay {
             // }
         }
 
-        let mut res = vec![];
+        let mut triangulation = vec![];
         if let Some(smallest_triangle) = smallest_triangle {
             contour.remove(middle_vertex);
-            res.push(smallest_triangle);
+            triangulation.push(smallest_triangle);
 
             if contour.len() >= 3 {
-                res.append(&mut self.triangulate_hole(contour));
+                triangulation.append(&mut self.triangulate_hole(contour));
             }
         }
 
-        res
+        triangulation
     }
 
     pub fn insert_triangle(
