@@ -1,20 +1,23 @@
 use super::DelaunayTriangleHandle;
 
-use crate::point::PointHandle;
 use crate::point::Point;
+use crate::point::PointHandle;
 
 use std::collections::HashSet;
 use std::convert;
 
+/// A set of points.
 pub struct Polygon<'arena> {
     points: Vec<PointHandle<'arena>>,
 }
 
 impl<'arena> Polygon<'arena> {
+    /// Creates a new [`Polygon`] from the given points.
     pub fn new(points: Vec<PointHandle<'arena>>) -> Self {
         Self { points }
     }
 
+    /// Creates a new [`Polygon`] from the vertices of the given triangles.
     pub fn from_triangles(triangles: &Vec<DelaunayTriangleHandle<'arena>>) -> Self {
         triangles
             .iter()
@@ -25,10 +28,12 @@ impl<'arena> Polygon<'arena> {
             .into()
     }
 
+    /// Returns a reference to the points in the polygon.
     pub fn points(&self) -> &Vec<PointHandle<'arena>> {
         &self.points
     }
 
+    /// Sorts the points in the polygon with the origin at `origin` by angle.
     pub fn sort_by_angle(&mut self, origin: PointHandle<'arena>) {
         self.points.sort_by(|a, b| {
             let a = Point::new(a.x() - origin.x(), a.y() - origin.y());
