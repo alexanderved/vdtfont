@@ -40,6 +40,55 @@ impl Delaunay {
     pub fn bounds(&self) -> Bounds {
         self.bounds
     }
+    
+    pub fn insert_triangle(
+        &mut self,
+        triangle: DelaunayTriangle,
+        supposed_neighbours: &Vec<Index>
+    ) -> Index {
+        let triangle_index = self.triangles.add(triangle);
+        let triangle_handle =
+            self.triangles.handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+
+        supposed_neighbours
+            .iter()
+            .copied()
+            .map(|neighbour_index| {
+                self.triangles.handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
+            })
+            .filter(|neigbour| triangle_handle.shared_points_with(&neigbour).len() == 2)
+            .for_each(|neighbour| {
+                neighbour.try_add_neighbour(triangle_handle);
+                triangle_handle.try_add_neighbour(neighbour);
+            });
+
+        triangle_handle.points()
+            .into_iter()
+            .for_each(|p| {
+                p.add_triangle_to_fan(triangle_handle);
+            });    
+
+        triangle_index
+    }
+
+    pub fn remove_triangle(&mut self, triangle_index: Index) {
+        let triangle =
+            self.triangles().handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+
+        triangle.neighbours()
+            .into_iter()
+            .for_each(|n| {
+                n.try_remove_neighbour(triangle.index());
+            });
+
+        triangle.points()
+            .into_iter()
+            .for_each(|p| {
+                p.remove_triangle_from_fan(triangle_index);
+            });
+
+        self.triangles.remove(triangle_index).unwrap();
+    }
 
     pub fn insert_edge(&mut self, edge: [PointId; 2]) {
         let edge: Edge = [
@@ -140,55 +189,6 @@ impl Delaunay {
         }
 
         triangulation
-    }
-
-    pub fn insert_triangle(
-        &mut self,
-        triangle: DelaunayTriangle,
-        supposed_neighbours: &Vec<Index>
-    ) -> Index {
-        let triangle_index = self.triangles.add(triangle);
-        let triangle_handle =
-            self.triangles.handle::<DelaunayTriangleHandle>(triangle_index, self.points());
-
-        supposed_neighbours
-            .iter()
-            .copied()
-            .map(|neighbour_index| {
-                self.triangles.handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
-            })
-            .filter(|neigbour| triangle_handle.shared_points_with(&neigbour).len() == 2)
-            .for_each(|neighbour| {
-                neighbour.try_add_neighbour(triangle_handle);
-                triangle_handle.try_add_neighbour(neighbour);
-            });
-
-        triangle_handle.points()
-            .into_iter()
-            .for_each(|p| {
-                p.add_triangle_to_fan(triangle_handle);
-            });    
-
-        triangle_index
-    }
-
-    pub fn remove_triangle(&mut self, triangle_index: Index) {
-        let triangle =
-            self.triangles().handle::<DelaunayTriangleHandle>(triangle_index, self.points());
-
-        triangle.neighbours()
-            .into_iter()
-            .for_each(|n| {
-                n.try_remove_neighbour(triangle.index());
-            });
-
-        triangle.points()
-            .into_iter()
-            .for_each(|p| {
-                p.remove_triangle_from_fan(triangle_index);
-            });
-
-        self.triangles.remove(triangle_index).unwrap();
     }
 
     pub fn image(&self) -> Vec<u8> {
