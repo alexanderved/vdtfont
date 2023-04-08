@@ -222,10 +222,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
-    pub fn shared_edge_with(
-        &self,
-        other: &DelaunayTriangleHandle<'arena>,
-    ) -> Edge {
+    pub fn shared_edge_with(&self, other: &DelaunayTriangleHandle<'arena>) -> Edge {
         self.shared_points_with(other).into()
     }
 
@@ -299,8 +296,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let sp1 = shared_points[1].skew_product(&opposite_points[0], &opposite_points[1]);
         let by_the_same_side_after_flip = sp0.signum() == sp1.signum();
 
-        let has_contour_edge = shared_points[0].previous_in_outline() == shared_points[1]
-            || shared_points[1].previous_in_outline() == shared_points[0];
+        let has_contour_edge = Edge::from(shared_points).is_contour();
 
         let satisfies_delaunay_condition = !self.is_in_circle_with(other);
 

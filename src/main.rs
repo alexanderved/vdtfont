@@ -3,10 +3,10 @@ use arena_system::{Arena, Handle, Index};
 use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
-use vdtfont::delaunay::{Delaunay, DelaunayFactory};
+use vdtfont::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangleHandle};
 use vdtfont::font::*;
 use vdtfont::point::{Point, PointHandle};
-use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
+use vdtfont::voronoi::{PointId, VoronoiImage, VoronoiImageFactory};
 
 pub const IMG_DIM: usize = 2048;
 pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
@@ -65,6 +65,18 @@ fn save(voronoi_image: &VoronoiImage, delaunay: &Delaunay, name: &str) -> anyhow
     Ok(())
 }
 
+fn remove_excess_triangles(
+    delaunay: &Delaunay,
+    starting_triangle: DelaunayTriangleHandle,
+    is_visible: bool,
+) {
+    starting_triangle.set_is_visible(is_visible);
+    starting_triangle.neighbours().into_iter().for_each(|n| {
+        //let has_contour_edge
+        let is_visible = if true { true } else { is_visible };
+    });
+}
+
 fn main() -> anyhow::Result<()> {
     let platform = ocl::Platform::default();
     let device = ocl::Device::list(platform, Some(ocl::DeviceType::GPU))?[0];
@@ -82,77 +94,84 @@ fn main() -> anyhow::Result<()> {
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
     for i in 0..26 {
-    let c = char::from_u32('a' as u32 + i as u32).unwrap();
-    println!("{}", c);
-    let glyph_id = parsed_face.glyph_index(c).unwrap();
+        let c = char::from_u32('a' as u32 + i as u32).unwrap();
+        println!("{}", c);
+        let glyph_id = parsed_face.glyph_index(c).unwrap();
 
-    let mut outliner = outliner::Outliner::new();
-    let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
+        let mut outliner = outliner::Outliner::new();
+        let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
 
-    let height: f32 =
-        (parsed_face.as_face_ref().ascender() - parsed_face.as_face_ref().descender()).into();
-    let h_factor = dim as f32 / height;
-    let v_factor = dim as f32 / height;
+        let height: f32 =
+            (parsed_face.as_face_ref().ascender() - parsed_face.as_face_ref().descender()).into();
+        let h_factor = dim as f32 / height;
+        let v_factor = dim as f32 / height;
 
-    let bounds = ttfp::Rect {
-        x_min: (rect.x_min as f32 * h_factor) as i16,
-        x_max: (rect.x_max as f32 * h_factor) as i16,
-        y_min: (rect.y_min as f32 * v_factor) as i16,
-        y_max: (rect.y_max as f32 * v_factor) as i16,
-    };
+        let bounds = ttfp::Rect {
+            x_min: (rect.x_min as f32 * h_factor) as i16,
+            x_max: (rect.x_max as f32 * h_factor) as i16,
+            y_min: (rect.y_min as f32 * v_factor) as i16,
+            y_max: (rect.y_max as f32 * v_factor) as i16,
+        };
 
-    println!("The number of points: {}", outliner.points.len());
-    println!("The shortest distance: {}", outliner.shortest_distance * h_factor);
-    println!("The height of a glyph: {}", height);
+        println!("The number of points: {}", outliner.points.len());
+        println!("The shortest distance: {}", outliner.shortest_distance * h_factor);
+        println!("The height of a glyph: {}", height);
 
-    (0..outliner.points.len()).into_iter().for_each(|i| {
-        let p = outliner.points.handle::<PointHandle>(i.into(), None);
-        let new_x = p.x() * h_factor - bounds.x_min as f32;
-        let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32;
+        (0..outliner.points.len()).into_iter().for_each(|i| {
+            let p = outliner.points.handle::<PointHandle>(i.into(), None);
+            let new_x = p.x() * h_factor - bounds.x_min as f32;
+            let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32;
 
-        let mut point = outliner.points.handle::<PointHandle>(i.into(), None);
-        point.set_coords(ocl::prm::Float2::new(new_x, new_y));
-    });
-
-    let _random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
-
-    let now = std::time::Instant::now();
-
-    let mut voronoi_image_factory = VoronoiImageFactory::new(queue.clone(), IMG_DIM)?;
-    let mut delaunay_factory = DelaunayFactory::new(queue.clone())?;
-
-    let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
-    let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
-   
-    let mut edges: Vec<[i64; 2]> = vec![];
-    delaunay
-        .points()
-        .handle_iter::<PointHandle>(Some(delaunay.triangles()))
-        .for_each(|p| {
-            let pp = p.previous_in_outline();
-            if !p.is_connected_to(pp)
-                && p.index() != Index::from(-1i64)
-                && pp.index() != Index::from(-1i64)
-                && !p.triangle_fan().is_empty()
-                && !pp.triangle_fan().is_empty()
-            {
-                edges.push([p.index().into(), pp.index().into()]);
-            }
+            let mut point = outliner.points.handle::<PointHandle>(i.into(), None);
+            point.set_coords(ocl::prm::Float2::new(new_x, new_y));
         });
 
-    for e in edges {
-        println!("{:?}", e);
+        let _random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
 
-        delaunay.insert_edge(e);
-    }
+        let now = std::time::Instant::now();
 
-    let dur = now.elapsed();
-    println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
+        let mut voronoi_image_factory = VoronoiImageFactory::new(queue.clone(), IMG_DIM)?;
+        let mut delaunay_factory = DelaunayFactory::new(queue.clone())?;
 
-    save(&voronoi_image, &delaunay, "voronoi.png")?;
+        let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
+        let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
 
-    let mut t = "".to_string();
-    let _ = std::io::stdin().read_line(&mut t);
+        let mut edges: Vec<[i64; 2]> = vec![];
+        delaunay
+            .points()
+            .handle_iter::<PointHandle>(Some(delaunay.triangles()))
+            .for_each(|p| {
+                let pp = p.previous_in_outline();
+                if !p.is_connected_to(pp)
+                    && p.index() != Index::from(-1i64)
+                    && pp.index() != Index::from(-1i64)
+                    && !p.triangle_fan().is_empty()
+                    && !pp.triangle_fan().is_empty()
+                {
+                    edges.push([p.index().into(), pp.index().into()]);
+                }
+            });
+
+        for e in edges {
+            println!("{:?}", e);
+
+            delaunay.insert_edge(e);
+        }
+
+        let bounding_point_ids: [PointId; 4] = delaunay.bounds().into();
+        let bounding_triangle = delaunay
+            .points()
+            .handle::<PointHandle>(bounding_point_ids[0].into(), Some(delaunay.triangles()))
+            .triangle_fan()[0];
+        remove_excess_triangles(&delaunay, bounding_triangle, false);
+
+        let dur = now.elapsed();
+        println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
+
+        save(&voronoi_image, &delaunay, "voronoi.png")?;
+
+        let mut t = "".to_string();
+        let _ = std::io::stdin().read_line(&mut t);
     }
 
     Ok(())

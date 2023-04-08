@@ -92,8 +92,7 @@ impl ttfp::OutlineBuilder for Outliner {
             m.set_previous_in_outline(self.last);
 
             self.points
-                .lookup_mut((self.last_move + 1)
-                .into())
+                .lookup_mut((self.last_move + 1).into())
                 .unwrap()
                 .set_previous_in_outline(self.last);
         }

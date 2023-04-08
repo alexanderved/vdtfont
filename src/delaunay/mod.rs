@@ -44,17 +44,19 @@ impl Delaunay {
     pub fn insert_triangle(
         &mut self,
         triangle: DelaunayTriangle,
-        supposed_neighbours: &Vec<Index>
+        supposed_neighbours: &Vec<Index>,
     ) -> Index {
         let triangle_index = self.triangles.add(triangle);
-        let triangle_handle =
-            self.triangles.handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+        let triangle_handle = self
+            .triangles
+            .handle::<DelaunayTriangleHandle>(triangle_index, self.points());
 
         supposed_neighbours
             .iter()
             .copied()
             .map(|neighbour_index| {
-                self.triangles.handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
+                self.triangles
+                    .handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
             })
             .filter(|neigbour| triangle_handle.shared_points_with(&neigbour).len() == 2)
             .for_each(|neighbour| {
@@ -62,30 +64,25 @@ impl Delaunay {
                 triangle_handle.try_add_neighbour(neighbour);
             });
 
-        triangle_handle.points()
-            .into_iter()
-            .for_each(|p| {
-                p.add_triangle_to_fan(triangle_handle);
-            });    
+        triangle_handle.points().into_iter().for_each(|p| {
+            p.add_triangle_to_fan(triangle_handle);
+        });
 
         triangle_index
     }
 
     pub fn remove_triangle(&mut self, triangle_index: Index) {
-        let triangle =
-            self.triangles().handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+        let triangle = self
+            .triangles()
+            .handle::<DelaunayTriangleHandle>(triangle_index, self.points());
 
-        triangle.neighbours()
-            .into_iter()
-            .for_each(|n| {
-                n.try_remove_neighbour(triangle.index());
-            });
+        triangle.neighbours().into_iter().for_each(|n| {
+            n.try_remove_neighbour(triangle.index());
+        });
 
-        triangle.points()
-            .into_iter()
-            .for_each(|p| {
-                p.remove_triangle_from_fan(triangle_index);
-            });
+        triangle.points().into_iter().for_each(|p| {
+            p.remove_triangle_from_fan(triangle_index);
+        });
 
         self.triangles.remove(triangle_index).unwrap();
     }
@@ -112,21 +109,16 @@ impl Delaunay {
             .map(|n| n.index())
             .collect::<Vec<_>>();
 
-        let triangle_indices_to_remove = triangle_track
-            .into_iter()
-            .map(|t| t.index())
-            .collect::<Vec<_>>();
+        let triangle_indices_to_remove =
+            triangle_track.into_iter().map(|t| t.index()).collect::<Vec<_>>();
         triangle_indices_to_remove
             .into_iter()
             .for_each(|t| self.remove_triangle(t));
 
-        triangulation0
-            .into_iter()
-            .chain(triangulation1)
-            .for_each(|t| {
-                let triangle_index = self.insert_triangle(t, &neighbours);
-                neighbours.push(triangle_index);
-            });
+        triangulation0.into_iter().chain(triangulation1).for_each(|t| {
+            let triangle_index = self.insert_triangle(t, &neighbours);
+            neighbours.push(triangle_index);
+        });
     }
 
     fn calculate_contour<'arena>(
@@ -168,13 +160,13 @@ impl Delaunay {
             ]);
 
             // t.is_counterclockwise(self.points()) {
-                let r = t.circumcircle_radius(self.points());
+            let r = t.circumcircle_radius(self.points());
 
-                if r < smallest_circle {
-                    smallest_circle = r;
-                    smallest_triangle = Some(t);
-                    middle_vertex = i + 1;
-                }
+            if r < smallest_circle {
+                smallest_circle = r;
+                smallest_triangle = Some(t);
+                middle_vertex = i + 1;
+            }
             // }
         }
 
@@ -194,8 +186,7 @@ impl Delaunay {
     pub fn image(&self) -> Vec<u8> {
         let mut bitmap = vec![0.0; self.dim * self.dim];
 
-        self
-            .triangles
+        self.triangles
             .handle_iter::<DelaunayTriangleHandle>(&self.points)
             .for_each(|t| {
                 if let Ok(t) = t.get() {
@@ -217,7 +208,7 @@ impl Delaunay {
                                 .unwrap())
                             .clone(),
                         );
-        
+
                         crate::draw_line(
                             &mut bitmap,
                             self.dim,
@@ -235,7 +226,7 @@ impl Delaunay {
                                 .unwrap())
                             .clone(),
                         );
-        
+
                         crate::draw_line(
                             &mut bitmap,
                             self.dim,

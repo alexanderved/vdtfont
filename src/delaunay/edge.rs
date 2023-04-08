@@ -21,6 +21,11 @@ impl<'arena> Edge<'arena> {
         self.points
     }
 
+    pub fn is_contour(&self) -> bool {
+        self.points[0] == self.points[1].previous_in_outline()
+            || self.points[1] == self.points[0].previous_in_outline()
+    }
+
     pub fn contains(&self, point: PointHandle<'arena>) -> bool {
         self.points.contains(&point)
     }

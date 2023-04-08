@@ -4,7 +4,7 @@ use crate::ocl::prm::Float2;
 use std::fmt;
 use std::hash;
 
-use arena_system::{Arena, Handle, RawHandle, Index};
+use arena_system::{Arena, Handle, Index, RawHandle};
 use smallvec::SmallVec;
 
 pub type PointId = i64;
