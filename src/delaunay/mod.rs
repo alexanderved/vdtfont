@@ -13,7 +13,7 @@ pub use triangle::*;
 
 use crate::point::*;
 
-use arena_system::{Arena, Handle};
+use arena_system::{Arena, Handle, Index};
 
 pub struct Delaunay {
     dim: usize,
@@ -49,14 +49,12 @@ impl Delaunay {
         .into();
 
         let (edge_track, triangle_track) = edge.find_triangle_track();
-        let mut polygon: Polygon = Polygon::from(&triangle_track)
-            .points()
+        let mut neighbours = triangle_track
             .iter()
-            .filter(|p| !edge.points().contains(p))
-            .map(|p| *p)
-            .collect::<Vec<_>>()
-            .into();
-        polygon.sort_by_angle(edge.points()[0]);
+            .flat_map(|t| t.neighbours())
+            .filter(|n| !triangle_track.contains(&n))
+            .map(|n| n.index())
+            .collect::<Vec<_>>();
 
         let mut contour0 = vec![edge.points()[0], edge_track[0].points()[0]];
         for e in edge_track[1..].iter() {
@@ -75,6 +73,7 @@ impl Delaunay {
             }
         }
         contour0.push(edge.points()[1]);
+        //let contour0 = contour0.into_iter().rev().collect::<Vec<_>>();
 
         let mut contour1 = vec![edge.points()[0], edge_track[0].points()[1]];
         for e in edge_track[1..].iter() {
@@ -98,26 +97,26 @@ impl Delaunay {
         println!("Contour0: {:?}", contour0);
         println!("Contour1: {:?}", contour1);
 
-        let mut tri0 = self.triangulate_hole(contour0);
-        tri0
-            .iter_mut()
-            .for_each(|t| t.set_is_visible(true));
+        let tri0 = self.triangulate_hole(contour0);
+        let tri1 = self.triangulate_hole(contour1);
 
-
-        let mut tri1 = self.triangulate_hole(contour1);
-        tri1
-            .iter_mut()
-            .for_each(|t| t.set_is_visible(true));
+        let triangle_indices_to_remove = triangle_track
+            .into_iter()
+            .map(|t| t.index())
+            .collect::<Vec<_>>();
+        triangle_indices_to_remove
+            .into_iter()
+            .for_each(|t| self.remove_triangle(t));
 
         for t in tri0 {
-            self.triangles.add(t);
+            let triangle_index = self.insert_triangle(t, &neighbours);
+            neighbours.push(triangle_index);
         }
 
         for t in tri1 {
-            self.triangles.add(t);
+            let triangle_index = self.insert_triangle(t, &neighbours);
+            neighbours.push(triangle_index);
         }
-
-
     }
 
     pub fn triangulate_hole(&self, mut contour: Vec<PointHandle>) -> Vec<DelaunayTriangle> {
@@ -126,12 +125,12 @@ impl Delaunay {
         let mut smallest_circle = f32::MAX;
         for (i, points) in contour.windows(3).enumerate() {
             let t = DelaunayTriangle::new([
-                points[0].index().into(), 
+                points[0].index().into(),
                 points[1].index().into(),
                 points[2].index().into(),
             ]);
 
-            //if t.is_counterclockwise(self.points()) {
+            // t.is_counterclockwise(self.points()) {
                 let r = t.circumcircle_radius(self.points());
 
                 if r < smallest_circle {
@@ -139,18 +138,62 @@ impl Delaunay {
                     smallest_triangle = Some(t);
                     middle_vertex = i + 1;
                 }
-            //}
+            // }
         }
 
-        contour.remove(middle_vertex);
+        let mut res = vec![];
+        if let Some(smallest_triangle) = smallest_triangle {
+            contour.remove(middle_vertex);
+            res.push(smallest_triangle);
 
-        let mut res = vec![smallest_triangle.unwrap()];
-
-        if contour.len() >= 3 {
-            res.append(&mut self.triangulate_hole(contour));
+            if contour.len() >= 3 {
+                res.append(&mut self.triangulate_hole(contour));
+            }
         }
 
         res
+    }
+
+    pub fn insert_triangle(
+        &mut self,
+        triangle: DelaunayTriangle,
+        supposed_neighbours: &Vec<Index>
+    ) -> Index {
+        let triangle_index = self.triangles.add(triangle);
+        let triangle_handle =
+            self.triangles.handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+
+        supposed_neighbours
+            .iter()
+            .copied()
+            .map(|neighbour_index| {
+                self.triangles.handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
+            })
+            .filter(|neigbour| triangle_handle.shared_points_with(&neigbour).len() == 2)
+            .for_each(|neighbour| {
+                println!("N: {}", neighbour.exists());
+                neighbour.try_add_neighbour(triangle_handle);
+                triangle_handle.try_add_neighbour(neighbour);
+            });
+
+        triangle_index
+    }
+
+    pub fn remove_triangle(&mut self, triangle_index: Index) {
+        let triangle =
+            self.triangles().handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+        triangle.neighbours()
+            .into_iter()
+            .for_each(|n| {
+                n.try_remove_neighbour(triangle.index());
+            });
+        triangle.points()
+            .into_iter()
+            .for_each(|p| {
+                p.remove_triangle_from_fan(triangle_index);
+            });
+
+        self.triangles.remove(triangle_index).unwrap();
     }
 
     pub fn image(&self) -> Vec<u8> {
