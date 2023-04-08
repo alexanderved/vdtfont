@@ -1,12 +1,7 @@
-use arena_system::{Arena, Handle, Index};
-
-use owned_ttf_parser::{self as ttfp, AsFaceRef};
 use rand::Rng;
 
-use vdtfont::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangleHandle};
 use vdtfont::font::*;
-use vdtfont::point::{Point, PointHandle, PointId};
-use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
+use vdtfont::point::Point;
 use vdtfont::font::Font;
 
 pub const IMG_DIM: usize = 2048;
@@ -33,166 +28,34 @@ fn generate_random_points(dim: usize) -> Vec<Point> {
     res
 }
 
-fn save(voronoi_image: &VoronoiImage, delaunay: &Delaunay, name: &str) -> anyhow::Result<()> {
-    let image = voronoi_image.image();
-    let dim = voronoi_image.dim();
-    let len = dim * dim * 4;
+fn save(glyph: &TriangulatedGlyph, name: &str) -> anyhow::Result<()> {
+    let dim = glyph.dim();
 
-    let mut img_data = vec![0; len];
-    image.read(&mut img_data)?;
+    let glyph_img_data = glyph.image();
 
-    let img_data = img_data
-        .chunks(4)
-        .flat_map(|p| {
-            let mut res = [255u8; 4];
-
-            res[0] = (p[0] as f32 * 255.0 / dim as f32).min(255.0) as u8;
-            res[1] = (p[1] as f32 * 255.0 / dim as f32).min(255.0) as u8;
-            res[2] = (p[2] as f32 * 255.0 / dim as f32).min(255.0) as u8;
-
-            res
-        })
-        .collect::<Vec<u8>>();
-
-    let delaunay_img_data = delaunay.image();
-    let img_data = img_data
-        .chunks(4)
-        .zip(delaunay_img_data.chunks(4))
-        .flat_map(|(v, d)| if d[3] > 0 { [0, 0, 0, d[3]] } else { [v[0], v[1], v[2], v[3]] })
-        .collect::<Vec<u8>>();
-
-    image::save_buffer(name, &img_data, dim as u32, dim as u32, image::ColorType::Rgba8)?;
+    image::save_buffer(name, &glyph_img_data, dim as u32, dim as u32, image::ColorType::Rgba8)?;
 
     Ok(())
 }
 
-fn remove_excess_triangles(
-    delaunay: &Delaunay,
-    starting_triangle: DelaunayTriangleHandle,
-    is_visible: bool,
-) {
-    if starting_triangle.is_finalized() { return; }
-
-    starting_triangle.set_is_visible(is_visible);
-    starting_triangle.set_is_finalized(true);
-
-    starting_triangle.neighbours().into_iter().for_each(|n| {
-        let se = starting_triangle.shared_edge_with(&n);
-        /* println!("Neighbour edge {:?} is contour: {}", se, se.is_contour());
-        println!("Previos points: {:?}, {:?}", se.points()[0].previous_in_outline(),
-            se.points()[1].previous_in_outline()); */
-        let has_contour_edge = se.is_contour();
-        let iv = if has_contour_edge { !is_visible } else { is_visible };
-
-        remove_excess_triangles(delaunay, n, iv);
-    });
-}
-
 fn main() -> anyhow::Result<()> {
-    let platform = ocl::Platform::default();
-    let device = ocl::Device::list(platform, Some(ocl::DeviceType::GPU))?[0];
-    let context = ocl::Context::builder().platform(platform).devices(device).build()?;
-    let queue =
-        ocl::Queue::new(&context, device, Some(ocl::CommandQueueProperties::PROFILING_ENABLE))?;
-
-    let dim = IMG_DIM / 2;
-
     #[rustfmt::skip]
     let font =
         include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf");
         //include_bytes!(
         //    "/home/alex/projects/.deprecated/font_rasterizer/examples/fonts/DejaVuSansMono.ttf");
 
-    let f = Font::from_vec(font.to_vec())?;
-
-    let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
-    let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
+    let mut f = Font::from_vec(font.to_vec())?;
 
     for i in 0..26 {
         let c = char::from_u32('a' as u32 + i as u32).unwrap();
         println!("{}", c);
 
         let g = f.glyph(c);
-        let (_, _, _, points) = f.outline_glyph(g).into_raw_parts();
+        let og = f.outline_glyph(g);
+        let tg = f.triangulate_glyph(og)?;
 
-        /* let glyph_id = parsed_face.glyph_index(c).unwrap();
-
-        let mut outliner = outliner::Outliner::new();
-        let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
-
-        let height: f32 =
-            (parsed_face.as_face_ref().ascender() - parsed_face.as_face_ref().descender()).into();
-        let h_factor = dim as f32 / height;
-        let v_factor = dim as f32 / height;
-
-        let bounds = ttfp::Rect {
-            x_min: (rect.x_min as f32 * h_factor) as i16,
-            x_max: (rect.x_max as f32 * h_factor) as i16,
-            y_min: (rect.y_min as f32 * v_factor) as i16,
-            y_max: (rect.y_max as f32 * v_factor) as i16,
-        };
-
-        println!("The number of points: {}", outliner.points.len());
-        println!("The shortest distance: {}", outliner.shortest_distance * h_factor);
-        println!("The height of a glyph: {}", height);
-
-        let points: Arena<_> = outliner.points.into();
-
-        (0..points.len()).into_iter().for_each(|i| {
-            let p = points.handle::<PointHandle>(i.into(), None);
-            let new_x = p.x() * h_factor - bounds.x_min as f32 + 5.0;
-            let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32 + 5.0;
-
-            let mut point = points.handle::<PointHandle>(i.into(), None);
-            point.set_coords(ocl::prm::Float2::new(new_x, new_y));
-        });
-
-        let _random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
-
- */        let now = std::time::Instant::now();
-
-        let mut voronoi_image_factory = VoronoiImageFactory::new(queue.clone(), IMG_DIM)?;
-        let mut delaunay_factory = DelaunayFactory::new(queue.clone())?;
-
-        let voronoi_image = voronoi_image_factory.construct_borrowed(points, dim)?;
-        let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
-
-        let mut edges: Vec<[i64; 2]> = vec![];
-        delaunay
-            .points()
-            .handle_iter::<PointHandle>(Some(delaunay.triangles()))
-            .for_each(|p| {
-                let pp = p.previous_in_outline();
-                if !p.is_connected_to(pp)
-                    && p.index() != Index::from(-1i64)
-                    && pp.index() != Index::from(-1i64)
-                    && !p.triangle_fan().is_empty()
-                    && !pp.triangle_fan().is_empty()
-                {
-                    edges.push([p.index().into(), pp.index().into()]);
-                }
-            });
-
-        for e in edges {
-            println!("{:?}", e);
-
-            delaunay.insert_edge(e);
-        }
-
-        let bounding_point_ids: [PointId; 4] = delaunay.bounds().into();
-        for pid in bounding_point_ids {
-            let bounding_triangle = delaunay
-                .points()
-                .handle::<PointHandle>(pid.into(), Some(delaunay.triangles()))
-                .triangle_fan()[0];
-
-            remove_excess_triangles(&delaunay, bounding_triangle, false);
-        }
-
-        let dur = now.elapsed();
-        println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
-
-        save(&voronoi_image, &delaunay, "voronoi.png")?;
+        save(&tg, "glyph.png")?;
 
         let mut t = "".to_string();
         let _ = std::io::stdin().read_line(&mut t);

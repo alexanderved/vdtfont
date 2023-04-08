@@ -1,9 +1,10 @@
 use crate::Point;
-use crate::delaunay::DelaunayTriangle;
+use crate::delaunay::{DelaunayTriangle, DelaunayTriangleHandle};
+use crate::point::PointHandle;
 
 use std::convert;
 
-use arena_system::Arena;
+use arena_system::{Arena, Handle};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Glyph(pub u16);
@@ -49,6 +50,10 @@ impl OutlinedGlyph {
         self.glyph
     }
 
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
     pub fn bounds(&self) -> ttfp::Rect {
         self.bounds
     }
@@ -64,6 +69,7 @@ impl OutlinedGlyph {
 
 pub struct TriangulatedGlyph {
     glyph: Glyph,
+    dim: usize,
 
     points: Arena<Point>,
     triangles: Arena<DelaunayTriangle>,
@@ -72,10 +78,19 @@ pub struct TriangulatedGlyph {
 impl TriangulatedGlyph {
     pub(super) fn new(
         glyph: Glyph,
+        dim: usize,
         points: Arena<Point>,
         triangles: Arena<DelaunayTriangle>
     ) -> Self {
-        Self { glyph, points, triangles }
+        Self { glyph, dim, points, triangles }
+    }
+
+    pub fn glyph(&self) -> Glyph {
+        self.glyph
+    }
+
+    pub fn dim(&self) -> usize {
+        self.dim
     }
 
     pub fn points(&self) -> &Arena<Point> {
@@ -86,7 +101,75 @@ impl TriangulatedGlyph {
         &self.triangles
     }
 
-    pub fn into_raw_parts(self) -> (Glyph, Arena<Point>, Arena<DelaunayTriangle>) {
-        (self.glyph, self.points, self.triangles)
+    pub fn into_raw_parts(self) -> (Glyph, usize, Arena<Point>, Arena<DelaunayTriangle>) {
+        (self.glyph, self.dim, self.points, self.triangles)
+    }
+
+    pub fn image(&self) -> Vec<u8> {
+        let mut bitmap = vec![0.0; self.dim * self.dim];
+
+        self.triangles
+            .handle_iter::<DelaunayTriangleHandle>(&self.points)
+            .for_each(|t| {
+                if let Ok(t) = t.get() {
+                    if t.is_visible {
+                        crate::draw_line(
+                            &mut bitmap,
+                            self.dim,
+                            self.dim,
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[0].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[1].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                        );
+
+                        crate::draw_line(
+                            &mut bitmap,
+                            self.dim,
+                            self.dim,
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[1].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[2].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                        );
+
+                        crate::draw_line(
+                            &mut bitmap,
+                            self.dim,
+                            self.dim,
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[0].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[2].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                        );
+                    }
+                }
+            });
+
+        bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * (1.0 - a)) as u8]).collect()
     }
 }

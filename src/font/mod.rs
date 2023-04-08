@@ -12,8 +12,9 @@ use arena_system::{Arena, Handle};
 use ocl::prm::Float2;
 use ttfp::AsFaceRef;
 
-const MIN_GLYPH_HEIGHT: usize = 256;
+const MIN_GLYPH_HEIGHT: usize = 64;
 const MAX_GLYPH_HEIGHT: usize = 2048;
+const MIN_POINT_DISTANCE: f32 = 2.0;
 
 pub struct Font {
     subtables: ttfp::PreParsedSubtables<'static, ttfp::OwnedFace>,
@@ -127,7 +128,7 @@ impl Font {
             .unwrap();
 
         let dim = nearest_power_of_two(
-            (MAX_GLYPH_HEIGHT as f32 * 4.0 / outliner.shortest_distance) as usize,
+            (MAX_GLYPH_HEIGHT as f32 * MIN_POINT_DISTANCE / outliner.shortest_distance) as usize,
         )
         .clamp(MIN_GLYPH_HEIGHT, MAX_GLYPH_HEIGHT);
 
@@ -171,14 +172,15 @@ impl Font {
             .triangle_fan()[0];
         self.remove_excess_triangles(&delaunay, bounding_triangle, false);
 
-        let (_, points, triangles, _) = delaunay.into_raw_parts();
+        let (dim, points, triangles, _) = delaunay.into_raw_parts();
         let triangles = triangles
             .handle_iter::<DelaunayTriangleHandle>(&points)
+            .filter(|t| t.get().is_ok())
             .filter(|t| t.is_visible())
             .map(|t| *t.get().unwrap())
             .collect::<Arena<DelaunayTriangle>>();
 
-        Ok(TriangulatedGlyph::new(glyph, points, triangles))
+        Ok(TriangulatedGlyph::new(glyph, dim, points, triangles))
     }
 
     fn insert_constraint_edges(&self, delaunay: &mut Delaunay) {
