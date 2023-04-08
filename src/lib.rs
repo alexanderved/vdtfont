@@ -8,9 +8,10 @@ pub mod opencl;
 pub mod point;
 pub mod voronoi;
 
-use std::{mem, time};
+pub use point::Point;
+pub use font::{Font, Glyph, OutlinedGlyph, TriangulatedGlyph};
 
-use point::Point;
+use std::{mem, time};
 
 fn bench(f: impl FnOnce() -> anyhow::Result<()>) -> time::Duration {
     let now = std::time::Instant::now();
