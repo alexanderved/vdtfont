@@ -5,7 +5,7 @@ mod polygon;
 mod triangle;
 mod triangle_fan;
 
-pub(crate) use bounds::*;
+pub use bounds::*;
 pub use edge::*;
 pub use factory::DelaunayFactory;
 pub use polygon::Polygon;
@@ -40,7 +40,7 @@ impl Delaunay {
     pub fn bounds(&self) -> Bounds {
         self.bounds
     }
-    
+
     pub fn insert_triangle(
         &mut self,
         triangle: DelaunayTriangle,
