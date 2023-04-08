@@ -424,7 +424,7 @@ impl DelaunayFactory {
         let triangle_vec = triangles
             .handle_iter::<DelaunayTriangleHandle>(points)
             .map(|t| *t.get().unwrap())
-            .collect::<Vec<_>>();
+            .collect::<Vec<DelaunayTriangle>>();
         self.triangles_buffer.write(&triangle_vec).unwrap();
     }
 

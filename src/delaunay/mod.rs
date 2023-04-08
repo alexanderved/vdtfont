@@ -127,7 +127,7 @@ impl Delaunay {
             .flat_map(|triangle| triangle.neighbours())
             .filter(|neighbour| !triangle_track.contains(neighbour))
             .map(|neighbour| neighbour.index())
-            .collect::<Vec<_>>();
+            .collect::<Vec<Index>>();
 
         // Remove the triangles which are intersected by the given `edge`.
         let triangle_indices_to_remove =

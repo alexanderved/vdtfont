@@ -1,6 +1,6 @@
-pub mod curve;
+mod curve;
 pub mod glyph;
-pub mod outliner;
+mod outliner;
 
 pub use glyph::{Glyph, OutlinedGlyph, TriangulatedGlyph};
 
@@ -24,11 +24,15 @@ pub struct Font {
 }
 
 impl Font {
+    /// Creates a new [`Font`] from bytes.
     #[inline]
     pub fn from_vec(data: Vec<u8>) -> anyhow::Result<Self> {
         Self::from_vec_and_index(data, 0)
     }
 
+    /// Creates a new [`Font`] from bytes.
+    /// 
+    /// You can set index for font collections. For simple ttf fonts set index to 0.
     #[inline]
     pub fn from_vec_and_index(data: Vec<u8>, index: u32) -> anyhow::Result<Self> {
         let platform = ocl::Platform::default();
@@ -62,12 +66,6 @@ impl Font {
     #[inline]
     pub fn line_gap(&self) -> f32 {
         self.subtables.as_face_ref().line_gap().into()
-    }
-
-    #[inline]
-    pub fn glyph(&self, c: char) -> Glyph {
-        let index = self.subtables.glyph_index(c).map(|id| id.0).unwrap_or(0);
-        Glyph(index)
     }
 
     #[inline]
@@ -116,22 +114,36 @@ impl Font {
 
     #[inline]
     pub fn glyph_count(&self) -> usize {
-        self.subtables.as_face_ref().number_of_glyphs() as _
+        self.subtables.as_face_ref().number_of_glyphs() as usize
     }
 
+    /// Returns a glyph which correspondes to the given character `c`.
+    #[inline]
+    pub fn glyph(&self, c: char) -> Glyph {
+        let index = self.subtables.glyph_index(c).map(|id| id.0).unwrap_or(0);
+        Glyph(index)
+    }
+
+    /// Outlines the given `glyph`.
     pub fn outline_glyph(&self, glyph: Glyph) -> OutlinedGlyph {
         let mut outliner = outliner::Outliner::new();
+
+        // Outline a glyph.
         let rect = self
             .subtables
             .as_face_ref()
             .outline_glyph(glyph.into(), &mut outliner)
             .unwrap();
 
+        // Find a dimension which is the power of two,
+        // in which the shortest distance between the points is >= `MIN_POINT_DISTANCE` 
+        // and `MIN_GLYPH_HEIGHT` < `dim` < `MIN_GLYPH_HEIGHT`.
         let dim = nearest_power_of_two(
             (MAX_GLYPH_HEIGHT as f32 * MIN_POINT_DISTANCE / outliner.shortest_distance) as usize,
         )
         .clamp(MIN_GLYPH_HEIGHT, MAX_GLYPH_HEIGHT);
 
+        // Scale the glyph.
         let height: f32 = self.ascender() - self.descender();
         let h_factor = dim as f32 / height;
         let v_factor = dim as f32 / height;
@@ -155,16 +167,20 @@ impl Font {
         OutlinedGlyph::new(glyph, dim, bounds, points)
     }
 
+    /// Triangulates the given `outlined_glyph`.
     pub fn triangulate_glyph(
         &mut self,
         outlined_glyph: OutlinedGlyph
     ) -> anyhow::Result<TriangulatedGlyph> {
         let (glyph, dim, _, points) = outlined_glyph.into_raw_parts();
+        // Triangulate the points in the outline of the glyph.
         let voronoi_image = self.voronoi_image_factory.construct_borrowed(points, dim)?;
         let mut delaunay = self.delaunay_factory.construct(&voronoi_image)?;
 
+        // Insert constraint edges which are missing in the triangulation.
         self.insert_constraint_edges(&mut delaunay);
 
+        // Hide triangles which are outside the contour.
         let bounding_point_ids: [PointId; 4] = delaunay.bounds().into();
         let bounding_triangle = delaunay
             .points()
@@ -173,6 +189,8 @@ impl Font {
         self.remove_excess_triangles(bounding_triangle, false);
 
         let (dim, points, triangles, _) = delaunay.into_raw_parts();
+
+        // Remove the invisible triangles.
         let triangles = triangles
             .handle_iter::<DelaunayTriangleHandle>(&points)
             .filter(|t| t.get().is_ok())
@@ -183,6 +201,7 @@ impl Font {
         Ok(TriangulatedGlyph::new(glyph, dim, points, triangles))
     }
 
+    // Inserts missing edges into the given `delaunay` triangulation.
     fn insert_constraint_edges(&self, delaunay: &mut Delaunay) {
         let mut edges: Vec<[i64; 2]> = vec![];
         delaunay
@@ -207,6 +226,7 @@ impl Font {
             });
     }
 
+    // Recursively hides triangles which are outside the contour.
     #[allow(clippy::only_used_in_recursion)]
     fn remove_excess_triangles(
         &self,
@@ -220,6 +240,7 @@ impl Font {
 
         starting_triangle.neighbours().into_iter().for_each(|n| {
             let has_contour_edge = starting_triangle.shared_edge_with(&n).is_contour();
+            // When cross the contour edge, invert the `is_visible` parameter.
             let is_visible = if has_contour_edge { !is_visible } else { is_visible };
 
             self.remove_excess_triangles(n, is_visible);

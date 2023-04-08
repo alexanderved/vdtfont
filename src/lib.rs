@@ -8,7 +8,7 @@ pub mod opencl;
 pub mod point;
 pub mod voronoi;
 
-pub use point::Point;
+pub use point::{Point, PointHandle, PointId};
 pub use font::{Font, Glyph, OutlinedGlyph, TriangulatedGlyph};
 
 use std::{mem, time};
