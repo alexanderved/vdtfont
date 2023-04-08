@@ -180,8 +180,6 @@ impl VoronoiImageFactory {
             let changed_pixels_number = self.changed_pixels_number_buffer.first()?;
             self.changed_pixels_number_buffer.clear()?;
 
-            println!("Changed pixel number: {}", changed_pixels_number);
-
             is_conquered = changed_pixels_number == 0;
         }
 
