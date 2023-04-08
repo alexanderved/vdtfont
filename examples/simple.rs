@@ -1,3 +1,4 @@
+use anyhow::Context;
 use vdtfont::{Point, PointHandle, Font, TriangulatedGlyph};
 use vdtfont::delaunay::DelaunayTriangleHandle;
 
@@ -124,41 +125,42 @@ pub fn rasterize_glyph(glyph: &TriangulatedGlyph) -> Vec<u8> {
             }
         });
 
-    bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * (1.0 - a)) as u8]).collect()
+    bitmap.into_iter().flat_map(|a| {
+        if a > 0.0 {
+            [255, 255, 255, (255.0 * a) as u8]
+        } else {
+            [0, 0, 0, 255]
+        }
+    }).collect()
 } 
 
 
 fn save(glyph: &TriangulatedGlyph, name: &str) -> anyhow::Result<()> {
     let dim = glyph.dim();
-
     let glyph_img_data = rasterize_glyph(glyph);
-
     image::save_buffer(name, &glyph_img_data, dim as u32, dim as u32, image::ColorType::Rgba8)?;
 
     Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
-    #[rustfmt::skip]
-    let font =
-        include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf");
+    let font_data = include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf");
 
-    let mut f = Font::from_vec(font.to_vec())?;
+    let mut font = Font::from_vec(font_data.to_vec())?;
 
-    for i in 0..26 {
-        let c = char::from_u32('a' as u32 + i as u32).unwrap();
-        println!("{}", c);
+    let mut s = "".to_string();
+    loop {
+        println!("Enter any symbol (CTRL + C to exit):");
+        std::io::stdin().read_line(&mut s)?;
+        let c = s.chars().nth(0).context("No character was provided")?;
 
-        let g = f.glyph(c);
-        let outlined_glyph = f.outline_glyph(g);
-        let triangulated_glyph = f.triangulate_glyph(outlined_glyph)?;
+        let glyph = font.glyph(c);
+        let outlined_glyph = font.outline_glyph(glyph);
+        let triangulated_glyph = font.triangulate_glyph(outlined_glyph)?;
 
-        save(&triangulated_glyph, "glyph.png")?;
+        save(&triangulated_glyph, &format!("{c}.png"))?;
+        println!("The image of the symbol was saved in {c}.png");
 
-        let mut t = "".to_string();
-        let _ = std::io::stdin().read_line(&mut t);
-        println!("{t}");
+        s.clear();
     }
-
-    Ok(())
 }
