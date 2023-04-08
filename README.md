@@ -1,4 +1,7 @@
-# VDTFont
+VDTFont
+[![crates.io](https://img.shields.io/crates/v/vdtfont.svg)](https://crates.io/crates/vdtfont)
+[![Documentation](https://docs.rs/vdtfont/badge.svg)](https://docs.rs/vdtfont)
+==============
 A novel library for converting glyphs into triangulations which can be used right in the Graphical APIs.
 
 ```rust
@@ -22,4 +25,19 @@ triangulated_glyph
     .for_each(|triangle_handle| {
         // ...
     })
+```
+
+## What's new?
+
+The original font_rasterizer wasn't competetive so it was decided to almost fully rewrite it.
+
+A new library VDTFont doesn't use classical method of rasterizing every pixel, but
+triangulates glyphs using GPU.
+
+## Example
+
+To run the example use the following command:
+
+```bash
+# cargo run --release --example simple
 ```

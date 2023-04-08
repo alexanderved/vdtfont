@@ -23,7 +23,7 @@ impl Default for Outliner {
     fn default() -> Self {
         Self::new()
     }
-}    
+}
 
 impl ttfp::OutlineBuilder for Outliner {
     fn move_to(&mut self, x: f32, y: f32) {

@@ -4,7 +4,7 @@ mod outliner;
 
 pub use glyph::{Glyph, OutlinedGlyph, TriangulatedGlyph};
 
-use crate::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangleHandle, DelaunayTriangle};
+use crate::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangle, DelaunayTriangleHandle};
 use crate::point::{Point, PointHandle, PointId};
 use crate::voronoi::VoronoiImageFactory;
 
@@ -31,12 +31,15 @@ impl Font {
     }
 
     /// Creates a new [`Font`] from bytes.
-    /// 
+    ///
     /// You can set index for font collections. For simple ttf fonts set index to 0.
     #[inline]
     pub fn from_vec_and_index(data: Vec<u8>, index: u32) -> anyhow::Result<Self> {
         let platform = ocl::Platform::default();
-        let device = ocl::Device::list(platform, Some(ocl::DeviceType::GPU))?[0];
+        let device = *ocl::Device::list(platform, Some(ocl::DeviceType::GPU))
+            .expect("OpenCL error occured. You may need to install OpenCL drivers")
+            .get(0)
+            .expect("No GPU was found. You may need to install OpenCL drivers");
         let context = ocl::Context::builder().platform(platform).devices(device).build()?;
         let queue =
             ocl::Queue::new(&context, device, Some(ocl::CommandQueueProperties::PROFILING_ENABLE))?;
@@ -136,7 +139,7 @@ impl Font {
             .unwrap();
 
         // Find a dimension which is the power of two,
-        // in which the shortest distance between the points is >= `MIN_POINT_DISTANCE` 
+        // in which the shortest distance between the points is >= `MIN_POINT_DISTANCE`
         // and `MIN_GLYPH_HEIGHT` < `dim` < `MIN_GLYPH_HEIGHT`.
         let dim = nearest_power_of_two(
             (MAX_GLYPH_HEIGHT as f32 * MIN_POINT_DISTANCE / outliner.shortest_distance) as usize,
@@ -170,7 +173,7 @@ impl Font {
     /// Triangulates the given `outlined_glyph`.
     pub fn triangulate_glyph(
         &mut self,
-        outlined_glyph: OutlinedGlyph
+        outlined_glyph: OutlinedGlyph,
     ) -> anyhow::Result<TriangulatedGlyph> {
         let (glyph, dim, _, points) = outlined_glyph.into_raw_parts();
         // Triangulate the points in the outline of the glyph.
@@ -219,21 +222,17 @@ impl Font {
                 }
             });
 
-        edges
-            .into_iter()
-            .for_each(|e| {
-                delaunay.insert_edge(e);
-            });
+        edges.into_iter().for_each(|e| {
+            delaunay.insert_edge(e);
+        });
     }
 
     // Recursively hides triangles which are outside the contour.
     #[allow(clippy::only_used_in_recursion)]
-    fn remove_excess_triangles(
-        &self,
-        starting_triangle: DelaunayTriangleHandle,
-        is_visible: bool,
-    ) {
-        if starting_triangle.is_finalized() { return; }
+    fn remove_excess_triangles(&self, starting_triangle: DelaunayTriangleHandle, is_visible: bool) {
+        if starting_triangle.is_finalized() {
+            return;
+        }
 
         starting_triangle.set_is_visible(is_visible);
         starting_triangle.set_is_finalized(true);

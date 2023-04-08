@@ -1,5 +1,5 @@
-use crate::Point;
 use crate::delaunay::DelaunayTriangle;
+use crate::Point;
 
 use std::convert;
 
@@ -118,7 +118,7 @@ impl TriangulatedGlyph {
         glyph: Glyph,
         dim: usize,
         points: Arena<Point>,
-        triangles: Arena<DelaunayTriangle>
+        triangles: Arena<DelaunayTriangle>,
     ) -> Self {
         Self { glyph, dim, points, triangles }
     }
