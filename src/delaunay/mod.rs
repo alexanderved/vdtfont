@@ -199,75 +199,68 @@ impl Delaunay {
     pub fn image(&self) -> Vec<u8> {
         let mut bitmap = vec![0.0; self.dim * self.dim];
 
-        let mut i: i64 = 0;
-        let mut tri = self
+        self
             .triangles
-            .handle::<DelaunayTriangleHandle>(i.into(), &self.points)
-            .get();
-
-        while let Ok(t) = tri {
-            if t.is_visible {
-                crate::draw_line(
-                    &mut bitmap,
-                    self.dim,
-                    self.dim,
-                    (*self
-                        .points
-                        .handle::<PointHandle>(t.vertices[0].into(), None)
-                        .get()
-                        .unwrap())
-                    .clone(),
-                    (*self
-                        .points
-                        .handle::<PointHandle>(t.vertices[1].into(), None)
-                        .get()
-                        .unwrap())
-                    .clone(),
-                );
-
-                crate::draw_line(
-                    &mut bitmap,
-                    self.dim,
-                    self.dim,
-                    (*self
-                        .points
-                        .handle::<PointHandle>(t.vertices[1].into(), None)
-                        .get()
-                        .unwrap())
-                    .clone(),
-                    (*self
-                        .points
-                        .handle::<PointHandle>(t.vertices[2].into(), None)
-                        .get()
-                        .unwrap())
-                    .clone(),
-                );
-
-                crate::draw_line(
-                    &mut bitmap,
-                    self.dim,
-                    self.dim,
-                    (*self
-                        .points
-                        .handle::<PointHandle>(t.vertices[0].into(), None)
-                        .get()
-                        .unwrap())
-                    .clone(),
-                    (*self
-                        .points
-                        .handle::<PointHandle>(t.vertices[2].into(), None)
-                        .get()
-                        .unwrap())
-                    .clone(),
-                );
-            }
-
-            i += 1;
-            tri = self
-                .triangles
-                .handle::<DelaunayTriangleHandle>(i.into(), &self.points)
-                .get();
-        }
+            .handle_iter::<DelaunayTriangleHandle>(&self.points)
+            .for_each(|t| {
+                if let Ok(t) = t.get() {
+                    if t.is_visible {
+                        crate::draw_line(
+                            &mut bitmap,
+                            self.dim,
+                            self.dim,
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[0].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[1].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                        );
+        
+                        crate::draw_line(
+                            &mut bitmap,
+                            self.dim,
+                            self.dim,
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[1].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[2].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                        );
+        
+                        crate::draw_line(
+                            &mut bitmap,
+                            self.dim,
+                            self.dim,
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[0].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                            (*self
+                                .points
+                                .handle::<PointHandle>(t.vertices[2].into(), None)
+                                .get()
+                                .unwrap())
+                            .clone(),
+                        );
+                    }
+                }
+            });
 
         bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * a) as u8]).collect()
     }
