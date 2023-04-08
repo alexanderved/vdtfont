@@ -1,4 +1,5 @@
 use crate::Point;
+use crate::delaunay::DelaunayTriangle;
 
 use std::convert;
 
@@ -33,14 +34,15 @@ impl convert::Into<ttfp::GlyphId> for Glyph {
 
 pub struct OutlinedGlyph {
     glyph: Glyph,
+    dim: usize,
 
     bounds: ttfp::Rect,
     points: Arena<Point>,
 }
 
 impl OutlinedGlyph {
-    pub(super) fn new(glyph: Glyph, bounds: ttfp::Rect, points: Arena<Point>) -> Self {
-        Self { glyph, bounds, points }
+    pub(super) fn new(glyph: Glyph, dim: usize, bounds: ttfp::Rect, points: Arena<Point>) -> Self {
+        Self { glyph, dim, bounds, points }
     }
 
     pub fn glyph(&self) -> Glyph {
@@ -55,7 +57,36 @@ impl OutlinedGlyph {
         &self.points
     }
 
-    pub fn into_raw_parts(self) -> (Glyph, ttfp::Rect, Arena<Point>) {
-        (self.glyph, self.bounds, self.points)
+    pub fn into_raw_parts(self) -> (Glyph, usize, ttfp::Rect, Arena<Point>) {
+        (self.glyph, self.dim, self.bounds, self.points)
+    }
+}
+
+pub struct TriangulatedGlyph {
+    glyph: Glyph,
+
+    points: Arena<Point>,
+    triangles: Arena<DelaunayTriangle>,
+}
+
+impl TriangulatedGlyph {
+    pub(super) fn new(
+        glyph: Glyph,
+        points: Arena<Point>,
+        triangles: Arena<DelaunayTriangle>
+    ) -> Self {
+        Self { glyph, points, triangles }
+    }
+
+    pub fn points(&self) -> &Arena<Point> {
+        &self.points
+    }
+
+    pub fn triangles(&self) -> &Arena<DelaunayTriangle> {
+        &self.triangles
+    }
+
+    pub fn into_raw_parts(self) -> (Glyph, Arena<Point>, Arena<DelaunayTriangle>) {
+        (self.glyph, self.points, self.triangles)
     }
 }

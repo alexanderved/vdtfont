@@ -41,6 +41,10 @@ impl Delaunay {
         self.bounds
     }
 
+    pub fn into_raw_parts(self) -> (usize, Arena<Point>, Arena<DelaunayTriangle>, Bounds) {
+        (self.dim, self.points, self.triangles, self.bounds)
+    }
+
     pub fn insert_triangle(
         &mut self,
         triangle: DelaunayTriangle,

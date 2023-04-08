@@ -113,7 +113,7 @@ fn main() -> anyhow::Result<()> {
         println!("{}", c);
 
         let g = f.glyph(c);
-        let (_, _, points) = f.outline_glyph(g).into_raw_parts();
+        let (_, _, _, points) = f.outline_glyph(g).into_raw_parts();
 
         /* let glyph_id = parsed_face.glyph_index(c).unwrap();
 
