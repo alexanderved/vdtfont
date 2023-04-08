@@ -62,7 +62,9 @@ impl DelaunayTriangle {
         b[1] = B.x() * B.x() + B.y() * B.y() - C.x() * C.x() - C.y() * C.y();
 
         let det = a[0] * a[3] - a[1] * a[2];
-        if libm::fabsf(det) <= f32::EPSILON { return -1.0; }
+        if libm::fabsf(det) <= f32::EPSILON {
+            return -1.0;
+        }
 
         let mut center = [0.0; 2];
         center[0] = (b[0] * a[3] - a[1] * b[1]) / det;
@@ -91,6 +93,10 @@ pub struct DelaunayTriangleHandle<'arena> {
 }
 
 impl<'arena> DelaunayTriangleHandle<'arena> {
+    pub fn exists(&self) -> bool {
+        self.get().is_ok()
+    }
+
     pub fn points(&self) -> [PointHandle<'arena>; 3] {
         let vertices = self.get().unwrap().vertices;
 
