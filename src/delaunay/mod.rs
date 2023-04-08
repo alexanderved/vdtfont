@@ -171,10 +171,15 @@ impl Delaunay {
             })
             .filter(|neigbour| triangle_handle.shared_points_with(&neigbour).len() == 2)
             .for_each(|neighbour| {
-                println!("N: {}", neighbour.exists());
                 neighbour.try_add_neighbour(triangle_handle);
                 triangle_handle.try_add_neighbour(neighbour);
             });
+
+        triangle_handle.points()
+            .into_iter()
+            .for_each(|p| {
+                p.add_triangle_to_fan(triangle_handle);
+            });    
 
         triangle_index
     }
@@ -182,11 +187,13 @@ impl Delaunay {
     pub fn remove_triangle(&mut self, triangle_index: Index) {
         let triangle =
             self.triangles().handle::<DelaunayTriangleHandle>(triangle_index, self.points());
+
         triangle.neighbours()
             .into_iter()
             .for_each(|n| {
                 n.try_remove_neighbour(triangle.index());
             });
+
         triangle.points()
             .into_iter()
             .for_each(|p| {

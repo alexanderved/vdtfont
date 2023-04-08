@@ -42,6 +42,6 @@ pub fn tesselate_cubic_curve(p: (Point, Point, Point, Point), points: &mut Arena
         tesselate_cubic_curve(p0, points);
         tesselate_cubic_curve(p1, points);
     } else {
-        points.add(p.3)
+        points.add(p.3);
     }
 }

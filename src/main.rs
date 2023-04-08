@@ -76,15 +76,15 @@ fn main() -> anyhow::Result<()> {
 
     #[rustfmt::skip]
     let font =
-        include_bytes!("../../../.deprecated/font_rasterizer/.fonts/times.ttf");
+        include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Italic.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
-    //for i in 0..26 {
-    //let c = char::from_u32('a' as u32 + i as u32).unwrap();
-    //println!("{}", c);
-    let glyph_id = parsed_face.glyph_index('w').unwrap();
+    for i in 0..26 {
+    let c = char::from_u32('a' as u32 + i as u32).unwrap();
+    println!("{}", c);
+    let glyph_id = parsed_face.glyph_index(c).unwrap();
 
     let mut outliner = outliner::Outliner::new();
     let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
@@ -107,8 +107,8 @@ fn main() -> anyhow::Result<()> {
 
     (0..outliner.points.len()).into_iter().for_each(|i| {
         let p = outliner.points.handle::<PointHandle>(i.into(), None);
-        let new_x = p.x() * h_factor;
-        let new_y = bounds.height() as f32 - p.y() * v_factor;
+        let new_x = p.x() * h_factor - bounds.x_min as f32;
+        let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32;
 
         let mut point = outliner.points.handle::<PointHandle>(i.into(), None);
         point.set_coords(ocl::prm::Float2::new(new_x, new_y));
@@ -137,6 +137,7 @@ fn main() -> anyhow::Result<()> {
                 && !pp.triangle_fan().is_empty()
             {
                 println!("{:?} {:?}", p, pp);
+                println!("{} {}", p.triangle_fan().len(), pp.triangle_fan().len());
                 edges.push([p.index().into(), pp.index().into()]);
             }
         });
@@ -149,9 +150,12 @@ fn main() -> anyhow::Result<()> {
 
     let dur = now.elapsed();
     println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
-    //}
 
     save(&voronoi_image, &delaunay, "voronoi.png")?;
+
+    let mut t = "".to_string();
+    let _ = std::io::stdin().read_line(&mut t);
+    }
 
     Ok(())
 }

@@ -90,6 +90,12 @@ impl ttfp::OutlineBuilder for Outliner {
 
         if let Ok(mut m) = self.points.lookup_mut(self.last_move.into()) {
             m.set_previous_in_outline(self.last);
+
+            self.points
+                .lookup_mut((self.last_move + 1)
+                .into())
+                .unwrap()
+                .set_previous_in_outline(self.last);
         }
     }
 }
