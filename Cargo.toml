@@ -2,8 +2,12 @@
 name = "vdtfont"
 version = "0.3.0"
 edition = "2021"
+description = "A library for converting glyphs into triangulations"
 authors = ["Alexander Vedekhin"]
+repository = "https://github.com/alexanderved/vdtfont"
+keywords = ["voronoi", "delaunay", "triangulation", "font", "glyph"]
 license = "MPL-2.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
