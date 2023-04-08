@@ -5,8 +5,9 @@ use rand::Rng;
 
 use vdtfont::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangleHandle};
 use vdtfont::font::*;
-use vdtfont::point::{Point, PointHandle};
-use vdtfont::voronoi::{PointId, VoronoiImage, VoronoiImageFactory};
+use vdtfont::point::{Point, PointHandle, PointId};
+use vdtfont::voronoi::{VoronoiImage, VoronoiImageFactory};
+use vdtfont::font::Font;
 
 pub const IMG_DIM: usize = 2048;
 pub const IMG_LEN: usize = IMG_DIM * IMG_DIM * 4;
@@ -102,13 +103,19 @@ fn main() -> anyhow::Result<()> {
         //include_bytes!(
         //    "/home/alex/projects/.deprecated/font_rasterizer/examples/fonts/DejaVuSansMono.ttf");
 
+    let f = Font::from_vec(font.to_vec())?;
+
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
 
     for i in 0..26 {
         let c = char::from_u32('a' as u32 + i as u32).unwrap();
         println!("{}", c);
-        let glyph_id = parsed_face.glyph_index(c).unwrap();
+
+        let g = f.glyph(c);
+        let (_, _, points) = f.outline_glyph(g).into_raw_parts();
+
+        /* let glyph_id = parsed_face.glyph_index(c).unwrap();
 
         let mut outliner = outliner::Outliner::new();
         let rect = parsed_face.as_face_ref().outline_glyph(glyph_id, &mut outliner).unwrap();
@@ -142,7 +149,7 @@ fn main() -> anyhow::Result<()> {
 
         let _random = generate_random_points(dim).into_iter().collect::<Arena<Point>>();
 
-        let now = std::time::Instant::now();
+ */        let now = std::time::Instant::now();
 
         let mut voronoi_image_factory = VoronoiImageFactory::new(queue.clone(), IMG_DIM)?;
         let mut delaunay_factory = DelaunayFactory::new(queue.clone())?;

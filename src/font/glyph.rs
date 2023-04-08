@@ -34,14 +34,28 @@ impl convert::Into<ttfp::GlyphId> for Glyph {
 pub struct OutlinedGlyph {
     glyph: Glyph,
 
+    bounds: ttfp::Rect,
     points: Arena<Point>,
 }
 
 impl OutlinedGlyph {
-    pub(super) fn new(glyph: Glyph, points: Arena<Point>) -> Self {
-        Self {
-            glyph,
-            points,
-        }
+    pub(super) fn new(glyph: Glyph, bounds: ttfp::Rect, points: Arena<Point>) -> Self {
+        Self { glyph, bounds, points }
+    }
+
+    pub fn glyph(&self) -> Glyph {
+        self.glyph
+    }
+
+    pub fn bounds(&self) -> ttfp::Rect {
+        self.bounds
+    }
+
+    pub fn points(&self) -> &Arena<Point> {
+        &self.points
+    }
+
+    pub fn into_raw_parts(self) -> (Glyph, ttfp::Rect, Arena<Point>) {
+        (self.glyph, self.bounds, self.points)
     }
 }

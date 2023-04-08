@@ -1,6 +1,6 @@
 pub extern crate arena_system;
 pub extern crate ocl;
-extern crate owned_ttf_parser as ttfp;
+pub extern crate owned_ttf_parser as ttfp;
 
 pub mod delaunay;
 pub mod font;
