@@ -1,10 +1,8 @@
 use crate::point::Point;
 
-use arena_system::Arena;
-
 const OBJSPACE_FLATNESS: f32 = 0.35;
 
-pub fn tesselate_quadric_curve(p: (Point, Point, Point), points: &mut Arena<Point>) {
+pub fn tesselate_quadric_curve(p: (Point, Point, Point), points: &mut Vec<Point>) {
     let mp01 = p.0.midpoint(&p.1);
     let mp12 = p.1.midpoint(&p.2);
     let midpoint = mp01.midpoint(&mp12);
@@ -17,11 +15,11 @@ pub fn tesselate_quadric_curve(p: (Point, Point, Point), points: &mut Arena<Poin
         tesselate_quadric_curve(p0, points);
         tesselate_quadric_curve(p1, points);
     } else {
-        points.add(p.2);
+        points.push(p.2);
     }
 }
 
-pub fn tesselate_cubic_curve(p: (Point, Point, Point, Point), points: &mut Arena<Point>) {
+pub fn tesselate_cubic_curve(p: (Point, Point, Point, Point), points: &mut Vec<Point>) {
     let longlen = p.0.distance(&p.1) + p.1.distance(&p.2) + p.2.distance(&p.3);
     let shortlen = p.0.distance(&p.3);
     let flatness_squared = longlen.powi(2) - shortlen.powi(2);
@@ -42,6 +40,6 @@ pub fn tesselate_cubic_curve(p: (Point, Point, Point, Point), points: &mut Arena
         tesselate_cubic_curve(p0, points);
         tesselate_cubic_curve(p1, points);
     } else {
-        points.add(p.3);
+        points.push(p.3);
     }
 }

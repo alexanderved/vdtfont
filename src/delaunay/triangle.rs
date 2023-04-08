@@ -16,11 +16,18 @@ pub struct DelaunayTriangle {
     pub neighbours: [TriangleId; 3],
     pub neighbours_number: i32,
     pub is_visible: bool,
+    pub is_finalized: bool,
 }
 
 impl DelaunayTriangle {
     pub fn new(vertices: [PointId; 3]) -> Self {
-        Self { vertices, neighbours: [-1; 3], neighbours_number: 0, is_visible: true }
+        Self {
+            vertices,
+            neighbours: [-1; 3],
+            neighbours_number: 0,
+            is_visible: true,
+            is_finalized: false,
+        }
     }
 
     pub fn is_visible(&self) -> bool {
@@ -139,6 +146,14 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
     pub fn set_is_visible(&self, is_visible: bool) {
         self.get_mut().unwrap().is_visible = is_visible;
+    }
+
+    pub fn is_finalized(&self) -> bool {
+        self.get_mut().unwrap().is_finalized
+    }
+
+    pub fn set_is_finalized(&self, is_finalized: bool) {
+        self.get_mut().unwrap().is_finalized = is_finalized;
     }
 
     pub fn edges(&self) -> SmallVec<[Edge<'arena>; 3]> {

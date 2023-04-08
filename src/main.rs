@@ -70,10 +70,20 @@ fn remove_excess_triangles(
     starting_triangle: DelaunayTriangleHandle,
     is_visible: bool,
 ) {
+    if starting_triangle.is_finalized() { return; }
+
     starting_triangle.set_is_visible(is_visible);
+    starting_triangle.set_is_finalized(true);
+
     starting_triangle.neighbours().into_iter().for_each(|n| {
-        //let has_contour_edge
-        let is_visible = if true { true } else { is_visible };
+        let se = starting_triangle.shared_edge_with(&n);
+        /* println!("Neighbour edge {:?} is contour: {}", se, se.is_contour());
+        println!("Previos points: {:?}, {:?}", se.points()[0].previous_in_outline(),
+            se.points()[1].previous_in_outline()); */
+        let has_contour_edge = se.is_contour();
+        let iv = if has_contour_edge { !is_visible } else { is_visible };
+
+        remove_excess_triangles(delaunay, n, iv);
     });
 }
 
@@ -88,7 +98,9 @@ fn main() -> anyhow::Result<()> {
 
     #[rustfmt::skip]
     let font =
-        include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Italic.ttf");
+        include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf");
+        //include_bytes!(
+        //    "/home/alex/projects/.deprecated/font_rasterizer/examples/fonts/DejaVuSansMono.ttf");
 
     let owned_face = ttfp::OwnedFace::from_vec(font.to_vec(), 0).unwrap();
     let parsed_face = ttfp::PreParsedSubtables::from(owned_face);
@@ -117,12 +129,14 @@ fn main() -> anyhow::Result<()> {
         println!("The shortest distance: {}", outliner.shortest_distance * h_factor);
         println!("The height of a glyph: {}", height);
 
-        (0..outliner.points.len()).into_iter().for_each(|i| {
-            let p = outliner.points.handle::<PointHandle>(i.into(), None);
-            let new_x = p.x() * h_factor - bounds.x_min as f32;
-            let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32;
+        let points: Arena<_> = outliner.points.into();
 
-            let mut point = outliner.points.handle::<PointHandle>(i.into(), None);
+        (0..points.len()).into_iter().for_each(|i| {
+            let p = points.handle::<PointHandle>(i.into(), None);
+            let new_x = p.x() * h_factor - bounds.x_min as f32 + 5.0;
+            let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32 + 5.0;
+
+            let mut point = points.handle::<PointHandle>(i.into(), None);
             point.set_coords(ocl::prm::Float2::new(new_x, new_y));
         });
 
@@ -133,7 +147,7 @@ fn main() -> anyhow::Result<()> {
         let mut voronoi_image_factory = VoronoiImageFactory::new(queue.clone(), IMG_DIM)?;
         let mut delaunay_factory = DelaunayFactory::new(queue.clone())?;
 
-        let voronoi_image = voronoi_image_factory.construct_borrowed(outliner.points, dim)?;
+        let voronoi_image = voronoi_image_factory.construct_borrowed(points, dim)?;
         let mut delaunay = delaunay_factory.construct(&voronoi_image)?;
 
         let mut edges: Vec<[i64; 2]> = vec![];
@@ -159,11 +173,14 @@ fn main() -> anyhow::Result<()> {
         }
 
         let bounding_point_ids: [PointId; 4] = delaunay.bounds().into();
-        let bounding_triangle = delaunay
-            .points()
-            .handle::<PointHandle>(bounding_point_ids[0].into(), Some(delaunay.triangles()))
-            .triangle_fan()[0];
-        remove_excess_triangles(&delaunay, bounding_triangle, false);
+        for pid in bounding_point_ids {
+            let bounding_triangle = delaunay
+                .points()
+                .handle::<PointHandle>(pid.into(), Some(delaunay.triangles()))
+                .triangle_fan()[0];
+
+            remove_excess_triangles(&delaunay, bounding_triangle, false);
+        }
 
         let dur = now.elapsed();
         println!("Overall time: {}μs, {}ms", dur.as_micros(), dur.as_millis());
@@ -172,6 +189,7 @@ fn main() -> anyhow::Result<()> {
 
         let mut t = "".to_string();
         let _ = std::io::stdin().read_line(&mut t);
+        println!("{t}");
     }
 
     Ok(())

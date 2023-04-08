@@ -5,6 +5,7 @@ use crate::point::PointHandle;
 use std::convert;
 use std::ops::ControlFlow;
 
+use arena_system::Handle;
 use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy)]
@@ -22,8 +23,10 @@ impl<'arena> Edge<'arena> {
     }
 
     pub fn is_contour(&self) -> bool {
-        self.points[0] == self.points[1].previous_in_outline()
-            || self.points[1] == self.points[0].previous_in_outline()
+        (self.points[0] == self.points[1].previous_in_outline() 
+                && !self.points[0].index().is_invalid())
+            || (self.points[1] == self.points[0].previous_in_outline() 
+                    && !self.points[1].index().is_invalid())
     }
 
     pub fn contains(&self, point: PointHandle<'arena>) -> bool {

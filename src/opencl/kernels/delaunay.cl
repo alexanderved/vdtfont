@@ -10,6 +10,7 @@ typedef struct Triangle {
     TriangleId neighbours[3];
     int neighbours_number;
     bool is_visible;
+    bool is_finalized;
 } Triangle;
 
 typedef struct TriangleFan {
