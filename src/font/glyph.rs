@@ -1,11 +1,11 @@
 use crate::Point;
-use crate::delaunay::{DelaunayTriangle, DelaunayTriangleHandle};
-use crate::point::PointHandle;
+use crate::delaunay::DelaunayTriangle;
 
 use std::convert;
 
-use arena_system::{Arena, Handle};
+use arena_system::Arena;
 
+/// A glyph with id which correspondes to one of the characters in the font.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Glyph(pub u16);
 
@@ -33,6 +33,7 @@ impl convert::From<Glyph> for ttfp::GlyphId {
     }
 }
 
+/// An outlined glyph.
 pub struct OutlinedGlyph {
     glyph: Glyph,
     dim: usize,
@@ -42,31 +43,40 @@ pub struct OutlinedGlyph {
 }
 
 impl OutlinedGlyph {
-    pub(super) fn new(glyph: Glyph, dim: usize, bounds: ttfp::Rect, points: Arena<Point>) -> Self {
-        Self { glyph, dim, bounds, points }
-    }
-
+    /// Returns a glyph.
     pub fn glyph(&self) -> Glyph {
         self.glyph
     }
 
+    /// Returns a dimension of the glyph.
     pub fn dim(&self) -> usize {
         self.dim
     }
 
+    /// Returns bounds of the glyph.
     pub fn bounds(&self) -> ttfp::Rect {
         self.bounds
     }
 
+    /// Returns points which the outline of the glyph consists of.
     pub fn points(&self) -> &Arena<Point> {
         &self.points
     }
 
+    /// Converts [`OutlinedGlyph`] into raw parts: a glyph, a dimension, bounds and points.
     pub fn into_raw_parts(self) -> (Glyph, usize, ttfp::Rect, Arena<Point>) {
         (self.glyph, self.dim, self.bounds, self.points)
     }
+
+    /// Creates a new [`OutlinedGlyph`].
+    ///
+    /// The validity of the given parameters is ensured by [`Font`].
+    pub(super) fn new(glyph: Glyph, dim: usize, bounds: ttfp::Rect, points: Arena<Point>) -> Self {
+        Self { glyph, dim, bounds, points }
+    }
 }
 
+/// A triangulated glyph.
 pub struct TriangulatedGlyph {
     glyph: Glyph,
     dim: usize,
@@ -76,6 +86,34 @@ pub struct TriangulatedGlyph {
 }
 
 impl TriangulatedGlyph {
+    /// Returns a glyph.
+    pub fn glyph(&self) -> Glyph {
+        self.glyph
+    }
+
+    /// Returns a dimension of the glyph.
+    pub fn dim(&self) -> usize {
+        self.dim
+    }
+
+    /// Returns points which the outline of the glyph consists of.
+    pub fn points(&self) -> &Arena<Point> {
+        &self.points
+    }
+
+    /// Returns triangles which the triangulation of the glyph consists of.
+    pub fn triangles(&self) -> &Arena<DelaunayTriangle> {
+        &self.triangles
+    }
+
+    /// Converts [`TriangulatedGlyph`] into raw parts: a glyph, a dimension, points and triangles
+    pub fn into_raw_parts(self) -> (Glyph, usize, Arena<Point>, Arena<DelaunayTriangle>) {
+        (self.glyph, self.dim, self.points, self.triangles)
+    }
+
+    /// Creates a new [`TriangulatedGlyph`].
+    ///
+    /// The validity of the given parameters is ensured by [`Font`].
     pub(super) fn new(
         glyph: Glyph,
         dim: usize,
@@ -83,93 +121,5 @@ impl TriangulatedGlyph {
         triangles: Arena<DelaunayTriangle>
     ) -> Self {
         Self { glyph, dim, points, triangles }
-    }
-
-    pub fn glyph(&self) -> Glyph {
-        self.glyph
-    }
-
-    pub fn dim(&self) -> usize {
-        self.dim
-    }
-
-    pub fn points(&self) -> &Arena<Point> {
-        &self.points
-    }
-
-    pub fn triangles(&self) -> &Arena<DelaunayTriangle> {
-        &self.triangles
-    }
-
-    pub fn into_raw_parts(self) -> (Glyph, usize, Arena<Point>, Arena<DelaunayTriangle>) {
-        (self.glyph, self.dim, self.points, self.triangles)
-    }
-
-    pub fn image(&self) -> Vec<u8> {
-        let mut bitmap = vec![0.0; self.dim * self.dim];
-
-        self.triangles
-            .handle_iter::<DelaunayTriangleHandle>(&self.points)
-            .for_each(|t| {
-                if let Ok(t) = t.get() {
-                    if t.is_visible {
-                        crate::draw_line(
-                            &mut bitmap,
-                            self.dim,
-                            self.dim,
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[0].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[1].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                        );
-
-                        crate::draw_line(
-                            &mut bitmap,
-                            self.dim,
-                            self.dim,
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[1].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[2].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                        );
-
-                        crate::draw_line(
-                            &mut bitmap,
-                            self.dim,
-                            self.dim,
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[0].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                            (*self
-                                .points
-                                .handle::<PointHandle>(t.vertices[2].into(), None)
-                                .get()
-                                .unwrap())
-                            .clone(),
-                        );
-                    }
-                }
-            });
-
-        bitmap.into_iter().flat_map(|a| [0, 0, 0, (255.0 * (1.0 - a)) as u8]).collect()
     }
 }
