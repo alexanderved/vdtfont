@@ -136,8 +136,6 @@ fn main() -> anyhow::Result<()> {
                 && !p.triangle_fan().is_empty()
                 && !pp.triangle_fan().is_empty()
             {
-                println!("{:?} {:?}", p, pp);
-                println!("{} {}", p.triangle_fan().len(), pp.triangle_fan().len());
                 edges.push([p.index().into(), pp.index().into()]);
             }
         });

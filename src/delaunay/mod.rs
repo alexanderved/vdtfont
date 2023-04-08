@@ -53,8 +53,8 @@ impl Delaunay {
         let contour0 = self.calculate_contour(edge, edge_track[0].points()[0], &edge_track);
         let contour1 = self.calculate_contour(edge, edge_track[0].points()[1], &edge_track);
 
-        let tri0 = self.triangulate_hole(contour0);
-        let tri1 = self.triangulate_hole(contour1);
+        let triangulation0 = self.triangulate_hole(contour0);
+        let triangulation1 = self.triangulate_hole(contour1);
 
         let mut neighbours = triangle_track
             .iter()
@@ -71,15 +71,13 @@ impl Delaunay {
             .into_iter()
             .for_each(|t| self.remove_triangle(t));
 
-        for t in tri0 {
-            let triangle_index = self.insert_triangle(t, &neighbours);
-            neighbours.push(triangle_index);
-        }
-
-        for t in tri1 {
-            let triangle_index = self.insert_triangle(t, &neighbours);
-            neighbours.push(triangle_index);
-        }
+        triangulation0
+            .into_iter()
+            .chain(triangulation1)
+            .for_each(|t| {
+                let triangle_index = self.insert_triangle(t, &neighbours);
+                neighbours.push(triangle_index);
+            });
     }
 
     fn calculate_contour<'arena>(
