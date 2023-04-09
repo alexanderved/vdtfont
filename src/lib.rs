@@ -1,5 +1,5 @@
-//! A novel library for converting glyphs into triangulations
-//! which can be used right in the Graphical APIs.
+//! A novel library for converting glyphs into triangulations which can be
+//! used to simplify text rendering in Game and Application Interfaces.
 //!
 //! ```
 //! use vdtfont::{*, delaunay::*};
