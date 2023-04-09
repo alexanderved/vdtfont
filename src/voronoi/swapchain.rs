@@ -1,6 +1,7 @@
 use crate::ocl;
 use crate::opencl::ImageView;
 
+// A swapchain which is used by [`VoronoiImageFactory`].
 pub(super) struct Swapchain {
     max_dim: usize,
     dim: usize,
@@ -10,6 +11,7 @@ pub(super) struct Swapchain {
 }
 
 impl Swapchain {
+    // Creates a new [`Swapchain`].
     pub(super) fn new(queue: &ocl::Queue, dim: usize) -> anyhow::Result<Self> {
         if !dim.is_power_of_two() {
             anyhow::bail!("The given maximal dimension {dim} isn't the power of two");
@@ -46,10 +48,12 @@ impl Swapchain {
         Ok(Self { max_dim: dim, dim, images: [input_image, output_image], last: 0 })
     }
 
+    // Returns a dimension of the swapchain.
     pub(super) fn dim(&self) -> usize {
         self.dim
     }
 
+    // Sets the dimension of the swapchain wiht `dim`.
     pub(super) fn set_dim(&mut self, dim: usize) -> anyhow::Result<()> {
         if !dim.is_power_of_two() {
             anyhow::bail!("The given dimension {dim} isn't the power of two");
@@ -69,6 +73,7 @@ impl Swapchain {
         Ok(())
     }
 
+    // Renders into the swapchain using the function `f`.
     pub(super) fn render<F, T>(&mut self, f: F) -> anyhow::Result<T>
     where
         F: FnOnce(&ImageView<i32>, &ImageView<i32>) -> anyhow::Result<T>,
@@ -82,18 +87,22 @@ impl Swapchain {
         render_result
     }
 
+    // Returns the last rendered image of the swapchain.
     pub(super) fn last(&self) -> &ImageView<i32> {
         &self.images[self.last]
     }
-
+    
+    // Returns the next image for rendering.
     fn next(&self) -> &ImageView<i32> {
         &self.images[(self.last + 1) % 2]
     }
 
+    // Swaps images in the swapchain.
     fn swap(&mut self) {
         self.last = (self.last + 1) % 2;
     }
 
+    // Clears the swapchain.
     pub(super) fn clear(&self) -> anyhow::Result<()> {
         let undefined_data = vec![-1; self.dim * self.dim * 4];
 
