@@ -75,7 +75,12 @@ Run the following command:
 $ cargo build --release --example simple
 # run it
 $ ./target/release/examples/simple
+Enter any symbol (CTRL + C to exit):
+r
+The image of the symbol was saved in r.png
 ```
+
+![r.png](r.png)
 
 ## Roadmap
 
