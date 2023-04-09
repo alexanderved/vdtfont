@@ -12,6 +12,7 @@ use std::borrow::Cow;
 
 use arena_system::Arena;
 
+/// An image of the Voronoi diagram.
 pub struct VoronoiImage<'a> {
     dim: usize,
 
@@ -20,14 +21,17 @@ pub struct VoronoiImage<'a> {
 }
 
 impl<'a> VoronoiImage<'a> {
+    /// Returns a dimension of the diagram.
     pub fn dim(&self) -> usize {
         self.dim
     }
 
+    /// Returns a reference to the arena of points in the diagram.
     pub fn sites(&self) -> &Arena<Point> {
         &self.sites
     }
 
+    /// Returns an image view of the diagram.
     pub fn image(&self) -> &ImageView<i32> {
         match self.image {
             Cow::Owned(ref image) => image,
@@ -35,6 +39,7 @@ impl<'a> VoronoiImage<'a> {
         }
     }
 
+    /// Converts the [`VoronoiImage`] into pixels.
     pub fn to_pixels(&self) -> anyhow::Result<Vec<Pixel>> {
         Ok(self
             .image
@@ -50,6 +55,9 @@ impl<'a> VoronoiImage<'a> {
             .collect())
     }
 
+    // Creates a new [`VoronoiImage`].
+    //
+    // The validity of `dim`, `sites`, `image` is ensured by [`VoronoiImageFactory`].
     fn new(dim: usize, sites: Arena<Point>, image: Cow<'a, ImageView<i32>>) -> Self {
         Self { dim, sites, image }
     }

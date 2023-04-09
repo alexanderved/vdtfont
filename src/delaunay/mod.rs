@@ -26,7 +26,7 @@ pub struct Delaunay {
 }
 
 impl Delaunay {
-    /// Returns a dimaension of the triangulation.
+    /// Returns a dimension of the triangulation.
     pub fn dim(&self) -> usize {
         self.dim
     }
