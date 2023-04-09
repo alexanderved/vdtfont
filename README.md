@@ -30,7 +30,7 @@ triangulated_glyph
 
 ## Overview
 
-VDTFont uses OpenCL to build Voronoi diagram and compute Delaunay triangulation with points from the glyph. The triangulation of the glyph can used for its rendering.
+VDTFont uses OpenCL to build Voronoi diagram and compute Delaunay triangulation with points from the glyph. The triangulation of the glyph can be used for its rendering.
 
 Full algorithm of triangulation is described in the paper ["Computing Two-dimensional Delaunay Triangulation Using Graphics Hardware"](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
 

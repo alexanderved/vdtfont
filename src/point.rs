@@ -75,10 +75,12 @@ impl Point {
         }
     }
 
+    /// Returns the `x` coordinate of the point.
     pub fn x(&self) -> f32 {
         self.coords[0]
     }
 
+    /// Returns the `y` coordinate of the point.
     pub fn y(&self) -> f32 {
         self.coords[1]
     }
@@ -87,45 +89,55 @@ impl Point {
         self.coords
     }
 
+    /// Returns coordinates of the point.
     pub fn set_coords(&mut self, coords: Float2) {
         self.coords = coords;
     }
 
+    /// Checks if the point is bounding.
     pub fn is_bounding(&self) -> bool {
         self.is_bounding
     }
 
+    /// Returns the previous point in the outline.
     pub fn previous_in_outline(&self) -> PointId {
         self.previous_in_outline
     }
 
+    /// Sets the previous point in the outline.
     pub fn set_previous_in_outline(&mut self, previous_in_outline: PointId) {
         self.previous_in_outline = previous_in_outline;
     }
 
+    /// Returns the triangle fan of the point.
     pub fn triangle_fan(&self) -> &SmallVec<[TriangleId; 6]> {
         &self.triangle_fan
     }
 
+    /// Sets the triangle fan of the point.
     pub fn set_triangle_fan(&mut self, triangle_fan: SmallVec<[TriangleId; 6]>) {
         self.triangle_fan = triangle_fan;
     }
 
+    /// Returns a point between two points.
     pub fn midpoint(&self, other: &Point) -> Point {
         Point::new((self.x() + other.x()) / 2.0, (self.y() + other.y()) / 2.0)
     }
 
+    /// Returns the squared distance between two points.
     pub fn distance_squared(&self, other: &Point) -> f32 {
         let p = Point::new(self.x() - other.x(), self.y() - other.y());
 
         p.x().powi(2) + p.y().powi(2)
     }
 
+    /// Returns the distance between two points.
     pub fn distance(&self, other: &Point) -> f32 {
         self.distance_squared(other).sqrt()
     }
 }
 
+/// A handle of the [`Point`] which is used by [`Arena`].
 #[derive(Clone, Copy)]
 pub struct PointHandle<'arena> {
     raw: RawHandle<'arena, Point>,
@@ -133,32 +145,39 @@ pub struct PointHandle<'arena> {
 }
 
 impl<'arena> PointHandle<'arena> {
+    /// Returns the `x` coordinate of the point.
     pub fn x(&self) -> f32 {
         self.get().unwrap().coords[0]
     }
 
+    /// Returns the `y` coordinate of the point.
     pub fn y(&self) -> f32 {
         self.get().unwrap().coords[1]
     }
 
+    /// Returns coordinates of the point.
     pub fn coords(&self) -> Float2 {
         self.get().unwrap().coords
     }
 
+    /// Sets the coordinates of the point.
     pub fn set_coords(&mut self, coords: Float2) {
         self.get_mut().unwrap().coords = coords;
     }
 
+    /// Checks if the point is bounding.
     pub fn is_bounding(&self) -> bool {
         self.get().unwrap().is_bounding
     }
 
+    /// Returns the previous point in the outline.
     pub fn previous_in_outline(&self) -> PointHandle<'arena> {
         let this = self.get().expect("Can't get the point");
 
         self.arena().handle(this.previous_in_outline().into(), self.triangles)
     }
 
+    /// Returns the triangle fan of the point.
     pub fn triangle_fan(&self) -> SmallVec<[DelaunayTriangleHandle<'arena>; 6]> {
         self.get()
             .unwrap()
@@ -170,6 +189,7 @@ impl<'arena> PointHandle<'arena> {
             .collect()
     }
 
+    /// Sets the triangle fan of the point.
     pub fn set_triangle_fan(
         &mut self,
         triangle_fan: SmallVec<[DelaunayTriangleHandle<'arena>; 6]>,
@@ -178,12 +198,14 @@ impl<'arena> PointHandle<'arena> {
             triangle_fan.into_iter().map(|h| h.index().into()).collect();
     }
 
+    /// Adds `triangle` to the triangle fan of the point.
     pub fn add_triangle_to_fan(&self, triangle: DelaunayTriangleHandle) {
         let triangle_fan = &mut self.get_mut().unwrap().triangle_fan;
 
         triangle_fan.push(triangle.index().into());
     }
 
+    /// Removes `triangle` from the triangle fan of the point.
     pub fn remove_triangle_from_fan(&self, triangle_index: Index) {
         let triangle_fan = &mut self.get_mut().unwrap().triangle_fan;
         let position = triangle_fan.iter().position(|t| *t == triangle_index.into());
@@ -193,6 +215,7 @@ impl<'arena> PointHandle<'arena> {
         }
     }
 
+    /// Checks if the point is connected to the other one.
     pub fn is_connected_to(&self, other: PointHandle<'arena>) -> bool {
         self.triangle_fan()
             .into_iter()
@@ -200,6 +223,8 @@ impl<'arena> PointHandle<'arena> {
             && *self != other
     }
 
+    /// Calculates skew product of `self` and `other` points
+    /// with the origin of coordinates at `origin`
     pub fn skew_product(&self, origin: &Self, other: &Self) -> f32 {
         let a = Point::new(self.x() - origin.x(), self.y() - origin.y());
         let b = Point::new(other.x() - origin.x(), other.y() - origin.y());
@@ -207,6 +232,7 @@ impl<'arena> PointHandle<'arena> {
         a.x() * b.y() - a.y() * b.x()
     }
 
+    /// Returns the distance between two points.
     pub fn distance(&self, other: &PointHandle) -> f32 {
         let this = self.get().expect("Can't get the point");
         let other = other.get().expect("Can't get the other point");
