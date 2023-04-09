@@ -9,6 +9,7 @@ use smallvec::SmallVec;
 
 pub type TriangleId = i64;
 
+/// A triangle which is used in [`Delaunay`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct DelaunayTriangle {
@@ -20,6 +21,7 @@ pub struct DelaunayTriangle {
 }
 
 impl DelaunayTriangle {
+    /// Creates a new [`DelaunayTriangle`] with the given `vertices`.
     pub fn new(vertices: [PointId; 3]) -> Self {
         Self {
             vertices,
@@ -30,14 +32,27 @@ impl DelaunayTriangle {
         }
     }
 
+    /// Checks if the triangle is visible.
     pub fn is_visible(&self) -> bool {
         self.is_visible
     }
 
+    /// Sets the visibility of the triangle.
     pub fn set_is_visible(&mut self, is_visible: bool) {
         self.is_visible = is_visible;
     }
 
+    /// Checks if the triangle is finalized.
+    pub fn is_finalized(&self) -> bool {
+        self.is_finalized
+    }
+
+    /// Makes the triangle finalized or not based on `is_finalized`.
+    pub fn set_is_finalized(&mut self, is_finalized: bool) {
+        self.is_finalized = is_finalized;
+    }
+
+    /// Checks if the triangle is counterclockwise.
     pub fn is_counterclockwise(&self, points: &Arena<Point>) -> bool {
         points.handle::<PointHandle>(self.vertices[1].into(), None).skew_product(
             &points.handle(self.vertices[0].into(), None),
@@ -45,6 +60,7 @@ impl DelaunayTriangle {
         ) < 0.0
     }
 
+    /// Makes the triangle counterclockwise.
     pub fn make_counterclockwise(&mut self, points: &Arena<Point>) {
         if !self.is_counterclockwise(points) {
             let (vertices0, vertices1) = self.vertices[1..].split_at_mut(1);
@@ -53,6 +69,7 @@ impl DelaunayTriangle {
         }
     }
 
+    /// Returns the radius of the circumcircle around the triangle.
     #[allow(non_snake_case)]
     pub fn circumcircle_radius(&self, points: &Arena<Point>) -> f32 {
         let A = points.handle::<PointHandle>(self.vertices[0].into(), None);
@@ -92,6 +109,7 @@ impl std::default::Default for DelaunayTriangle {
 
 unsafe impl ocl::traits::OclPrm for DelaunayTriangle {}
 
+/// A handle of the [`DelaunayTriangle`] which is used by [`Arena`].
 #[derive(Clone, Copy)]
 pub struct DelaunayTriangleHandle<'arena> {
     raw: RawHandle<'arena, DelaunayTriangle>,
@@ -99,10 +117,7 @@ pub struct DelaunayTriangleHandle<'arena> {
 }
 
 impl<'arena> DelaunayTriangleHandle<'arena> {
-    pub fn exists(&self) -> bool {
-        self.get().is_ok()
-    }
-
+    /// Returns [`PointHandle`]s for the vertices of the triangle.
     pub fn points(&self) -> [PointHandle<'arena>; 3] {
         let vertices = self.get().unwrap().vertices;
 
@@ -113,6 +128,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         ]
     }
 
+    /// Sets the given `points` as the vertices of the triangle.
     pub fn set_points(&self, points: [PointHandle; 3]) {
         let mut this = self.get_mut().unwrap();
 
@@ -120,6 +136,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             [points[0].index().into(), points[1].index().into(), points[2].index().into()]
     }
 
+    /// Returns [`DelaunayTriangleHandle`]s for the neighbours of the triangle.
     pub fn neighbours(&self) -> SmallVec<[DelaunayTriangleHandle<'arena>; 3]> {
         let neighbour_ids = self.get().unwrap().neighbours;
         neighbour_ids
@@ -129,6 +146,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
+    /// Sets the `new_neighbours` as the neighbours of the triangle.
     pub fn set_neighbours(&self, new_neighbours: SmallVec<[DelaunayTriangleHandle<'arena>; 3]>) {
         let neighbours = &mut self.get_mut().unwrap().neighbours;
         *neighbours = [-1; 3];
@@ -139,22 +157,27 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .for_each(|(neighbour, new_neighbour)| *neighbour = new_neighbour.index().into());
     }
 
+    /// Checks if the triangle is visible.
     pub fn is_visible(&self) -> bool {
         self.get_mut().unwrap().is_visible
     }
 
+    /// Sets the visibility of the triangle.
     pub fn set_is_visible(&self, is_visible: bool) {
         self.get_mut().unwrap().is_visible = is_visible;
     }
 
+    /// Checks if the triangle is finalized.
     pub fn is_finalized(&self) -> bool {
         self.get_mut().unwrap().is_finalized
     }
 
+    /// Makes the triangle finalized or not based on `is_finalized`.
     pub fn set_is_finalized(&self, is_finalized: bool) {
         self.get_mut().unwrap().is_finalized = is_finalized;
     }
 
+    /// Returns the edges of the triangle.
     pub fn edges(&self) -> SmallVec<[Edge<'arena>; 3]> {
         let vertices = self.points();
         (0..3)
@@ -164,14 +187,18 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect::<SmallVec<[Edge<'arena>; 3]>>()
     }
 
+    /// Returns the edges of the triangle except the `exception` edge.
     pub fn edges_except(&self, exception: Edge<'arena>) -> SmallVec<[Edge<'arena>; 2]> {
         self.edges().into_iter().filter(|edge| edge != &exception).collect()
     }
 
+    /// Checks if the triangle is the neighbour of the other one.
     pub fn is_neighbour(&self, neighbour: &DelaunayTriangleHandle<'arena>) -> bool {
         self.neighbours().contains(neighbour)
     }
 
+    /// Replaces the neighbour with the index `index` with `new_neighbour` if it exists
+    /// in the neighbour list of the triangle.
     pub fn try_replace_neighbour(
         &self,
         index: Index,
@@ -185,6 +212,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
+    /// Adds `new_neighbour` to the neighbour list of the triangle if it has free space.
     pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) -> bool {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == -1);
@@ -198,6 +226,8 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
+    /// Removes the neighbour with the index `index` from the neighbour list
+    /// of the triangle if it exists there.
     pub fn try_remove_neighbour(&self, index: Index) -> bool {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
         let position = neighbour_ids.iter().position(|n| *n == index.into());
@@ -211,18 +241,21 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
+    /// Checks if the triangle is counterclockwise.
     pub fn is_counterclockwise(&self) -> bool {
         let this = self.get().unwrap();
 
         this.is_counterclockwise(self.points)
     }
 
+    /// Makes the triangle counterclockwise.
     pub fn make_counterclockwise(&mut self) {
         let mut this = self.get_mut().unwrap();
 
         this.make_counterclockwise(self.points);
     }
 
+    /// Returns points which the triangle shares with the other one.
     pub fn shared_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
@@ -235,10 +268,12 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
+    /// Returns an edge which the triangle shares with the other one.
     pub fn shared_edge_with(&self, other: &DelaunayTriangleHandle<'arena>) -> Edge {
         self.shared_points_with(other).into()
     }
 
+    /// Returns points which the triangle doesn't share with the other one.
     pub fn opposite_points_with(
         &self,
         other: &DelaunayTriangleHandle<'arena>,
@@ -251,6 +286,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .collect()
     }
 
+    /// Returns the edge of the triangle which is opposite to the given `vertex`.
     pub fn opposite_edge_to(&self, vertex: PointHandle) -> Edge<'arena> {
         self.points()
             .into_iter()
@@ -259,6 +295,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .into()
     }
 
+    /// Returns the neighbour of the triangle on the given `edge`.
     pub fn neighbour_on_edge(&self, edge: Edge) -> DelaunayTriangleHandle<'arena> {
         self.neighbours()
             .into_iter()
@@ -266,6 +303,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
             .expect("No neighbour which shares the specified edge")
     }
 
+    /// Checks if the triangle is fully in the circle of the other triangle.
     pub fn is_in_circle_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let s = self.shared_points_with(other);
         let o = self.opposite_points_with(other);
@@ -293,24 +331,28 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         alift * bcdet + blift * cadet + clift * abdet > 0.0
     }
 
+    /// Checks if the triangle can be flipped with the other one.
     pub fn is_flippable_with(&self, other: &DelaunayTriangleHandle) -> bool {
         let shared_points = self.shared_points_with(other);
         let opposite_points = self.opposite_points_with(other);
 
         if !(shared_points.len() == 2 && opposite_points.len() == 2) {
-            println!("Bad");
             return false;
         }
 
+        // Can't be flipped if the shared edge will be connected to the bounds after flip.
         let is_opposite_point_on_bounds =
             opposite_points[0].is_bounding() || opposite_points[1].is_bounding();
 
+        // Can't be flipped if the triangles will intersect after flip.
         let sp0 = shared_points[0].skew_product(&opposite_points[0], &opposite_points[1]);
         let sp1 = shared_points[1].skew_product(&opposite_points[0], &opposite_points[1]);
         let by_the_same_side_after_flip = sp0.signum() == sp1.signum();
 
+        // Can't be flipped if the shared edge is in the contour.
         let has_contour_edge = Edge::from(shared_points).is_contour();
 
+        // Can't be flipped if the triangles satisfies Delaunay condition.
         let satisfies_delaunay_condition = !self.is_in_circle_with(other);
 
         if by_the_same_side_after_flip {
@@ -332,6 +374,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         true
     }
 
+    /// Flips the triangle with the other one.
     pub fn flip_with(
         &mut self,
         other: &mut DelaunayTriangleHandle<'arena>,
@@ -351,6 +394,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         is_flippable
     }
 
+    // Flips the shared edge of the triangles.
     fn flip_edge(&mut self, other: &mut DelaunayTriangleHandle<'arena>) {
         {
             let shared_points = self.shared_points_with(other);
@@ -364,6 +408,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         other.make_counterclockwise();
     }
 
+    // Update the neighbours of the triangles after flip.
     fn update_neighbours(&self, other: &DelaunayTriangleHandle<'arena>) {
         let mut neighbourhood = self.neighbours();
         let mut other_neighbours = other
@@ -392,6 +437,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         }
     }
 
+    /// Flips the triangle with its neighbours except the `exception` triangle.
     pub fn flip_with_neighbours_except(
         &mut self,
         exception: Option<DelaunayTriangleHandle>,
