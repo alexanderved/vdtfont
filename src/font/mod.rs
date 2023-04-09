@@ -16,6 +16,7 @@ const MIN_GLYPH_HEIGHT: usize = 64;
 const MAX_GLYPH_HEIGHT: usize = 2048;
 const MIN_POINT_DISTANCE: f32 = 2.0;
 
+/// A preparsed font data.
 pub struct Font {
     subtables: ttfp::PreParsedSubtables<'static, ttfp::OwnedFace>,
 
