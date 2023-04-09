@@ -11,6 +11,12 @@ use crate::voronoi::{Pixel, VoronoiImage};
 use arena_system::{Arena, Handle};
 use smallvec::ToSmallVec;
 
+/// A factory for constructing [`Delaunay`].
+/// 
+/// [`Delaunay`] is computated based on [`VoronoiImage`].
+/// 
+/// A full algorithm of triangulation is described in the paper
+/// ["Computing Two-dimensional Delaunay Triangulation Using Graphics Hardware"](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf)
 pub struct DelaunayFactory {
     count_triangles_kernel: ocl::Kernel,
     triangle_number_buffer: Buffer<i32>,
@@ -31,6 +37,7 @@ pub struct DelaunayFactory {
 }
 
 impl DelaunayFactory {
+    /// Creates a new [`DelaunayFactory`].
     pub fn new(queue: ocl::Queue) -> anyhow::Result<Self> {
         let program = ocl::Program::builder()
             .src_file("src/opencl/kernels/delaunay.cl")
@@ -112,6 +119,12 @@ impl DelaunayFactory {
         })
     }
 
+    /// Constructs a new [`Delaunay`].
+    /// 
+    /// [`Delaunay`] is computated based on the given [`VoronoiImage`].
+    /// 
+    /// A full algorithm of triangulation is described in
+    /// [this paper](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
     pub fn construct(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<Delaunay> {
         let dim = voronoi_image.dim();
         let mut points = self.collect_discrete_points(voronoi_image.sites());
@@ -133,6 +146,7 @@ impl DelaunayFactory {
         Ok(Delaunay::new(dim, points, triangles, bounds))
     }
 
+    // Converts points from continuous coordinates to discrete.
     fn collect_discrete_points(&self, points: &Arena<Point>) -> Arena<Point> {
         points
             .handle_iter::<PointHandle>(None)
@@ -146,6 +160,7 @@ impl DelaunayFactory {
             .collect::<Arena<Point>>()
     }
 
+    // Builds triangles according to data from the [`VoronoiImage`].
     fn build_triangles(
         &mut self,
         voronoi_image: &VoronoiImage<'_>,
@@ -180,6 +195,7 @@ impl DelaunayFactory {
         Ok(triangles)
     }
 
+    // Counts triangles in triangulation according to data from the [`VoronoiImage`].
     fn count_triangles(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<i32> {
         self.count_triangles_kernel
             .set_default_global_work_size((voronoi_image.dim(), voronoi_image.dim()).into())
@@ -198,6 +214,7 @@ impl DelaunayFactory {
         Ok(triangle_number)
     }
 
+    // Adds a super-structure to the triangulation.
     fn add_bounds(
         &self,
         dim: usize,
@@ -217,6 +234,7 @@ impl DelaunayFactory {
         ])
     }
 
+    // Adds points of the super-structure to `points`.
     fn add_bounding_points(&self, dim: usize, points: &mut Arena<Point>) {
         let min_x = -(dim as f32 * 10.0);
         let min_y = -(dim as f32 * 10.0);
@@ -229,6 +247,7 @@ impl DelaunayFactory {
         points.add(Point::with_is_bounding(min_x, max_y, true));
     }
 
+    // Adds pixels which correspondes to super-structure points.
     fn add_bounding_pixels(
         &self,
         dim: usize,
@@ -262,6 +281,10 @@ impl DelaunayFactory {
         );
     }
 
+    // Makes the triangulation into the convex polygon.
+    //
+    // A full algorithm of triangulation is described in the section C1 of
+    // [this paper](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
     fn fix_convex_hull(
         &mut self,
         dim: usize,
@@ -271,8 +294,12 @@ impl DelaunayFactory {
     ) -> anyhow::Result<()> {
         let mut pixel_stack: Vec<&Pixel> = vec![];
 
+        // Iterate over border pixels.
         'pixels: for pixel in voronoi_image_border_pixels_iter(dim, voronoi_image_pixels) {
+            // Take pixels[-1] from stack until triangle with vertices
+            // (pixels[-2], pixels[-1], pixels[0]) is clockwise.
             'vertices: while let Some(last) = pixel_stack.last() {
+                // If pixel[0] is the same as pixel[-1], move to the next pixel.
                 if last.nearest_site_id() == pixel.nearest_site_id() {
                     continue 'pixels;
                 }
@@ -301,6 +328,7 @@ impl DelaunayFactory {
         Ok(())
     }
 
+    // Connects triangles with their neighbours.
     fn calculate_triangle_neighbours(
         &mut self,
         triangles: &mut Vec<DelaunayTriangle>,
@@ -321,6 +349,7 @@ impl DelaunayFactory {
         Ok(())
     }
 
+    // Sets triangle fans for points.
     fn calculate_triangle_fans(&mut self, points: &mut Arena<Point>) -> anyhow::Result<()> {
         let mut triangle_fans = self.create_triangle_fans(points.len())?;
         self.count_triangles_in_fans()?;
@@ -340,6 +369,7 @@ impl DelaunayFactory {
         Ok(())
     }
 
+    // Creates empty triangle fans.
     fn create_triangle_fans(&mut self, points_number: usize) -> anyhow::Result<Vec<TriangleFan>> {
         let triangle_fans = (0..points_number as PointId)
             .map(TriangleFan::new)
@@ -350,6 +380,7 @@ impl DelaunayFactory {
         Ok(triangle_fans)
     }
 
+    // Counts triangles in the triangle fan of every point.
     fn count_triangles_in_fans(&mut self) -> anyhow::Result<()> {
         self.count_triangles_in_fans_kernel
             .set_default_global_work_size(
@@ -369,6 +400,8 @@ impl DelaunayFactory {
         Ok(())
     }
 
+    // Assigns offset to every triangle fan to use it later
+    // when read from flatten triangle fans list.
     fn calculate_triangle_offset_in_fans(&mut self) -> anyhow::Result<()> {
         self.free_triangle_index_buffer.clear()?;
 
@@ -388,6 +421,7 @@ impl DelaunayFactory {
         Ok(())
     }
 
+    // Finds all triangles in triangle fans and writes them to `flatten_triangle_fans`.
     fn find_triangles_in_fans(&mut self) -> anyhow::Result<Vec<TriangleId>> {
         let mut flatten_triangle_fans = vec![-1; self.triangles_buffer.len() * 3];
         self.flatten_triangle_fans_buffer.write(&flatten_triangle_fans)?;
@@ -414,6 +448,7 @@ impl DelaunayFactory {
         Ok(flatten_triangle_fans)
     }
 
+    // Flips all triangles with their neighbours if it is possible.
     fn flip_triangles(&mut self, triangles: &Arena<DelaunayTriangle>, points: &Arena<Point>) {
         triangles
             .handle_iter::<DelaunayTriangleHandle>(points)
@@ -428,6 +463,7 @@ impl DelaunayFactory {
         self.triangles_buffer.write(&triangle_vec).unwrap();
     }
 
+    // Clears [`DelaunayFactory`] state.
     fn reset(&mut self) -> anyhow::Result<()> {
         self.triangle_number_buffer.clear()?;
         self.free_triangle_index_buffer.clear()?;
@@ -436,6 +472,7 @@ impl DelaunayFactory {
     }
 }
 
+// Returns an iterator over border pixels in [`VoronoiImage`].
 #[rustfmt::skip]
 fn voronoi_image_border_pixels_iter(
     dim: usize,
