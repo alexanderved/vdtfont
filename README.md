@@ -2,7 +2,8 @@ VDTFont
 [![crates.io](https://img.shields.io/crates/v/vdtfont.svg)](https://crates.io/crates/vdtfont)
 [![Documentation](https://docs.rs/vdtfont/badge.svg)](https://docs.rs/vdtfont)
 ==============
-A novel library for converting glyphs into triangulations which can be used right in the Graphical APIs.
+A novel library for converting glyphs into triangulations which can be used when rendering text
+in Game and Application interfaces.
 
 ```rust
 use vdtfont::{*, delaunay::*};
@@ -27,6 +28,12 @@ triangulated_glyph
     })
 ```
 
+## Overview
+
+VDTFont uses OpenCL to build Voronoi diagram and compute Delaunay triangulation with points from the glyph. The triangulation of the glyph can used for its rendering.
+
+Full algorithm of triangulation is described in the paper ["Computing Two-dimensional Delaunay Triangulation Using Graphics Hardware"](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
+
 ## What's new?
 
 The original font_rasterizer wasn't competetive so it was decided to almost fully rewrite it.
@@ -34,10 +41,44 @@ The original font_rasterizer wasn't competetive so it was decided to almost full
 A new library VDTFont doesn't use classical method of rasterizing every pixel, but
 triangulates glyphs using GPU.
 
+## Dependencies
+
+* ocl-icd-libopencl1
+* opencl-headers
+* OpenCL drivers for your GPU (e.g. intel-opencl-icd for Intel GPU)
+
+## Usage
+
+Run the following Cargo command in your Rust project directory:
+```bash
+$ cargo add vdtfont
+```
+
+Or add the following line to your Cargo.toml:
+```
+vdtfont = "0.3.0"
+```
+
+## Build
+
+Run the following Cargo command in the project directory:
+```bash
+$ cargo build --release
+```
+
 ## Example
 
-To run the example use the following command:
+Run the following command:
 
 ```bash
-cargo run --release --example simple
+# build it
+$ cargo build --release --example simple
+# run it
+$ ./target/release/examples/simple
 ```
+
+## Roadmap
+
+* Add C FFI
+* Fix inserting edge algorithm
+* Add function to fix self-intersecting outlines of glyphs

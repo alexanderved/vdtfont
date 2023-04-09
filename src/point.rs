@@ -9,6 +9,7 @@ use smallvec::SmallVec;
 
 pub type PointId = i64;
 
+/// A (x; y) coordinate with additional information.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Point {
     coords: Float2,
@@ -20,6 +21,7 @@ pub struct Point {
 }
 
 impl Point {
+    /// Creates a new [`Point`].
     pub fn new(x: f32, y: f32) -> Self {
         Self {
             coords: Float2::new(x, y),
@@ -31,6 +33,7 @@ impl Point {
         }
     }
 
+    /// Creates a new [`Point`] with the information if it is bounding or not.
     pub fn with_is_bounding(x: f32, y: f32, is_bounding: bool) -> Self {
         Self {
             coords: Float2::new(x, y),
@@ -42,6 +45,7 @@ impl Point {
         }
     }
 
+    /// Creates a new [`Point`] with the information about the previous one in the outline.
     pub fn with_previous(x: f32, y: f32, previous_in_outline: PointId) -> Self {
         Self {
             coords: Float2::new(x, y),
@@ -53,6 +57,8 @@ impl Point {
         }
     }
 
+    /// Creates a new [`Point`] with the information about the previous one in the outline
+    /// and if it is bounding or not.
     pub fn with_is_bounding_and_previous(
         x: f32,
         y: f32,
