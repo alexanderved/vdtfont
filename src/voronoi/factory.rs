@@ -9,6 +9,10 @@ use crate::point::{Point, PointHandle};
 
 use std::{borrow::Cow, iter};
 
+/// A factory for constructing [`VoronoiImage`].
+/// 
+/// A full algorithm of triangulation is described in the paper
+/// ["Computing Two-dimensional Delaunay Triangulation Using Graphics Hardware"](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf)
 pub struct VoronoiImageFactory {
     swapchain: Swapchain,
 
@@ -22,6 +26,7 @@ pub struct VoronoiImageFactory {
 }
 
 impl VoronoiImageFactory {
+    /// Creates a new [`VoronoiImageFactory`].
     pub fn new(queue: ocl::Queue, max_dim: usize) -> anyhow::Result<Self> {
         let swapchain = Swapchain::new(&queue, max_dim)?;
         let program = ocl::Program::builder()
@@ -70,6 +75,7 @@ impl VoronoiImageFactory {
         })
     }
 
+    /// Constructs a new [`VoronoiImage`] which owns its image.
     pub fn construct_owned(
         &mut self,
         sites: Arena<Point>,
@@ -82,6 +88,10 @@ impl VoronoiImageFactory {
         Ok(VoronoiImage::new(dim, sites, Cow::Owned(copied_image)))
     }
 
+    /// Constructs a new [`VoronoiImage`] which borrows its image
+    /// from [`VoronoiImageFactory`]'s swapchain.
+    /// 
+    /// New [`VoronoiImage`]s can't be constructed until the current one is dropped.
     pub fn construct_borrowed(
         &mut self,
         sites: Arena<Point>,
@@ -92,6 +102,7 @@ impl VoronoiImageFactory {
         Ok(VoronoiImage::new(dim, sites, Cow::Borrowed(self.swapchain.last())))
     }
 
+    // Draws a [`VoronoiImage`].
     fn draw_voronoi(&mut self, sites: &Arena<Point>, dim: usize) -> anyhow::Result<()> {
         self.swapchain.set_dim(dim)?;
         self.swapchain.clear()?;
@@ -103,6 +114,10 @@ impl VoronoiImageFactory {
         Ok(())
     }
 
+    // Plots sites into the image of the diagram.
+    //
+    // A full algorithm of triangulation is described in the section G1 of
+    // [this paper](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
     fn plot_sites(&mut self, sites: &Arena<Point>) -> anyhow::Result<()> {
         let raw_sites = sites
             .handle_iter::<PointHandle>(None)
@@ -128,6 +143,10 @@ impl VoronoiImageFactory {
         Ok(())
     }
 
+    // Fills the diagram based on the plotted sites.
+    //
+    // A full algorithm of triangulation is described in the section G1 of
+    // [this paper](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
     fn fill_voronoi(&mut self) -> anyhow::Result<()> {
         let dim = self.swapchain.dim();
         self.fill_voronoi_kernel
@@ -156,6 +175,10 @@ impl VoronoiImageFactory {
         Ok(())
     }
 
+    // Removes islands - the pixels which are not connected to the region of its site.
+    //
+    // A full algorithm of triangulation is described in the section G1 of
+    // [this paper](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
     fn conquer_islands(&mut self) -> anyhow::Result<()> {
         let dim = self.swapchain.dim();
         self.conquer_islands_kernel
