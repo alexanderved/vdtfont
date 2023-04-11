@@ -43,6 +43,7 @@ triangulates glyphs using GPU.
 
 ## Dependencies
 
+On Debian 11:
 * ocl-icd-libopencl1
 * opencl-headers
 * OpenCL drivers for your GPU (e.g. intel-opencl-icd for Intel GPU)
