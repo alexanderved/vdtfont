@@ -2,7 +2,7 @@ use super::{edge::Edge, Polygon};
 
 use crate::point::{Point, PointHandle, PointId};
 
-use std::fmt;
+use std::{fmt, iter};
 
 use arena_system::{Arena, Handle, Index, RawHandle};
 use smallvec::SmallVec;
@@ -201,6 +201,10 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     /// Adds `new_neighbour` to the neighbour list of the triangle if it has free space.
     pub fn try_add_neighbour(&self, new_neighbour: DelaunayTriangleHandle<'arena>) -> bool {
         let neighbour_ids = &mut self.get_mut().unwrap().neighbours;
+        if neighbour_ids.contains(&new_neighbour.index().into()) {
+            return false;
+        }
+
         let position = neighbour_ids.iter().position(|n| *n == -1);
 
         if let Some(position) = position {
@@ -369,7 +373,17 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let is_flippable = self.is_flippable_with(other) && deep != 0;
         if is_flippable {
             self.flip_edge(other);
-            self.update_neighbours(other);
+
+            let mut neighbourhood = self.neighbours();
+            let mut other_neighbours = other
+                .neighbours()
+                .into_iter()
+                .filter(|n| !neighbourhood.contains(n))
+                .collect::<SmallVec<[_; 3]>>();
+            neighbourhood.append(&mut other_neighbours);
+
+            self.update_neighbours(neighbourhood.clone().to_vec());
+            other.update_neighbours(neighbourhood.clone().to_vec());
 
             deep -= 1;
 
@@ -394,33 +408,27 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         other.make_counterclockwise();
     }
 
-    // Update the neighbours of the triangles after flip.
-    fn update_neighbours(&self, other: &DelaunayTriangleHandle<'arena>) {
-        let mut neighbourhood = self.neighbours();
-        let mut other_neighbours = other
-            .neighbours()
-            .into_iter()
-            .filter(|n| !neighbourhood.contains(n))
-            .collect::<SmallVec<[_; 3]>>();
-        neighbourhood.append(&mut other_neighbours);
+    // Update the neighbours of the triangle with `supposed_neighbours`.
+    fn update_neighbours(&self, mut supposed_neighbours: Vec<DelaunayTriangleHandle<'arena>>) {
+        let mut neighbours = self.neighbours().to_vec();
+        neighbours.append(&mut supposed_neighbours);
 
-        let triangles = [*self, *other];
-        for i in 0..2 {
-            let triangle = triangles[i];
-            let other_triangle = triangles[(i + 1) % 2];
-
-            let new_neighbours = neighbourhood
-                .iter()
-                .copied()
-                .filter(|neighbour| triangle.shared_points_with(neighbour).len() == 2)
-                .collect::<SmallVec<[DelaunayTriangleHandle; 3]>>();
-
-            new_neighbours
-                .iter()
-                .for_each(|n| n.try_replace_neighbour(other_triangle.index(), triangle));
-
-            triangle.set_neighbours(new_neighbours);
+        for neighbour in iter::once(self).chain(neighbours.iter()) {
+            neighbour.neighbours()
+                .into_iter()
+                .filter(|n| neighbour.shared_points_with(n).len() != 2)
+                .for_each(|n| {
+                    neighbour.try_remove_neighbour(n.index());
+                });
         }
+
+        neighbours
+            .into_iter()
+            .filter(|neighbour| self.shared_points_with(neighbour).len() == 2)
+            .for_each(|neighbour| {
+                neighbour.try_add_neighbour(*self);
+                self.try_add_neighbour(neighbour);
+            });
     }
 
     /// Flips the triangle with its neighbours except the `exception` triangle.
