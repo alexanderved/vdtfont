@@ -71,7 +71,7 @@ impl Delaunay {
                 self.triangles
                     .handle::<DelaunayTriangleHandle>(neighbour_index, self.points())
             })
-            .filter(|neigbour| triangle_handle.shared_points_with(neigbour).len() == 2)
+            .filter(|neigbour| triangle_handle.is_connected(neigbour))
             .for_each(|neighbour| {
                 neighbour.try_add_neighbour(triangle_handle);
                 triangle_handle.try_add_neighbour(neighbour);

@@ -183,6 +183,11 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         self.neighbours().contains(neighbour)
     }
 
+    /// Checks if the triangle is connected to the other one.
+    pub fn is_connected(&self, other: &DelaunayTriangleHandle<'arena>) -> bool {
+        self.shared_points_with(other).len() == 2
+    }
+
     /// Replaces the neighbour with the index `index` with `new_neighbour` if it exists
     /// in the neighbour list of the triangle.
     pub fn try_replace_neighbour(
@@ -416,7 +421,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         for neighbour in iter::once(self).chain(neighbours.iter()) {
             neighbour.neighbours()
                 .into_iter()
-                .filter(|n| neighbour.shared_points_with(n).len() != 2)
+                .filter(|n| !neighbour.is_connected(n))
                 .for_each(|n| {
                     neighbour.try_remove_neighbour(n.index());
                 });
@@ -424,7 +429,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
 
         neighbours
             .into_iter()
-            .filter(|neighbour| self.shared_points_with(neighbour).len() == 2)
+            .filter(|neighbour| self.is_connected(neighbour))
             .for_each(|neighbour| {
                 neighbour.try_add_neighbour(*self);
                 self.try_add_neighbour(neighbour);
