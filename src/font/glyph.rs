@@ -114,6 +114,8 @@ impl TriangulatedGlyph {
     /// Creates a new [`TriangulatedGlyph`].
     ///
     /// The validity of the given parameters is ensured by [`Font`].
+    /// 
+    /// [`Font`]: crate::font::Font
     pub(super) fn new(
         glyph: Glyph,
         dim: usize,

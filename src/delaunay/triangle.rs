@@ -18,6 +18,8 @@ pub enum Visibility {
 }
 
 /// A triangle which is used in [`Delaunay`].
+/// 
+/// [`Delaunay`]: crate::delaunay::Delaunay
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct DelaunayTriangle {
