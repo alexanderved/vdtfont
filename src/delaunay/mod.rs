@@ -147,9 +147,6 @@ impl Delaunay {
     // through the `control_point` and ends at the second point of `base_line`.
     //
     // Other points of the contour are obtained from `edge_track`.
-    //
-    // TODO: Fix algorithm of searching the next point in the contour because
-    // the current one may cause the creation of wrong contours.
     fn calculate_contour<'arena>(
         &self,
         base_line: Edge<'arena>,
@@ -157,21 +154,37 @@ impl Delaunay {
         edge_track: &[Edge<'arena>],
     ) -> Vec<PointHandle<'arena>> {
         let mut contour = vec![base_line.points()[0], control_point];
-        for e in edge_track[1..].iter() {
-            let last = contour.last().unwrap();
-            let d0 = last.distance(&e.points()[0]);
-            let d1 = last.distance(&e.points()[1]);
 
-            // Move to the next point because one of the current points is
-            // the same as the previous one
-            if d0 == 0.0 || d1 == 0.0 {
+        let is_counterclockwise_control = is_counterclockwise([
+            base_line.points()[0],
+            base_line.points()[1],
+            control_point,
+        ]);
+
+        for e in edge_track[1..].iter() {
+            let p0 = e.points()[0];
+            let p1 = e.points()[1];
+
+            let last = contour.last().unwrap();
+            if p0 == *last || p1 == *last {
                 continue;
             }
 
-            if d0 < d1 {
-                contour.push(e.points()[0]);
-            } else {
-                contour.push(e.points()[1]);
+            let is_counterclockwise0 = is_counterclockwise([
+                base_line.points()[0],
+                base_line.points()[1],
+                p0,
+            ]);
+            let is_counterclockwise1 = is_counterclockwise([
+                base_line.points()[0],
+                base_line.points()[1],
+                p1,
+            ]);
+
+            if is_counterclockwise_control == is_counterclockwise0 {
+                contour.push(p0);
+            } else if is_counterclockwise_control == is_counterclockwise1 {
+                contour.push(p1);
             }
         }
         contour.push(base_line.points()[1]);
@@ -234,4 +247,11 @@ impl Delaunay {
     ) -> Self {
         Self { dim, points, triangles, bounds }
     }
+}
+
+fn is_counterclockwise(points: [PointHandle; 3]) -> bool {
+    points[0].skew_product(
+        &points[1],
+        &points[2],
+    ) < 0.0
 }
