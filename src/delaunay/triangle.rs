@@ -2,7 +2,7 @@ use super::{edge::Edge, Polygon};
 
 use crate::point::{Point, PointHandle, PointId};
 
-use std::{fmt, iter};
+use std::{fmt, iter, hash, collections::HashSet};
 
 use arena_system::{Arena, Handle, Index, RawHandle};
 use smallvec::SmallVec;
@@ -379,16 +379,9 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         if is_flippable {
             self.flip_edge(other);
 
-            let mut neighbourhood = self.neighbours();
-            let mut other_neighbours = other
-                .neighbours()
-                .into_iter()
-                .filter(|n| !neighbourhood.contains(n))
-                .collect::<SmallVec<[_; 3]>>();
-            neighbourhood.append(&mut other_neighbours);
-
-            self.update_neighbours(neighbourhood.clone().to_vec());
-            other.update_neighbours(neighbourhood.clone().to_vec());
+            let neighbourhood = self.neighbourhood(*other);
+            self.update_neighbours(neighbourhood.clone());
+            other.update_neighbours(neighbourhood);
 
             deep -= 1;
 
@@ -413,13 +406,29 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         other.make_counterclockwise();
     }
 
+    // Gets all neighbours of the two triangles.
+    fn neighbourhood(
+        &self,
+        other: DelaunayTriangleHandle<'arena>,
+    ) -> Vec<DelaunayTriangleHandle<'arena>> {
+        let neighbourhood = self.neighbours()
+            .into_iter()
+            .chain(other.neighbours())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+
+        neighbourhood
+    }
+
     // Update the neighbours of the triangle with `supposed_neighbours`.
     fn update_neighbours(&self, mut supposed_neighbours: Vec<DelaunayTriangleHandle<'arena>>) {
         let mut neighbours = self.neighbours().to_vec();
         neighbours.append(&mut supposed_neighbours);
 
         for neighbour in iter::once(self).chain(neighbours.iter()) {
-            neighbour.neighbours()
+            neighbour
+                .neighbours()
                 .into_iter()
                 .filter(|n| !neighbour.is_connected(n))
                 .for_each(|n| {
@@ -493,5 +502,12 @@ impl PartialOrd for DelaunayTriangleHandle<'_> {
 impl Ord for DelaunayTriangleHandle<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.to_raw().cmp(&other.to_raw())
+    }
+}
+
+impl hash::Hash for DelaunayTriangleHandle<'_> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        let index: i64 = self.index().into();
+        index.hash(state);
     }
 }
