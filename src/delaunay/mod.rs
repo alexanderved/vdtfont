@@ -114,12 +114,14 @@ impl Delaunay {
         let (edge_track, triangle_track) = edge.find_triangle_track();
 
         // Calculate contours around the `edge`.
-        let contour0 = self.calculate_contour(edge, edge_track[0].points()[0], &edge_track);
-        let contour1 = self.calculate_contour(edge, edge_track[0].points()[1], &edge_track);
+        let (contour0, is_counterclockwise0) =
+            self.calculate_contour(edge, edge_track[0].points()[0], &edge_track);
+        let (contour1, is_counterclockwise1) =
+            self.calculate_contour(edge, edge_track[0].points()[1], &edge_track);
 
         // Triangulate the contours.
-        let triangulation0 = self.triangulate_hole(contour0);
-        let triangulation1 = self.triangulate_hole(contour1);
+        let triangulation0 = self.triangulate_hole(contour0, is_counterclockwise0);
+        let triangulation1 = self.triangulate_hole(contour1, is_counterclockwise1);
 
         // Find triangles around the `triangle_track`.
         let mut neighbours = triangle_track
@@ -152,35 +154,38 @@ impl Delaunay {
         base_line: Edge<'arena>,
         control_point: PointHandle<'arena>,
         edge_track: &[Edge<'arena>],
-    ) -> Vec<PointHandle<'arena>> {
+    ) -> (Vec<PointHandle<'arena>>, bool) {
         let mut contour = vec![base_line.points()[0], control_point];
 
         let is_counterclockwise_control = is_counterclockwise([
             base_line.points()[0],
-            base_line.points()[1],
             control_point,
+            base_line.points()[1],
         ]);
 
         for e in edge_track[1..].iter() {
             let p0 = e.points()[0];
             let p1 = e.points()[1];
-
             let last = contour.last().unwrap();
+
+            // Move to the next point because one of the current points is
+            // the same as the previous one
             if p0 == *last || p1 == *last {
                 continue;
             }
 
             let is_counterclockwise0 = is_counterclockwise([
                 base_line.points()[0],
-                base_line.points()[1],
                 p0,
+                base_line.points()[1],
             ]);
             let is_counterclockwise1 = is_counterclockwise([
                 base_line.points()[0],
-                base_line.points()[1],
                 p1,
+                base_line.points()[1],
             ]);
 
+            // Choose the next point which is by the same side of the edge as the control point.
             if is_counterclockwise_control == is_counterclockwise0 {
                 contour.push(p0);
             } else if is_counterclockwise_control == is_counterclockwise1 {
@@ -189,14 +194,15 @@ impl Delaunay {
         }
         contour.push(base_line.points()[1]);
 
-        contour
+        (contour, is_counterclockwise_control)
     }
 
     // Triangulate the given `contour`.
-    //
-    // TODO: Fix this algorithm because it can cause the creation of triangles
-    // which intersects each other.
-    fn triangulate_hole(&self, mut contour: Vec<PointHandle>) -> Vec<DelaunayTriangle> {
+    fn triangulate_hole(
+        &self,
+        mut contour: Vec<PointHandle>,
+        is_counterclockwise: bool
+    ) -> Vec<DelaunayTriangle> {
         let mut middle_vertex = 0;
         let mut smallest_triangle = None;
         let mut smallest_circle = f32::MAX;
@@ -209,15 +215,15 @@ impl Delaunay {
                 points[2].index().into(),
             ]);
 
-            // t.is_counterclockwise(self.points()) {
-            let r = t.circumcircle_radius(self.points());
+            if t.is_counterclockwise(self.points()) == is_counterclockwise {
+                let r = t.circumcircle_radius(self.points());
 
-            if r < smallest_circle {
-                smallest_circle = r;
-                smallest_triangle = Some(t);
-                middle_vertex = i + 1;
+                if r < smallest_circle {
+                    smallest_circle = r;
+                    smallest_triangle = Some(t);
+                    middle_vertex = i + 1;
+                }
             }
-            // }
         }
 
         let mut triangulation = vec![];
@@ -229,7 +235,7 @@ impl Delaunay {
 
             // Triangulate the new contour if it has 3 points at least.
             if contour.len() >= 3 {
-                triangulation.append(&mut self.triangulate_hole(contour));
+                triangulation.append(&mut self.triangulate_hole(contour, is_counterclockwise));
             }
         }
 
@@ -250,8 +256,8 @@ impl Delaunay {
 }
 
 fn is_counterclockwise(points: [PointHandle; 3]) -> bool {
-    points[0].skew_product(
-        &points[1],
+    points[1].skew_product(
+        &points[0],
         &points[2],
     ) < 0.0
 }
