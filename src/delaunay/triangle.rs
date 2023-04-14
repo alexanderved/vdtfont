@@ -414,9 +414,9 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let neighbourhood = self.neighbours()
             .into_iter()
             .chain(other.neighbours())
-            .collect::<HashSet<_>>()
+            .collect::<HashSet<DelaunayTriangleHandle>>()
             .into_iter()
-            .collect::<Vec<_>>();
+            .collect::<Vec<DelaunayTriangleHandle>>();
 
         neighbourhood
     }
@@ -426,6 +426,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
         let mut neighbours = self.neighbours().to_vec();
         neighbours.append(&mut supposed_neighbours);
 
+        // Remove all neighbours which are not connected to each other.
         for neighbour in iter::once(self).chain(neighbours.iter()) {
             neighbour
                 .neighbours()
@@ -436,6 +437,7 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
                 });
         }
 
+        // Make connected triangles neighbours.
         neighbours
             .into_iter()
             .filter(|neighbour| self.is_connected(neighbour))
