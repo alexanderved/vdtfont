@@ -1,10 +1,7 @@
-use common::rasterize_glyph;
+mod common;
 
 use vdtfont::*;
-
 use std::io::Cursor;
-
-mod common;
 
 const OPENSANS_REGULAR: &'static [u8] =
     include_bytes!("/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf");
@@ -17,7 +14,7 @@ fn test_opensans_regular_r() {
     let outlined_glyph = font.outline_glyph(glyph);
     let triangulated_glyph = font.triangulate_glyph(outlined_glyph).unwrap();
 
-    let glyph = rasterize_glyph(&triangulated_glyph);
+    let glyph = common::rasterize_glyph(&triangulated_glyph);
     let reference_glyph = image::load(
         Cursor::new(include_bytes!("../reference_glyphs/opensans_regular_r.png")),
         image::ImageFormat::Png,
