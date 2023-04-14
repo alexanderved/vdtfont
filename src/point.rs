@@ -217,10 +217,7 @@ impl<'arena> PointHandle<'arena> {
 
     /// Checks if the point is connected to the other one.
     pub fn is_connected_to(&self, other: PointHandle<'arena>) -> bool {
-        self.triangle_fan()
-            .into_iter()
-            .any(|t| t.points().contains(&other))
-            && *self != other
+        self.triangle_fan().into_iter().any(|t| t.points().contains(&other)) && *self != other
     }
 
     /// Calculates skew product of `self` and `other` points

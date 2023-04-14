@@ -1,6 +1,6 @@
 use anyhow::Context;
 use vdtfont::{Point, PointHandle, Font, TriangulatedGlyph};
-use vdtfont::delaunay::DelaunayTriangleHandle;
+use vdtfont::delaunay::{DelaunayTriangleHandle, Visibility};
 
 use std::mem;
 
@@ -67,7 +67,7 @@ pub fn rasterize_glyph(glyph: &TriangulatedGlyph) -> Vec<u8> {
         .handle_iter::<DelaunayTriangleHandle>(&glyph.points())
         .for_each(|t| {
             if let Ok(t) = t.get() {
-                if t.is_visible {
+                if matches!(t.visibility(), Visibility::Visible) {
                     draw_line(
                         &mut bitmap,
                         glyph.dim(),

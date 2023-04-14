@@ -9,6 +9,14 @@ use smallvec::SmallVec;
 
 pub type TriangleId = i64;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(i8)]
+pub enum Visibility {
+    Unknown = -1,
+    Invisible = 0,
+    Visible = 1,
+}
+
 /// A triangle which is used in [`Delaunay`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
@@ -16,8 +24,7 @@ pub struct DelaunayTriangle {
     pub vertices: [PointId; 3],
     pub neighbours: [TriangleId; 3],
     pub neighbours_number: i32,
-    pub is_visible: bool,
-    pub is_finalized: bool,
+    pub visibility: Visibility,
 }
 
 impl DelaunayTriangle {
@@ -27,29 +34,18 @@ impl DelaunayTriangle {
             vertices,
             neighbours: [-1; 3],
             neighbours_number: 0,
-            is_visible: true,
-            is_finalized: false,
+            visibility: Visibility::Unknown,
         }
     }
 
-    /// Checks if the triangle is visible.
-    pub fn is_visible(&self) -> bool {
-        self.is_visible
+    /// Returns the visibiity of the triangle.
+    pub fn visibility(&self) -> Visibility {
+        self.visibility
     }
 
     /// Sets the visibility of the triangle.
-    pub fn set_is_visible(&mut self, is_visible: bool) {
-        self.is_visible = is_visible;
-    }
-
-    /// Checks if the triangle is finalized.
-    pub fn is_finalized(&self) -> bool {
-        self.is_finalized
-    }
-
-    /// Makes the triangle finalized or not based on `is_finalized`.
-    pub fn set_is_finalized(&mut self, is_finalized: bool) {
-        self.is_finalized = is_finalized;
+    pub fn set_visibility(&mut self, visibility: Visibility) {
+        self.visibility = visibility;
     }
 
     /// Checks if the triangle is counterclockwise.
@@ -158,23 +154,13 @@ impl<'arena> DelaunayTriangleHandle<'arena> {
     }
 
     /// Checks if the triangle is visible.
-    pub fn is_visible(&self) -> bool {
-        self.get_mut().unwrap().is_visible
+    pub fn visibility(&self) -> Visibility {
+        self.get_mut().unwrap().visibility
     }
 
     /// Sets the visibility of the triangle.
-    pub fn set_is_visible(&self, is_visible: bool) {
-        self.get_mut().unwrap().is_visible = is_visible;
-    }
-
-    /// Checks if the triangle is finalized.
-    pub fn is_finalized(&self) -> bool {
-        self.get_mut().unwrap().is_finalized
-    }
-
-    /// Makes the triangle finalized or not based on `is_finalized`.
-    pub fn set_is_finalized(&self, is_finalized: bool) {
-        self.get_mut().unwrap().is_finalized = is_finalized;
+    pub fn set_visibiity(&self, visibility: Visibility) {
+        self.get_mut().unwrap().visibility = visibility;
     }
 
     /// Returns the edges of the triangle.

@@ -12,9 +12,9 @@ use arena_system::{Arena, Handle};
 use smallvec::ToSmallVec;
 
 /// A factory for constructing [`Delaunay`].
-/// 
+///
 /// [`Delaunay`] is computated based on [`VoronoiImage`].
-/// 
+///
 /// A full algorithm of triangulation is described in the paper
 /// ["Computing Two-dimensional Delaunay Triangulation Using Graphics Hardware"](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf)
 pub struct DelaunayFactory {
@@ -120,9 +120,9 @@ impl DelaunayFactory {
     }
 
     /// Constructs a new [`Delaunay`].
-    /// 
+    ///
     /// [`Delaunay`] is computated based on the given [`VoronoiImage`].
-    /// 
+    ///
     /// A full algorithm of triangulation is described in
     /// [this paper](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf).
     pub fn construct(&mut self, voronoi_image: &VoronoiImage<'_>) -> anyhow::Result<Delaunay> {

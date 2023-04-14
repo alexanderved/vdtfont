@@ -9,7 +9,7 @@ pub use bounds::Bounds;
 pub use edge::Edge;
 pub use factory::DelaunayFactory;
 pub use polygon::Polygon;
-pub use triangle::{DelaunayTriangle, DelaunayTriangleHandle, TriangleId};
+pub use triangle::{DelaunayTriangle, DelaunayTriangleHandle, TriangleId, Visibility};
 
 use crate::point::*;
 

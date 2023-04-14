@@ -10,7 +10,7 @@ use crate::point::{Point, PointHandle};
 use std::{borrow::Cow, iter};
 
 /// A factory for constructing [`VoronoiImage`].
-/// 
+///
 /// A full algorithm of triangulation is described in the paper
 /// ["Computing Two-dimensional Delaunay Triangulation Using Graphics Hardware"](https://www.comp.nus.edu.sg/%7Etants/delaunay/GPUDT.pdf)
 pub struct VoronoiImageFactory {
@@ -90,7 +90,7 @@ impl VoronoiImageFactory {
 
     /// Constructs a new [`VoronoiImage`] which borrows its image
     /// from [`VoronoiImageFactory`]'s swapchain.
-    /// 
+    ///
     /// New [`VoronoiImage`]s can't be constructed until the current one is dropped.
     pub fn construct_borrowed(
         &mut self,

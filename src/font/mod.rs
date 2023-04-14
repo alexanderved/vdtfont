@@ -4,7 +4,9 @@ mod outliner;
 
 pub use glyph::{Glyph, OutlinedGlyph, TriangulatedGlyph};
 
-use crate::delaunay::{Delaunay, DelaunayFactory, DelaunayTriangle, DelaunayTriangleHandle};
+use crate::delaunay::{
+    Delaunay, DelaunayFactory, DelaunayTriangle, DelaunayTriangleHandle, Visibility,
+};
 use crate::point::{Point, PointHandle, PointId};
 use crate::voronoi::VoronoiImageFactory;
 
@@ -190,7 +192,7 @@ impl Font {
             .points()
             .handle::<PointHandle>(bounding_point_ids[0].into(), Some(delaunay.triangles()))
             .triangle_fan()[0];
-        self.remove_excess_triangles(bounding_triangle, false);
+        self.remove_excess_triangles(bounding_triangle, Visibility::Invisible);
 
         let (dim, points, triangles, _) = delaunay.into_raw_parts();
 
@@ -198,7 +200,7 @@ impl Font {
         let triangles = triangles
             .handle_iter::<DelaunayTriangleHandle>(&points)
             .filter(|t| t.get().is_ok())
-            .filter(|t| t.is_visible())
+            .filter(|t| matches!(t.visibility(), Visibility::Visible))
             .map(|t| *t.get().unwrap())
             .collect::<Arena<DelaunayTriangle>>();
 
@@ -230,20 +232,31 @@ impl Font {
 
     // Recursively hides triangles which are outside the contour.
     #[allow(clippy::only_used_in_recursion)]
-    fn remove_excess_triangles(&self, starting_triangle: DelaunayTriangleHandle, is_visible: bool) {
-        if starting_triangle.is_finalized() {
+    fn remove_excess_triangles(
+        &self,
+        starting_triangle: DelaunayTriangleHandle,
+        visibility: Visibility,
+    ) {
+        if !matches!(starting_triangle.visibility(), Visibility::Unknown) {
             return;
         }
 
-        starting_triangle.set_is_visible(is_visible);
-        starting_triangle.set_is_finalized(true);
+        starting_triangle.set_visibiity(visibility);
 
         starting_triangle.neighbours().into_iter().for_each(|n| {
             let has_contour_edge = starting_triangle.shared_edge_with(&n).is_contour();
-            // When cross the contour edge, invert the `is_visible` parameter.
-            let is_visible = if has_contour_edge { !is_visible } else { is_visible };
+            // When cross the contour edge, invert the `visibility` parameter.
+            let visibility = if has_contour_edge {
+                match visibility {
+                    Visibility::Invisible => Visibility::Visible,
+                    Visibility::Visible => Visibility::Invisible,
+                    _ => unreachable!(),
+                }
+            } else {
+                visibility
+            };
 
-            self.remove_excess_triangles(n, is_visible);
+            self.remove_excess_triangles(n, visibility);
         });
     }
 }

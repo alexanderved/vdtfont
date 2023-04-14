@@ -9,8 +9,7 @@ typedef struct Triangle {
     PointId vertices[3];
     TriangleId neighbours[3];
     int neighbours_number;
-    bool is_visible;
-    bool is_finalized;
+    char visibility;
 } Triangle;
 
 typedef struct TriangleFan {

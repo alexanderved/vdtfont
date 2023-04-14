@@ -91,7 +91,7 @@ impl Swapchain {
     pub(super) fn last(&self) -> &ImageView<i32> {
         &self.images[self.last]
     }
-    
+
     // Returns the next image for rendering.
     fn next(&self) -> &ImageView<i32> {
         &self.images[(self.last + 1) % 2]

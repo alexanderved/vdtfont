@@ -34,5 +34,5 @@ pub mod opencl;
 pub mod point;
 pub mod voronoi;
 
-pub use point::{Point, PointHandle, PointId};
 pub use font::{Font, Glyph, OutlinedGlyph, TriangulatedGlyph};
+pub use point::{Point, PointHandle, PointId};

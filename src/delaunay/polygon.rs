@@ -68,4 +68,4 @@ impl<'arena> convert::From<Polygon<'arena>> for Vec<PointHandle<'arena>> {
     fn from(polygon: Polygon<'arena>) -> Self {
         polygon.points
     }
-}   
+}
