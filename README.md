@@ -85,7 +85,7 @@ The image of the symbol was saved in r.png
 
 ## Roadmap
 
-- [*] Realize basic glyph triangulation functionality
+- [x] Realize basic glyph triangulation functionality
+- [x] Fix inserting edge algorithm
 - [ ] Add C FFI
-- [ ] Fix inserting edge algorithm
 - [ ] Add function to fix self-intersecting outlines of glyphs
