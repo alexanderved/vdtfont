@@ -60,6 +60,42 @@ pub fn draw_line(bitmap: &mut Vec<f32>, width: usize, height: usize, p0: Point, 
     }
 }
 
+#[allow(unused)]
+pub fn rasterize_outline(glyph: &TriangulatedGlyph) -> Vec<u8> {
+    let mut bitmap = vec![0.0; glyph.dim() * glyph.dim()];
+
+    glyph
+        .points()
+        .handle_iter::<PointHandle>(None)
+        .for_each(|p| {
+            let pp = p.previous_in_outline();
+
+            if p.exists() && pp.exists() {
+                draw_line(
+                    &mut bitmap,
+                    glyph.dim(),
+                    glyph.dim(),
+                    (*p
+                        .get()
+                        .unwrap())
+                        .clone(),
+                    (*pp
+                        .get()
+                        .unwrap())
+                        .clone(),
+                );
+            }
+        });
+
+    bitmap.into_iter().flat_map(|a| {
+        if a > 0.0 {
+            [255, 255, 255, (255.0 * a) as u8]
+        } else {
+            [0, 0, 0, 255]
+        }
+    }).collect()
+}
+
 pub fn rasterize_glyph(glyph: &TriangulatedGlyph) -> Vec<u8> {
     let mut bitmap = vec![0.0; glyph.dim() * glyph.dim()];
 
