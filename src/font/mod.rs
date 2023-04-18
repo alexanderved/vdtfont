@@ -162,8 +162,8 @@ impl Font {
         };
 
         outliner.points.iter_mut().for_each(|p| {
-            let new_x = p.x() * h_factor - bounds.x_min as f32;
-            let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32;
+            let new_x = p.x() * h_factor - bounds.x_min as f32 + 2.0;
+            let new_y = bounds.height() as f32 - p.y() * v_factor + bounds.y_min as f32 + 2.0;
 
             p.set_coords(Float2::new(new_x, new_y));
         });
@@ -200,6 +200,7 @@ impl Font {
         let triangles = triangles
             .handle_iter::<DelaunayTriangleHandle>(&points)
             .filter(|t| t.get().is_ok())
+            //.map(|t| { t.set_visibiity(Visibility::Visible); t })
             .filter(|t| matches!(t.visibility(), Visibility::Visible))
             .map(|t| *t.get().unwrap())
             .collect::<Arena<DelaunayTriangle>>();
@@ -221,6 +222,7 @@ impl Font {
                     && !p.triangle_fan().is_empty()
                     && !pp.triangle_fan().is_empty()
                 {
+                    println!("({}; {}) - ({}; {})", p.x(), p.y(), pp.x(), pp.y());
                     edges.push([p.index().into(), pp.index().into()]);
                 }
             });
