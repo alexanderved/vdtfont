@@ -27,10 +27,14 @@ impl<'arena> Edge<'arena> {
 
     /// Checks if the edge is in contour.
     pub fn is_contour(&self) -> bool {
-        (self.points[0] == self.points[1].previous_in_outline()
-            && !self.points[0].index().is_invalid())
-            || (self.points[1] == self.points[0].previous_in_outline()
-                && !self.points[1].index().is_invalid())
+        let p0 = self.points[0];
+        let pp0 = p0.previous_in_outline();
+
+        let p1 = self.points[1];
+        let pp1 = p1.previous_in_outline();
+
+        (p0 == pp1 && !p0.index().is_invalid() && !pp1.index().is_invalid())
+            || (p1 == pp0 && !p1.index().is_invalid() && !pp0.index().is_invalid())
     }
 
     /// Checks if the edge contains the `point`.
