@@ -57,7 +57,7 @@ $ cargo add vdtfont
 
 Or add the following line to your Cargo.toml:
 ```
-vdtfont = "0.3.0"
+vdtfont = "0.3.2"
 ```
 
 ## Build
