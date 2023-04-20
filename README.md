@@ -28,6 +28,8 @@ triangulated_glyph
     })
 ```
 
+Full documentaion: https://docs.rs/vdtfont
+
 ## Overview
 
 VDTFont uses OpenCL to build Voronoi diagram and compute Delaunay triangulation with points from the glyph. The triangulation of the glyph can be used for its rendering.
