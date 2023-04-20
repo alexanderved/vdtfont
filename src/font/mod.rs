@@ -59,21 +59,31 @@ impl Font {
         Some(self.subtables.as_face_ref().units_per_em().into())
     }
 
+    /// Returns an ascender of the glyph.
     #[inline]
     pub fn ascender(&self) -> f32 {
         self.subtables.as_face_ref().ascender().into()
     }
 
+    /// Returns a descender of the glyph.
     #[inline]
     pub fn descender(&self) -> f32 {
         self.subtables.as_face_ref().descender().into()
     }
 
+    /// Returns a height of the glyph.
+    #[inline]
+    pub fn height(&self) -> f32 {
+        self.ascender() - self.descender()
+    }
+
+    /// Returns a line gap of the glyph.
     #[inline]
     pub fn line_gap(&self) -> f32 {
         self.subtables.as_face_ref().line_gap().into()
     }
 
+    /// Returns a horizontal advance of the glyph.
     #[inline]
     pub fn hor_advance(&self, glyph: Glyph) -> f32 {
         self.subtables
@@ -83,6 +93,7 @@ impl Font {
             .into()
     }
 
+    /// Returns a horizontal side bearing of the glyph.
     #[inline]
     pub fn hor_side_bearing(&self, glyph: Glyph) -> f32 {
         self.subtables
@@ -92,6 +103,7 @@ impl Font {
             .into()
     }
 
+    /// Returns a vertical advance of the glyph.
     #[inline]
     pub fn ver_advance(&self, glyph: Glyph) -> f32 {
         self.subtables
@@ -101,6 +113,7 @@ impl Font {
             .into()
     }
 
+    /// Returns a vertical side bearing of the glyph.
     #[inline]
     pub fn ver_side_bearing(&self, glyph: Glyph) -> f32 {
         self.subtables
@@ -110,6 +123,7 @@ impl Font {
             .into()
     }
 
+    /// Returns a horizontal kerning of the glyph.
     #[inline]
     pub fn hor_kerning(&self, first: Glyph, second: Glyph) -> f32 {
         self.subtables
@@ -118,6 +132,7 @@ impl Font {
             .unwrap_or_default()
     }
 
+    /// Returns a number of glyphs in the font.
     #[inline]
     pub fn glyph_count(&self) -> usize {
         self.subtables.as_face_ref().number_of_glyphs() as usize
